@@ -1,3 +1,4 @@
+
 const {
     Client,
     LocalAuth
@@ -21,11 +22,67 @@ const sessions = new Map();
 
 
 // =====================================================
-// CONFIGURAÇÃO DO CHROME
+// CONFIGURAÇÃO DO AMBIENTE / CHROME
 // =====================================================
+
+/*
+ * No Windows local:
+ * usamos o Chrome instalado no computador.
+ *
+ * No Render/Linux:
+ * não definimos executablePath.
+ * Dessa forma, o Puppeteer pode utilizar o navegador
+ * disponível no ambiente.
+ */
+
+const isWindows = process.platform === 'win32';
+
+const isRender =
+    process.env.RENDER === 'true' ||
+    process.env.RENDER === '1';
+
+const isProduction =
+    process.env.NODE_ENV === 'production' ||
+    isRender;
 
 const CHROME_PATH =
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+
+
+// =====================================================
+// CONFIGURAÇÃO DO PUPPETEER
+// =====================================================
+
+const puppeteerConfig = {
+    /*
+     * No computador local queremos continuar vendo
+     * o navegador para facilitar testes.
+     *
+     * No Render não existe interface gráfica.
+     */
+    headless: isProduction,
+
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-extensions'
+    ]
+};
+
+
+/*
+ * Somente no Windows local usamos o caminho fixo
+ * do Chrome instalado.
+ *
+ * No Render/Linux NÃO colocamos executablePath.
+ */
+if (isWindows && !isProduction) {
+    puppeteerConfig.executablePath = CHROME_PATH;
+}
 
 
 // =====================================================
@@ -153,6 +210,7 @@ async function startSession(
     // =================================================
     // DESCOBRIR A EMPRESA DA SESSÃO
     // =================================================
+
     /*
      * IMPORTANTE:
      *
@@ -246,19 +304,7 @@ async function startSession(
             clientId: sessionName
         }),
 
-        puppeteer: {
-
-            executablePath:
-                CHROME_PATH,
-
-            headless: false,
-
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage'
-            ]
-        }
+        puppeteer: puppeteerConfig
     });
 
 
@@ -661,6 +707,36 @@ async function startSession(
 
     try {
 
+        console.log(
+            `🚀 Iniciando sessão ${sessionName}...`
+        );
+
+        console.log(
+            `🖥️ Ambiente: ${isProduction ? 'produção/Render' : 'desenvolvimento/local'}`
+        );
+
+        console.log(
+            `🌐 Plataforma: ${process.platform}`
+        );
+
+        console.log(
+            `👻 Headless: ${puppeteerConfig.headless}`
+        );
+
+        if (puppeteerConfig.executablePath) {
+
+            console.log(
+                `🌐 Chrome: ${puppeteerConfig.executablePath}`
+            );
+
+        } else {
+
+            console.log(
+                '🌐 Chrome: navegador gerenciado pelo Puppeteer'
+            );
+        }
+
+
         await client.initialize();
 
     } catch (error) {
@@ -806,6 +882,10 @@ async function requestSessionPairingCode(
             code;
 
 
+        session.pairingCodeGeneratedAt =
+            Date.now();
+
+
         await updateSessionStatus(
             session,
             'pairing_code'
@@ -940,3 +1020,4 @@ module.exports = {
 
     getAllSessions
 };
+
