@@ -1,0 +1,1228 @@
+
+/* =========================================================
+   PÁGINA
+========================================================= */
+
+.clientes-page {
+    padding: 28px 30px 36px;
+    min-height: 100%;
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(17, 24, 39, 0.035),
+            transparent 32%
+        ),
+        #f7f8fa;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CABEÇALHO
+========================================================= */
+
+.clientes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 26px;
+}
+
+.clientes-header > div:first-child {
+    min-width: 0;
+}
+
+.clientes-header h1 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 750;
+    letter-spacing: -0.6px;
+}
+
+.clientes-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOTÃO ATUALIZAR
+========================================================= */
+
+.clientes-refresh-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 42px;
+    padding: 0 17px;
+
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+
+    background: #111827;
+    color: #ffffff;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 650;
+
+    box-shadow:
+        0 4px 10px rgba(17, 24, 39, 0.10);
+
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.clientes-refresh-button:hover {
+    background: #1f2937;
+    box-shadow:
+        0 7px 18px rgba(17, 24, 39, 0.16);
+    transform: translateY(-1px);
+}
+
+.clientes-refresh-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   ERRO
+========================================================= */
+
+.clientes-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 20px;
+    padding: 13px 15px;
+
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+
+    background: #fff5f5;
+    color: #991b1b;
+
+    font-size: 13px;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   ESTATÍSTICAS
+========================================================= */
+
+.clientes-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.cliente-stat-card {
+    position: relative;
+
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    padding: 20px;
+
+    border: 1px solid #e7e9ee;
+    border-radius: 15px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 3px 12px rgba(15, 23, 42, 0.035);
+
+    overflow: hidden;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.cliente-stat-card::after {
+    content: "";
+    position: absolute;
+
+    width: 90px;
+    height: 90px;
+
+    right: -35px;
+    top: -35px;
+
+    border-radius: 50%;
+
+    background: rgba(17, 24, 39, 0.025);
+
+    pointer-events: none;
+}
+
+.cliente-stat-card:hover {
+    transform: translateY(-2px);
+
+    border-color: #dfe3e9;
+
+    box-shadow:
+        0 9px 24px rgba(15, 23, 42, 0.07);
+}
+
+.cliente-stat-icon {
+    flex: 0 0 48px;
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    background: linear-gradient(
+        145deg,
+        #f8fafc,
+        #eef0f3
+    );
+
+    font-size: 21px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.cliente-stat-card span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cliente-stat-card strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 23px;
+    line-height: 1.15;
+    font-weight: 750;
+
+    letter-spacing: -0.3px;
+}
+
+
+/* =========================================================
+   CARD PRINCIPAL
+========================================================= */
+
+.clientes-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 4px 18px rgba(15, 23, 42, 0.035);
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.clientes-toolbar {
+    min-height: 82px;
+
+    padding: 18px 21px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+
+    border-bottom: 1px solid #edf0f3;
+
+    background: #ffffff;
+}
+
+.clientes-toolbar h2 {
+    margin: 0 0 4px;
+
+    color: #111827;
+
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 700;
+
+    letter-spacing: -0.2px;
+}
+
+.clientes-toolbar p {
+    margin: 0;
+
+    color: #8a93a1;
+
+    font-size: 12px;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   PESQUISA
+========================================================= */
+
+.clientes-search {
+    width: min(340px, 100%);
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 13px;
+    gap: 9px;
+
+    border: 1px solid #dfe3e8;
+    border-radius: 10px;
+
+    background: #f9fafb;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.clientes-search:focus-within {
+    border-color: #9ca3af;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 24, 39, 0.06);
+}
+
+.clientes-search span {
+    flex: 0 0 auto;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+
+.clientes-search input {
+    width: 100%;
+    min-width: 0;
+
+    padding: 0;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    color: #111827;
+
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.clientes-search input::placeholder {
+    color: #9ca3af;
+}
+
+
+/* =========================================================
+   TABELA
+========================================================= */
+
+.clientes-table-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+.clientes-table {
+    width: 100%;
+    min-width: 820px;
+
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.clientes-table th {
+    padding: 12px 20px;
+
+    border-bottom: 1px solid #e9ecf0;
+
+    background: #fafbfc;
+
+    color: #8a93a1;
+
+    text-align: left;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+
+    white-space: nowrap;
+}
+
+.clientes-table td {
+    padding: 14px 20px;
+
+    border-bottom: 1px solid #f0f2f5;
+
+    color: #374151;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+
+    vertical-align: middle;
+}
+
+.clientes-table tbody tr {
+    transition:
+        background 0.15s ease;
+}
+
+.clientes-table tbody tr:hover {
+    background: #fafbfc;
+}
+
+.clientes-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   CLIENTE
+========================================================= */
+
+.cliente-name {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    min-width: 170px;
+}
+
+.cliente-avatar {
+    flex: 0 0 38px;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+
+    background: linear-gradient(
+        145deg,
+        #111827,
+        #374151
+    );
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    box-shadow:
+        0 3px 8px rgba(17, 24, 39, 0.12);
+}
+
+.cliente-name strong {
+    display: block;
+
+    max-width: 180px;
+
+    overflow: hidden;
+
+    color: #111827;
+
+    font-size: 13px;
+    font-weight: 650;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   TELEFONE
+========================================================= */
+
+.clientes-table td:nth-child(2) {
+    color: #596273;
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   BADGE DE PEDIDOS
+========================================================= */
+
+.cliente-orders-badge {
+    min-width: 28px;
+    height: 28px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 8px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+
+    background: #f8fafc;
+
+    color: #374151;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   VALOR GASTO
+========================================================= */
+
+.clientes-table td strong {
+    color: #111827;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   BOTÃO VER DETALHES
+========================================================= */
+
+.cliente-view-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding: 0 12px;
+
+    border: 1px solid #e1e5ea;
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+
+    transition:
+        background 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease,
+        transform 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+.cliente-view-button:hover {
+    border-color: #cfd5dd;
+
+    background: #f8fafc;
+
+    color: #111827;
+
+    box-shadow:
+        0 3px 8px rgba(15, 23, 42, 0.06);
+
+    transform: translateY(-1px);
+}
+
+.cliente-view-button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   ESTADO VAZIO
+========================================================= */
+
+.clientes-empty {
+    min-height: 300px;
+
+    padding: 55px 20px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+.clientes-empty-icon {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 16px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+
+    background: #f8fafc;
+
+    font-size: 25px;
+}
+
+.clientes-empty h3 {
+    margin: 0 0 7px;
+
+    color: #111827;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.clientes-empty p {
+    max-width: 420px;
+
+    margin: 0;
+
+    color: #7b8492;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.clientes-loading {
+    min-height: 420px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    color: #6b7280;
+}
+
+.clientes-loading p {
+    margin: 0;
+
+    font-size: 13px;
+}
+
+.clientes-spinner {
+    width: 32px;
+    height: 32px;
+
+    margin-bottom: 14px;
+
+    border: 3px solid #e5e7eb;
+    border-top-color: #111827;
+
+    border-radius: 50%;
+
+    animation: clientes-spin 0.8s linear infinite;
+}
+
+@keyframes clientes-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   MODAL — OVERLAY
+========================================================= */
+
+.cliente-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(15, 23, 42, 0.52);
+
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    animation: cliente-overlay-in 0.18s ease;
+}
+
+@keyframes cliente-overlay-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.cliente-modal {
+    width: 100%;
+    max-width: 680px;
+    max-height: 86vh;
+
+    overflow-y: auto;
+
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 25px 70px rgba(15, 23, 42, 0.25);
+
+    animation: cliente-modal-in 0.2s ease;
+}
+
+@keyframes cliente-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.cliente-modal-header {
+    padding: 21px 22px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+
+    border-bottom: 1px solid #edf0f3;
+
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff,
+            #fcfcfd
+        );
+}
+
+.cliente-modal-header h2 {
+    margin: 0 0 5px;
+
+    color: #111827;
+
+    font-size: 20px;
+    line-height: 1.25;
+    font-weight: 750;
+
+    letter-spacing: -0.3px;
+}
+
+.cliente-modal-header p {
+    margin: 0;
+
+    color: #737d8c;
+
+    font-size: 13px;
+}
+
+.cliente-modal-close {
+    flex: 0 0 auto;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+
+    background: #f8fafc;
+
+    color: #4b5563;
+
+    cursor: pointer;
+
+    font-family: inherit;
+    font-size: 21px;
+    line-height: 1;
+
+    transition:
+        background 0.16s ease,
+        color 0.16s ease,
+        border-color 0.16s ease;
+}
+
+.cliente-modal-close:hover {
+    border-color: #d5dae1;
+    background: #f1f3f5;
+    color: #111827;
+}
+
+
+/* =========================================================
+   DETALHES DO CLIENTE
+========================================================= */
+
+.cliente-detail-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+
+    padding: 20px 22px 18px;
+}
+
+.cliente-detail-stats > div {
+    padding: 15px 16px;
+
+    border: 1px solid #e7e9ed;
+    border-radius: 11px;
+
+    background: #f9fafb;
+}
+
+.cliente-detail-stats span {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #7b8492;
+
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+}
+
+.cliente-detail-stats strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 19px;
+    line-height: 1.2;
+    font-weight: 750;
+}
+
+
+/* =========================================================
+   HISTÓRICO
+========================================================= */
+
+.cliente-history {
+    padding: 0 22px 22px;
+}
+
+.cliente-history h3 {
+    margin: 0 0 12px;
+
+    color: #111827;
+
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.cliente-orders-list {
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+
+    overflow: hidden;
+
+    background: #ffffff;
+}
+
+.cliente-order-row {
+    padding: 14px 15px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+
+    border-bottom: 1px solid #edf0f3;
+
+    transition:
+        background 0.15s ease;
+}
+
+.cliente-order-row:hover {
+    background: #fafbfc;
+}
+
+.cliente-order-row:last-child {
+    border-bottom: none;
+}
+
+.cliente-order-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cliente-order-row > div:last-child {
+    align-items: flex-end;
+}
+
+.cliente-order-row strong {
+    color: #111827;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cliente-order-row span {
+    color: #7b8492;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   STATUS DO PEDIDO
+========================================================= */
+
+.cliente-order-status {
+    display: inline-flex !important;
+    align-items: center;
+
+    padding: 4px 8px;
+
+    border-radius: 20px;
+
+    font-size: 10px !important;
+    font-weight: 700 !important;
+
+    line-height: 1.2;
+}
+
+.cliente-status-pending {
+    background: #fff7df;
+    color: #92400e !important;
+}
+
+.cliente-status-preparing {
+    background: #eaf3ff;
+    color: #1e40af !important;
+}
+
+.cliente-status-ready {
+    background: #eafaf0;
+    color: #166534 !important;
+}
+
+.cliente-status-completed {
+    background: #eef0ff;
+    color: #3730a3 !important;
+}
+
+
+/* =========================================================
+   MODAL LOADING
+========================================================= */
+
+.cliente-modal-loading {
+    min-height: 220px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 40px;
+
+    color: #7b8492;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   SEM PEDIDOS
+========================================================= */
+
+.cliente-no-orders {
+    margin: 0;
+
+    padding: 25px 18px;
+
+    border: 1px dashed #dfe3e8;
+    border-radius: 10px;
+
+    background: #fafbfc;
+
+    color: #7b8492;
+
+    text-align: center;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPONSIVO — TABLET
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .clientes-page {
+        padding: 24px;
+    }
+
+    .clientes-stats {
+        gap: 12px;
+    }
+
+    .cliente-stat-card {
+        padding: 17px;
+    }
+
+    .cliente-stat-card strong {
+        font-size: 20px;
+    }
+
+    .clientes-table th,
+    .clientes-table td {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVO — 900px
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .clientes-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .clientes-toolbar {
+        align-items: stretch;
+    }
+
+    .clientes-search {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVO — MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .clientes-page {
+        padding: 20px 14px 28px;
+    }
+
+
+    /* Cabeçalho */
+
+    .clientes-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .clientes-header h1 {
+        font-size: 25px;
+    }
+
+    .clientes-header p {
+        font-size: 13px;
+    }
+
+    .clientes-refresh-button {
+        width: 100%;
+    }
+
+
+    /* Estatísticas */
+
+    .clientes-stats {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .cliente-stat-card {
+        padding: 15px;
+        border-radius: 13px;
+    }
+
+    .cliente-stat-icon {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+        font-size: 19px;
+    }
+
+    .cliente-stat-card strong {
+        font-size: 19px;
+    }
+
+
+    /* Card principal */
+
+    .clientes-card {
+        border-radius: 13px;
+    }
+
+    .clientes-toolbar {
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .clientes-toolbar h2 {
+        font-size: 16px;
+    }
+
+
+    /* Tabela */
+
+    .clientes-table {
+        min-width: 760px;
+    }
+
+    .clientes-table th {
+        padding: 11px 14px;
+    }
+
+    .clientes-table td {
+        padding: 13px 14px;
+    }
+
+
+    /* Modal */
+
+    .cliente-modal-overlay {
+        padding: 12px;
+        align-items: center;
+    }
+
+    .cliente-modal {
+        max-height: 92vh;
+        border-radius: 15px;
+    }
+
+    .cliente-modal-header {
+        padding: 18px;
+    }
+
+    .cliente-detail-stats {
+        padding: 16px;
+        grid-template-columns: 1fr;
+    }
+
+    .cliente-history {
+        padding: 0 16px 18px;
+    }
+
+    .cliente-order-row {
+        padding: 13px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE PEQUENO
+========================================================= */
+
+@media (max-width: 400px) {
+
+    .clientes-page {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .cliente-stat-card {
+        gap: 11px;
+    }
+
+    .cliente-stat-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+
+    .cliente-modal-overlay {
+        padding: 8px;
+    }
+
+    .cliente-modal-header h2 {
+        font-size: 18px;
+    }
+
+}

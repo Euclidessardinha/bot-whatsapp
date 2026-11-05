@@ -1,0 +1,733 @@
+/* =========================================================
+   EMPRESA — PREMIUM DARK UI
+   ========================================================= */
+
+.company-page {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 30px;
+    color: #f8fafc;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.company-loading {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.company-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.company-header h2 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+    color: #f8fafc;
+}
+
+.company-header p {
+    margin: 8px 0 0;
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.company-error,
+.company-success {
+    padding: 14px 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: companyAlertIn 0.25s ease;
+}
+
+.company-error {
+    background: rgba(127, 29, 29, 0.18);
+    color: #fca5a5;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.company-success {
+    background: rgba(6, 78, 59, 0.18);
+    color: #6ee7b7;
+    border: 1px solid rgba(52, 211, 153, 0.22);
+}
+
+@keyframes companyAlertIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   MAIN LAYOUT
+   ========================================================= */
+
+.company-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+    gap: 22px;
+    align-items: start;
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.company-card,
+.company-preview {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(30, 41, 59, 0.96),
+            rgba(15, 23, 42, 0.98)
+        );
+
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    border-radius: 18px;
+    box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    overflow: hidden;
+}
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.card-header {
+    padding: 22px 24px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+    background: rgba(15, 23, 42, 0.32);
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: -0.2px;
+}
+
+.card-header p {
+    margin: 6px 0 0;
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.company-form {
+    padding: 25px;
+}
+
+.form-group {
+    margin-bottom: 21px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    box-sizing: border-box;
+
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 10px;
+
+    background: rgba(15, 23, 42, 0.72);
+    color: #f8fafc;
+
+    padding: 12px 13px;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #64748b;
+}
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover {
+    border-color: rgba(148, 163, 184, 0.28);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: rgba(99, 102, 241, 0.75);
+    background: rgba(15, 23, 42, 0.95);
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.10);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+}
+
+.form-group select {
+    cursor: pointer;
+}
+
+.form-group select option {
+    background: #0f172a;
+    color: #f8fafc;
+}
+
+.field-help {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   FORM ROW
+   ========================================================= */
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+/* =========================================================
+   BUSINESS HOURS
+   ========================================================= */
+
+.business-hours-section {
+    margin-top: 30px;
+    border: 1px solid rgba(148, 163, 184, 0.11);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.30);
+}
+
+.business-hours-section .card-header {
+    background: rgba(15, 23, 42, 0.40);
+}
+
+.business-hours-list {
+    padding: 8px 18px 14px;
+}
+
+.business-hours-row {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+
+    padding: 13px 6px;
+
+    border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+}
+
+.business-hours-row:last-child {
+    border-bottom: none;
+}
+
+.business-day {
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.business-hours-fields {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    min-width: 0;
+}
+
+.business-hours-fields input[type="time"] {
+    width: 110px;
+    box-sizing: border-box;
+
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 8px;
+
+    background: rgba(15, 23, 42, 0.75);
+    color: #e2e8f0;
+
+    padding: 9px 8px;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    outline: none;
+
+    transition: 0.2s ease;
+}
+
+.business-hours-fields input[type="time"]:focus {
+    border-color: rgba(99, 102, 241, 0.7);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.business-hours-fields input[type="time"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.business-hours-fields > span {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.closed-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    margin-left: 7px;
+
+    color: #94a3b8;
+    font-size: 11px;
+
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.closed-checkbox input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+
+    accent-color: #6366f1;
+
+    cursor: pointer;
+}
+
+/* =========================================================
+   SAVE BUTTON
+   ========================================================= */
+
+.company-form-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    padding-top: 24px;
+    margin-top: 24px;
+
+    border-top: 1px solid rgba(148, 163, 184, 0.09);
+}
+
+.company-save-button {
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #6366f1,
+            #4f46e5
+        );
+
+    color: #fff;
+
+    padding: 12px 21px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 22px rgba(79, 70, 229, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+.company-save-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 11px 26px rgba(79, 70, 229, 0.28);
+
+    filter: brightness(1.08);
+}
+
+.company-save-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.company-save-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* =========================================================
+   PREVIEW
+   ========================================================= */
+
+.company-preview {
+    padding: 24px;
+    position: sticky;
+    top: 20px;
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.preview-header > span {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    background: rgba(99, 102, 241, 0.10);
+    border: 1px solid rgba(99, 102, 241, 0.16);
+
+    font-size: 19px;
+}
+
+.preview-header h3 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.preview-header p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+/* =========================================================
+   WHATSAPP PREVIEW
+   ========================================================= */
+
+.whatsapp-preview {
+    position: relative;
+
+    padding: 20px;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(6, 78, 59, 0.30),
+            rgba(15, 23, 42, 0.90)
+        );
+
+    border: 1px solid rgba(52, 211, 153, 0.13);
+
+    overflow: hidden;
+}
+
+.whatsapp-preview::before {
+    content: '';
+
+    position: absolute;
+    top: -80px;
+    right: -80px;
+
+    width: 180px;
+    height: 180px;
+
+    border-radius: 50%;
+
+    background: rgba(52, 211, 153, 0.06);
+
+    pointer-events: none;
+}
+
+.preview-company {
+    position: relative;
+
+    margin-bottom: 17px;
+
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.preview-message {
+    position: relative;
+
+    background: rgba(255, 255, 255, 0.96);
+    color: #1e293b;
+
+    border-radius: 12px 12px 12px 4px;
+
+    padding: 14px;
+
+    font-size: 13px;
+    line-height: 1.55;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.12);
+
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.preview-info {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    color: #cbd5e1;
+
+    font-size: 12px;
+
+    margin-top: 10px;
+
+    padding: 8px 10px;
+
+    border-radius: 8px;
+
+    background: rgba(15, 23, 42, 0.48);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+
+    word-break: break-word;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .company-layout {
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.8fr);
+        gap: 16px;
+    }
+
+    .company-form {
+        padding: 21px;
+    }
+
+    .company-preview {
+        padding: 21px;
+    }
+
+    .business-hours-row {
+        grid-template-columns: 125px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .business-hours-fields {
+        flex-wrap: wrap;
+    }
+}
+
+/* =========================================================
+   MOBILE / SMALL TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .company-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .company-preview {
+        position: static;
+    }
+
+    .company-header h2 {
+        font-size: 24px;
+    }
+
+    .business-hours-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .business-hours-fields {
+        justify-content: flex-start;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+    .company-page {
+        padding-bottom: 20px;
+    }
+
+    .company-header {
+        margin-bottom: 18px;
+    }
+
+    .company-header h2 {
+        font-size: 21px;
+    }
+
+    .company-header p {
+        font-size: 12px;
+    }
+
+    .company-card,
+    .company-preview {
+        border-radius: 14px;
+    }
+
+    .card-header {
+        padding: 18px;
+    }
+
+    .company-form {
+        padding: 18px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .business-hours-list {
+        padding: 7px 12px 12px;
+    }
+
+    .business-hours-row {
+        padding: 12px 3px;
+    }
+
+    .business-hours-fields {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 7px;
+    }
+
+    .business-hours-fields input[type="time"] {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .business-hours-fields > span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .closed-checkbox {
+        grid-column: 1 / -1;
+        margin-left: 0;
+        padding-top: 3px;
+    }
+
+    .company-form-actions {
+        padding-top: 20px;
+        margin-top: 20px;
+    }
+
+    .company-save-button {
+        width: 100%;
+    }
+
+    .company-preview {
+        padding: 18px;
+    }
+
+    .whatsapp-preview {
+        padding: 16px;
+    }
+}
+
+/* =========================================================
+   VERY SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 380px) {
+    .company-form {
+        padding: 15px;
+    }
+
+    .card-header {
+        padding: 16px;
+    }
+
+    .business-hours-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .business-hours-fields > span {
+        display: none;
+    }
+
+    .closed-checkbox {
+        grid-column: auto;
+    }
+}
