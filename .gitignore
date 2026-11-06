@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Puppeteer / Chrome
+.cache/
+backend/.cache/
+
+# WhatsApp sessions
+.wwebjs_auth/
+backend/.wwebjs_auth/
+.wwebjs_cache/
+backend/.wwebjs_cache/
+
+# Logs
+*.log
+npm-debug.log*
