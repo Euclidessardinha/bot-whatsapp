@@ -82,6 +82,14 @@ const puppeteerConfig = {
  */
 if (isWindows && !isProduction) {
     puppeteerConfig.executablePath = CHROME_PATH;
+} else if (isProduction) {
+    const puppeteer = require('puppeteer');
+
+    puppeteerConfig.executablePath = puppeteer.executablePath();
+
+    console.log(
+        `🌐 Chrome Puppeteer: ${puppeteerConfig.executablePath}`
+    );
 }
 
 
