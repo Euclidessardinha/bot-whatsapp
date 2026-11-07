@@ -18,3 +18,5 @@ backend/.wwebjs_cache/
 # Logs
 *.log
 npm-debug.log*
+
+bot-whatsapp-backup.bundle

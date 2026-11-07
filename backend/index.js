@@ -107,6 +107,7 @@ async function handleIncomingMessage(message, session) {
 
         // Guardar mensagem do cliente
         await saveMessage(
+            companyId,
             conversation.id,
             'customer',
             message.body
@@ -126,6 +127,7 @@ if (!response) return;
 
         // Guardar resposta do bot
         await saveMessage(
+            companyId,
             conversation.id,
             'bot',
             response
