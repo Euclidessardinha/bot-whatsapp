@@ -1,0 +1,71 @@
+diff --git a/node_modules/whatsapp-web.js/src/Client.js b/node_modules/whatsapp-web.js/src/Client.js
+index 800109e..8c60cd8 100644
+--- a/node_modules/whatsapp-web.js/src/Client.js
++++ b/node_modules/whatsapp-web.js/src/Client.js
+@@ -143,42 +143,30 @@ class Client extends EventEmitter {
+ 
+         await this.pupPage.evaluate(ExposeAuthStore);
+ 
+-        const needAuthentication = await this.pupPage.evaluate(async () => {
+-            let state = window.require('WAWebSocketModel').Socket.state;
+-
+-            if (
+-                state === 'OPENING' ||
+-                state === 'UNLAUNCHED' ||
+-                state === 'PAIRING'
+-            ) {
+-                // wait till state changes
+-                await new Promise((r) => {
+-                    window
+-                        .require('WAWebSocketModel')
+-                        .Socket.on(
+-                            'change:state',
+-                            function waitTillInit(_AppState, state) {
+-                                if (
+-                                    state !== 'OPENING' &&
+-                                    state !== 'UNLAUNCHED' &&
+-                                    state !== 'PAIRING'
+-                                ) {
+-                                    window
+-                                        .require('WAWebSocketModel')
+-                                        .Socket.off(
+-                                            'change:state',
+-                                            waitTillInit,
+-                                        );
+-                                    r();
+-                                }
+-                            },
+-                        );
+-                });
+-            }
+-            state = window.require('WAWebSocketModel').Socket.state;
+-            return state == 'UNPAIRED' || state == 'UNPAIRED_IDLE';
+-        });
+-
++        const needAuthHandle = await this.pupPage.waitForFunction(
++    () => {
++        const wsModel = window.require('WAWebSocketModel');
++        if (!wsModel || !wsModel.Socket) return false;
++        let state = wsModel.Socket.state;
++        return (
++            state !== 'OPENING' &&
++            state !== 'UNLAUNCHED' &&
++            state !== 'PAIRING' &&
++            (state == 'UNPAIRED' ||
++                state == 'UNPAIRED_IDLE' ||
++                state == 'CONNECTED')
++        );
++    },
++    { timeout, polling: 200 },
++);
++const needAuthentication =
++    (await needAuthHandle.jsonValue()) &&
++    (await this.pupPage.evaluate(() => {
++        const wsModel = window.require('WAWebSocketModel');
++        if (!wsModel || !wsModel.Socket) return false;
++        const state = wsModel.Socket.state;
++        return state == 'UNPAIRED' || state == 'UNPAIRED_IDLE';
++    }));
+         if (needAuthentication) {
+             const { failed, failureEventPayload, restart } =
+                 await this.authStrategy.onAuthenticationNeeded();
