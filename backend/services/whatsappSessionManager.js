@@ -91,7 +91,7 @@ const puppeteerConfig = {
         '--no-pings',
 
         // Limitar processos do Chromium
-        '--renderer-process-limit=2'
+        '--renderer-process-limit=1'
     ]
 };
 
