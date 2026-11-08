@@ -328,7 +328,6 @@ async function startSession(
     `🔧 Criando Client WhatsApp para ${sessionName}...`
 );
 
-const client = new Client({
 
     // =================================================
     // CRIAR CLIENT WHATSAPP
