@@ -74,6 +74,7 @@ const puppeteerConfig = {
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
+        '--disable-software-rasterizer',
         '--disable-features=Translate,BackForwardCache'
     ]
 };
