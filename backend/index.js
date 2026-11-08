@@ -43,6 +43,26 @@ const authMiddleware = require('./middleware/authMiddleware');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+// =====================================================
+// MONITOR DE MEMÓRIA — DIAGNÓSTICO RENDER
+// =====================================================
+
+function logMemoryUsage() {
+    const memory = process.memoryUsage();
+
+    const rss = (memory.rss / 1024 / 1024).toFixed(1);
+    const heapUsed = (memory.heapUsed / 1024 / 1024).toFixed(1);
+    const heapTotal = (memory.heapTotal / 1024 / 1024).toFixed(1);
+    const external = (memory.external / 1024 / 1024).toFixed(1);
+
+    console.log(
+        `🧠 MEMORY | RSS: ${rss} MB | Heap: ${heapUsed}/${heapTotal} MB | External: ${external} MB`
+    );
+}
+
+setInterval(logMemoryUsage, 5000);
+
 // Middlewares gerais
 app.use(cors());
 app.use(express.json());
