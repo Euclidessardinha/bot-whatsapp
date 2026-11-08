@@ -68,7 +68,7 @@ const puppeteerConfig = {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
-        '--disable-gpu-compositing'
+        '--disable-gpu-compositing',
         '--no-first-run',
         '--no-zygote',
         '--disable-extensions',
