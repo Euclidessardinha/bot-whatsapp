@@ -324,6 +324,12 @@ async function startSession(
     );
 
 
+    console.log(
+    `🔧 Criando Client WhatsApp para ${sessionName}...`
+);
+
+const client = new Client({
+
     // =================================================
     // CRIAR CLIENT WHATSAPP
     // =================================================
@@ -767,7 +773,15 @@ async function startSession(
         }
 
 
-        await client.initialize();
+        console.log(
+    `🟡 ANTES DO client.initialize(): ${sessionName}`
+);
+
+await client.initialize();
+
+console.log(
+    `🟢 DEPOIS DO client.initialize(): ${sessionName}`
+);
 
     } catch (error) {
 
