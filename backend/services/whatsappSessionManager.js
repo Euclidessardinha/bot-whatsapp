@@ -1,4 +1,4 @@
-
+﻿
 const {
     Client,
     LocalAuth
@@ -69,7 +69,12 @@ const puppeteerConfig = {
         '--disable-gpu',
         '--no-first-run',
         '--no-zygote',
-        '--disable-extensions'
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=Translate,BackForwardCache'
     ]
 };
 
