@@ -45,21 +45,58 @@ const PORT = process.env.PORT || 3000;
 
 
 // =====================================================
-// MONITOR DE MEMÓRIA — DIAGNÓSTICO RENDER
+// MONITOR DE MEMÓRIA — NODE + CHROMIUM
 // =====================================================
 
+const { exec } = require('child_process');
+
+function formatMB(bytes) {
+    return (bytes / 1024 / 1024).toFixed(1);
+}
+
 function logMemoryUsage() {
-    const memory = process.memoryUsage();
+    const nodeMemory = process.memoryUsage();
 
-    const rss = (memory.rss / 1024 / 1024).toFixed(1);
-    const heapUsed = (memory.heapUsed / 1024 / 1024).toFixed(1);
-    const heapTotal = (memory.heapTotal / 1024 / 1024).toFixed(1);
-    const external = (memory.external / 1024 / 1024).toFixed(1);
+    exec(
+        `ps -eo pid,ppid,rss,comm,args | grep -E 'chrome|chromium' | grep -v grep`,
+        (error, stdout) => {
 
-    console.log(
-        `🧠 MEMORY | RSS: ${rss} MB | Heap: ${heapUsed}/${heapTotal} MB | External: ${external} MB`
+            let chromeTotal = 0;
+            let chromeProcesses = 0;
+
+            if (!error && stdout) {
+
+                const lines = stdout
+                    .trim()
+                    .split('\n')
+                    .filter(Boolean);
+
+                for (const line of lines) {
+
+                    const parts = line.trim().split(/\s+/);
+
+                    if (parts.length >= 4) {
+
+                        const rssKB = Number(parts[2]);
+
+                        if (!Number.isNaN(rssKB)) {
+                            chromeTotal += rssKB * 1024;
+                            chromeProcesses++;
+                        }
+                    }
+                }
+            }
+
+            console.log(
+                `🧠 MEMORY | Node: ${formatMB(nodeMemory.rss)} MB | ` +
+                `Chrome: ${formatMB(chromeTotal)} MB | ` +
+                `Chrome processes: ${chromeProcesses}`
+            );
+        }
     );
 }
+
+setInterval(logMemoryUsage, 5000);
 
 setInterval(logMemoryUsage, 5000);
 
