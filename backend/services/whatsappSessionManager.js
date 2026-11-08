@@ -63,20 +63,33 @@ const puppeteerConfig = {
     headless: isProduction,
 
     args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-software-rasterizer',
-        '--disable-features=Translate,BackForwardCache'
-    ]
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-extensions',
+    '--disable-background-networking',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-software-rasterizer',
+    '--disable-features=Translate,BackForwardCache',
+
+    // Otimização de memória
+    '--disable-crash-reporter',
+    '--disable-component-update',
+    '--disable-sync',
+    '--disable-default-apps',
+    '--disable-hang-monitor',
+    '--disable-prompt-on-repost',
+    '--disaable-notifications',
+    '--disble-translate',
+    '--metrics-recording-only',
+    '--no-default-browser-check',
+    '--no-pings'
+]
 };
 
 
