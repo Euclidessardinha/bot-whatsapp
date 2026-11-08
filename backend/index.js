@@ -45,56 +45,77 @@ const PORT = process.env.PORT || 3000;
 
 
 // =====================================================
-// MONITOR DE MEMÓRIA — NODE + CHROMIUM
+// MONITOR REAL DE MEMÓRIA DO CONTAINER — RENDER
 // =====================================================
 
-const { exec } = require('child_process');
+const fs = require('fs');
+
+function readMemoryFile(path) {
+    try {
+        return Number(
+            fs.readFileSync(path, 'utf8').trim()
+        );
+    } catch {
+        return null;
+    }
+}
 
 function formatMB(bytes) {
     return (bytes / 1024 / 1024).toFixed(1);
 }
 
-function logMemoryUsage() {
+function logContainerMemory() {
+
+    const memoryCurrent =
+        readMemoryFile('/sys/fs/cgroup/memory.current');
+
+    const memoryMaxRaw =
+        (() => {
+            try {
+                return fs
+                    .readFileSync(
+                        '/sys/fs/cgroup/memory.max',
+                        'utf8'
+                    )
+                    .trim();
+            } catch {
+                return null;
+            }
+        })();
+
     const nodeMemory = process.memoryUsage();
 
-    exec(
-        `ps -eo pid,ppid,rss,comm,args | grep -E 'chrome|chromium' | grep -v grep`,
-        (error, stdout) => {
+    if (
+        memoryCurrent !== null &&
+        memoryMaxRaw &&
+        memoryMaxRaw !== 'max'
+    ) {
 
-            let chromeTotal = 0;
-            let chromeProcesses = 0;
+        const memoryMax =
+            Number(memoryMaxRaw);
 
-            if (!error && stdout) {
+        const percentage =
+            ((memoryCurrent / memoryMax) * 100).toFixed(1);
 
-                const lines = stdout
-                    .trim()
-                    .split('\n')
-                    .filter(Boolean);
+        console.log(
+            `🧠 CONTAINER MEMORY | ` +
+            `Used: ${formatMB(memoryCurrent)} MB | ` +
+            `Limit: ${formatMB(memoryMax)} MB | ` +
+            `${percentage}% | ` +
+            `Node RSS: ${formatMB(nodeMemory.rss)} MB`
+        );
 
-                for (const line of lines) {
+    } else {
 
-                    const parts = line.trim().split(/\s+/);
-
-                    if (parts.length >= 4) {
-
-                        const rssKB = Number(parts[2]);
-
-                        if (!Number.isNaN(rssKB)) {
-                            chromeTotal += rssKB * 1024;
-                            chromeProcesses++;
-                        }
-                    }
-                }
-            }
-
-            console.log(
-                `🧠 MEMORY | Node: ${formatMB(nodeMemory.rss)} MB | ` +
-                `Chrome: ${formatMB(chromeTotal)} MB | ` +
-                `Chrome processes: ${chromeProcesses}`
-            );
-        }
-    );
+        console.log(
+            `🧠 CONTAINER MEMORY | ` +
+            `cgroup memory unavailable | ` +
+            `Node RSS: ${formatMB(nodeMemory.rss)} MB`
+        );
+    }
 }
+
+setInterval(logContainerMemory, 5000);
 
 setInterval(logMemoryUsage, 5000);
 
