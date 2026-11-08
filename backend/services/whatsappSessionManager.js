@@ -1,11 +1,12 @@
-﻿
-const {
+﻿const {
     Client,
     LocalAuth
 } = require('whatsapp-web.js');
 
 const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
+
+const { exec } = require('child_process');
 
 const {
     getCompanyBySession,
@@ -111,6 +112,215 @@ if (isWindows && !isProduction) {
 
     console.log(
         `🌐 Chrome Puppeteer: ${puppeteerConfig.executablePath}`
+    );
+}
+
+
+// =====================================================
+// DIAGNÓSTICO DOS PROCESSOS CHROMIUM
+// =====================================================
+
+function logChromeMemory() {
+
+    /*
+     * Este diagnóstico é somente informativo.
+     *
+     * Não altera o comportamento do Chrome,
+     * Puppeteer ou WhatsApp.
+     *
+     * No Render/Linux usamos "ps" para descobrir
+     * quantos processos Chromium existem e quanto
+     * cada um está consumindo de memória.
+     */
+
+    if (!isProduction) {
+        return;
+    }
+
+
+    exec(
+        "ps -eo pid,ppid,rss,comm,args | grep -E 'chrome|chromium' | grep -v grep",
+        (error, stdout) => {
+
+            if (error || !stdout.trim()) {
+                return;
+            }
+
+
+            console.log(
+                '🧩 CHROMIUM PROCESSES:'
+            );
+
+
+            stdout
+                .trim()
+                .split('\n')
+                .forEach(line => {
+
+                    const parts =
+                        line.trim().split(/\s+/);
+
+
+                    const pid =
+                        parts[0];
+
+                    const ppid =
+                        parts[1];
+
+                    const rssKb =
+                        Number(parts[2]);
+
+                    const command =
+                        parts.slice(3).join(' ');
+
+
+                    if (!Number.isNaN(rssKb)) {
+
+                        console.log(
+                            `   PID ${pid} | PPID ${ppid} | RSS ${(rssKb / 1024).toFixed(1)} MB | ${command.slice(0, 180)}`
+                        );
+                    }
+                });
+        }
+    );
+}
+
+
+// =====================================================
+// MONITORAMENTO DE MEMÓRIA DO CONTAINER
+// =====================================================
+
+function logContainerMemory() {
+
+    if (!isProduction) {
+        return;
+    }
+
+
+    try {
+
+        const memoryUsage =
+            process.memoryUsage();
+
+
+        const rss =
+            memoryUsage.rss;
+
+
+        /*
+         * O Render disponibiliza o limite de memória
+         * através do ambiente. Quando não estiver
+         * disponível, usamos 512 MB como referência
+         * atual do serviço.
+         */
+
+        const limit =
+            Number(process.env.MEMORY_LIMIT) ||
+            512 * 1024 * 1024;
+
+
+        const used =
+            process.memoryUsage().rss;
+
+
+        /*
+         * process.memoryUsage().rss representa apenas
+         * o processo Node.
+         *
+         * O diagnóstico abaixo utiliza /proc/meminfo
+         * para obter uma estimativa da memória total
+         * utilizada pelo container quando disponível.
+         */
+
+        exec(
+            "awk '/MemTotal:/ {total=$2} /MemAvailable:/ {available=$2} END {printf \"%.0f %.0f\", total, available}' /proc/meminfo",
+            (error, stdout) => {
+
+                if (
+                    !error &&
+                    stdout &&
+                    stdout.trim()
+                ) {
+
+                    const values =
+                        stdout.trim().split(/\s+/);
+
+
+                    const totalKb =
+                        Number(values[0]);
+
+                    const availableKb =
+                        Number(values[1]);
+
+
+                    if (
+                        Number.isFinite(totalKb) &&
+                        Number.isFinite(availableKb)
+                    ) {
+
+                        const totalBytes =
+                            totalKb * 1024;
+
+                        const availableBytes =
+                            availableKb * 1024;
+
+                        const containerUsed =
+                            totalBytes -
+                            availableBytes;
+
+
+                        const percentage =
+                            (
+                                containerUsed /
+                                totalBytes
+                            ) * 100;
+
+
+                        console.log(
+                            `🧠 CONTAINER MEMORY | Used: ${(containerUsed / 1024 / 1024).toFixed(1)} MB | Limit: ${(limit / 1024 / 1024).toFixed(1)} MB | ${percentage.toFixed(1)}% | Node RSS: ${(rss / 1024 / 1024).toFixed(1)} MB`
+                        );
+
+
+                        logChromeMemory();
+
+                        return;
+                    }
+                }
+
+
+                /*
+                 * Fallback caso /proc/meminfo não esteja
+                 * disponível.
+                 */
+
+                console.log(
+                    `🧠 NODE MEMORY | RSS: ${(used / 1024 / 1024).toFixed(1)} MB`
+                );
+
+
+                logChromeMemory();
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            '⚠️ Erro ao medir memória:',
+            error.message
+        );
+    }
+}
+
+
+// =====================================================
+// MONITORAMENTO PERIÓDICO DE MEMÓRIA
+// =====================================================
+
+if (isProduction) {
+
+    setInterval(
+        logContainerMemory,
+        30000
     );
 }
 
@@ -325,8 +535,8 @@ async function startSession(
 
 
     console.log(
-    `🔧 Criando Client WhatsApp para ${sessionName}...`
-);
+        `🔧 Criando Client WhatsApp para ${sessionName}...`
+    );
 
 
     // =================================================
@@ -773,14 +983,16 @@ async function startSession(
 
 
         console.log(
-    `🟡 ANTES DO client.initialize(): ${sessionName}`
-);
+            `🟡 ANTES DO client.initialize(): ${sessionName}`
+        );
 
-await client.initialize();
 
-console.log(
-    `🟢 DEPOIS DO client.initialize(): ${sessionName}`
-);
+        await client.initialize();
+
+
+        console.log(
+            `🟢 DEPOIS DO client.initialize(): ${sessionName}`
+        );
 
     } catch (error) {
 
@@ -1063,4 +1275,3 @@ module.exports = {
 
     getAllSessions
 };
-
