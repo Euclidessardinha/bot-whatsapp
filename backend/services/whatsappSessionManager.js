@@ -50,50 +50,106 @@ const CHROME_PATH =
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 
-// =====================================================
-// CONFIGURAÇÃO DO PUPPETEER
-// =====================================================
-
 const puppeteerConfig = {
     /*
-     * No computador local queremos continuar vendo
-     * o navegador para facilitar testes.
+     * No computador local:
+     * navegador visível para facilitar os testes.
      *
-     * No Render não existe interface gráfica.
+     * No Render:
+     * headless para reduzir recursos.
      */
     headless: isProduction,
 
     args: [
+
+        // =================================================
+        // SEGURANÇA / RENDER
+        // =================================================
+
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+
+
+        // =================================================
+        // GPU
+        // =================================================
+
+        /*
+         * WhatsApp Web não precisa de aceleração gráfica
+         * para o nosso bot.
+         *
+         * --in-process-gpu evita manter um processo GPU
+         * separado consumindo memória do container.
+         */
         '--disable-gpu',
         '--disable-gpu-compositing',
+        '--in-process-gpu',
+        '--disable-software-rasterizer',
+
+
+        // =================================================
+        // PROCESSOS / INICIALIZAÇÃO
+        // =================================================
+
         '--no-first-run',
         '--no-zygote',
         '--disable-extensions',
+        '--disable-default-apps',
+        '--no-default-browser-check',
+        '--disable-component-update',
+        '--disable-sync',
+
+
+        // =================================================
+        // ATIVIDADE EM BACKGROUND
+        // =================================================
+
         '--disable-background-networking',
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
         '--disable-renderer-backgrounding',
-        '--disable-software-rasterizer',
-        '--disable-features=Translate,BackForwardCache',
-
-        // Otimização de memória
-        '--disable-crash-reporter',
-        '--disable-component-update',
-        '--disable-sync',
-        '--disable-default-apps',
-        '--disable-hang-monitor',
-        '--disable-prompt-on-repost',
         '--disable-notifications',
         '--disable-translate',
-        '--metrics-recording-only',
-        '--no-default-browser-check',
-        '--no-pings',
+        '--disable-features=Translate,BackForwardCache',
 
-        // Limitar processos do Chromium
-        '--renderer-process-limit=1'
+
+        // =================================================
+        // TELEMETRIA / SERVIÇOS NÃO NECESSÁRIOS
+        // =================================================
+
+        '--metrics-recording-only',
+        '--no-pings',
+        '--disable-hang-monitor',
+        '--disable-prompt-on-repost',
+        '--disable-crash-reporter',
+
+
+        // =================================================
+        // PROCESSOS CHROMIUM
+        // =================================================
+
+        /*
+         * Manter somente um renderer principal.
+         *
+         * Não usamos --single-process porque pode causar
+         * instabilidade no WhatsApp Web.
+         */
+        '--renderer-process-limit=1',
+
+
+        // =================================================
+        // LIMITAR HEAP JAVASCRIPT DO RENDERER
+        // =================================================
+
+        /*
+         * Impede que o V8 dentro do renderer cresça
+         * indefinidamente.
+         *
+         * 256 MB é um limite inicial conservador para
+         * um container de 512 MB.
+         */
+        '--js-flags=--max-old-space-size=256'
     ]
 };
 
@@ -197,44 +253,30 @@ function logContainerMemory() {
         return;
     }
 
-
     try {
 
         const memoryUsage =
             process.memoryUsage();
 
-
         const rss =
             memoryUsage.rss;
 
-
         /*
-         * O Render disponibiliza o limite de memória
-         * através do ambiente. Quando não estiver
-         * disponível, usamos 512 MB como referência
-         * atual do serviço.
+         * Limite atual do serviço Render.
          */
-
         const limit =
             Number(process.env.MEMORY_LIMIT) ||
             512 * 1024 * 1024;
 
 
-        const used =
-            process.memoryUsage().rss;
-
-
         /*
-         * process.memoryUsage().rss representa apenas
-         * o processo Node.
+         * No Linux, cgroup representa melhor a memória
+         * realmente utilizada pelo container.
          *
-         * O diagnóstico abaixo utiliza /proc/meminfo
-         * para obter uma estimativa da memória total
-         * utilizada pelo container quando disponível.
+         * Tentamos primeiro cgroup v2.
          */
-
         exec(
-            "awk '/MemTotal:/ {total=$2} /MemAvailable:/ {available=$2} END {printf \"%.0f %.0f\", total, available}' /proc/meminfo",
+            "cat /sys/fs/cgroup/memory.current 2>/dev/null",
             (error, stdout) => {
 
                 if (
@@ -243,42 +285,18 @@ function logContainerMemory() {
                     stdout.trim()
                 ) {
 
-                    const values =
-                        stdout.trim().split(/\s+/);
+                    const used =
+                        Number(stdout.trim());
 
 
-                    const totalKb =
-                        Number(values[0]);
-
-                    const availableKb =
-                        Number(values[1]);
-
-
-                    if (
-                        Number.isFinite(totalKb) &&
-                        Number.isFinite(availableKb)
-                    ) {
-
-                        const totalBytes =
-                            totalKb * 1024;
-
-                        const availableBytes =
-                            availableKb * 1024;
-
-                        const containerUsed =
-                            totalBytes -
-                            availableBytes;
-
+                    if (Number.isFinite(used)) {
 
                         const percentage =
-                            (
-                                containerUsed /
-                                totalBytes
-                            ) * 100;
+                            (used / limit) * 100;
 
 
                         console.log(
-                            `🧠 CONTAINER MEMORY | Used: ${(containerUsed / 1024 / 1024).toFixed(1)} MB | Limit: ${(limit / 1024 / 1024).toFixed(1)} MB | ${percentage.toFixed(1)}% | Node RSS: ${(rss / 1024 / 1024).toFixed(1)} MB`
+                            `🧠 CONTAINER MEMORY | Used: ${(used / 1024 / 1024).toFixed(1)} MB | Limit: ${(limit / 1024 / 1024).toFixed(1)} MB | ${percentage.toFixed(1)}% | Node RSS: ${(rss / 1024 / 1024).toFixed(1)} MB`
                         );
 
 
@@ -290,16 +308,54 @@ function logContainerMemory() {
 
 
                 /*
-                 * Fallback caso /proc/meminfo não esteja
-                 * disponível.
+                 * Fallback para cgroup v1.
                  */
+                exec(
+                    "cat /sys/fs/cgroup/memory/memory.usage_in_bytes 2>/dev/null",
+                    (fallbackError, fallbackStdout) => {
 
-                console.log(
-                    `🧠 NODE MEMORY | RSS: ${(used / 1024 / 1024).toFixed(1)} MB`
+                        if (
+                            !fallbackError &&
+                            fallbackStdout &&
+                            fallbackStdout.trim()
+                        ) {
+
+                            const used =
+                                Number(
+                                    fallbackStdout.trim()
+                                );
+
+
+                            if (Number.isFinite(used)) {
+
+                                const percentage =
+                                    (used / limit) * 100;
+
+
+                                console.log(
+                                    `🧠 CONTAINER MEMORY | Used: ${(used / 1024 / 1024).toFixed(1)} MB | Limit: ${(limit / 1024 / 1024).toFixed(1)} MB | ${percentage.toFixed(1)}% | Node RSS: ${(rss / 1024 / 1024).toFixed(1)} MB`
+                                );
+
+
+                                logChromeMemory();
+
+                                return;
+                            }
+                        }
+
+
+                        /*
+                         * Último fallback:
+                         * mostrar apenas Node RSS.
+                         */
+                        console.log(
+                            `🧠 NODE MEMORY | RSS: ${(rss / 1024 / 1024).toFixed(1)} MB`
+                        );
+
+
+                        logChromeMemory();
+                    }
                 );
-
-
-                logChromeMemory();
             }
         );
 
@@ -311,7 +367,6 @@ function logContainerMemory() {
         );
     }
 }
-
 
 // =====================================================
 // MONITORAMENTO PERIÓDICO DE MEMÓRIA
