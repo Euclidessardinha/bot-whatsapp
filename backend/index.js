@@ -115,6 +115,9 @@ function logContainerMemory() {
     }
 }
 
+setInterval(logContainerMemory, 5000);
+
+
 
 // Middlewares gerais
 app.use(cors());
