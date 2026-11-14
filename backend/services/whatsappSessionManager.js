@@ -44,7 +44,8 @@ const isRender =
 
 const isProduction =
     process.env.NODE_ENV === 'production' ||
-    isRender;
+    isRender ||
+    process.platform === 'linux';
 
 const CHROME_PATH =
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
