@@ -1,1 +1,32 @@
-FROM node:24-bookwormecho.echo WORKDIR /appecho.echo RUN apt-get update && apt-get install -y echo     libasound2 echo     libatk-bridge2.0-0 echo     libatk1.0-0 echo     libcups2 echo     libdbus-1-3 echo     libdrm2 echo     libgbm1 echo     libglib2.0-0 echo     libgtk-3-0 echo     libnspr4 echo     libnss3 echo     libpango-1.0-0 echo     libpangocairo-1.0-0 echo     libx11-6 echo     libx11-xcb1 echo     libxcb1 echo     libxcomposite1 echo     libxdamage1 echo     libxext6 echo     libxfixes3 echo     libxrandr2 echo     libxshmfence1 echo     libxss1 echo     libxtst6 echo     ca-certificates echo     fonts-liberation echo     wget echo     xdg-utils echo     && rm -rf /var/lib/apt/lists/*echo.echo COPY package*.json ./echo.echo RUN npm installecho.echo COPY . .echo.echo EXPOSE 8080echo.echo CMD ["node", "index.js"]
+FROM node:24-bookworm
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    chromium \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libgbm1 \
+    libasound2 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libxshmfence1 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libdrm2 \
+    fonts-liberation \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+CMD ["node", "index.js"]
