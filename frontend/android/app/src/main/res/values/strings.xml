@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">WhatsApp Bot</string>
+    <string name="title_activity_main">WhatsApp Bot</string>
+    <string name="package_name">com.whatsappbotsaas.app</string>
+    <string name="custom_url_scheme">com.whatsappbotsaas.app</string>
+</resources>

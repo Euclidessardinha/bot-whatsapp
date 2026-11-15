@@ -1,7 +1,12 @@
+/* =========================================================
+   REGISTER PAGE
+========================================================= */
+
 .register-page {
     position: relative;
 
     min-height: 100vh;
+    width: 100%;
 
     display: flex;
     align-items: center;
@@ -9,32 +14,32 @@
 
     overflow: hidden;
 
-    padding: 50px 30px 70px;
-
     box-sizing: border-box;
+
+    padding: 45px 30px 70px;
 
     background:
         radial-gradient(
             circle at 10% 15%,
-            rgba(37, 99, 235, 0.18),
+            rgba(37, 211, 102, 0.10),
             transparent 34%
         ),
         radial-gradient(
             circle at 90% 85%,
-            rgba(16, 185, 129, 0.13),
+            rgba(37, 211, 102, 0.07),
             transparent 34%
         ),
-        #080b12;
+        #070b09;
 
     color: #ffffff;
 }
 
 
 /* =========================================================
-   BACKGROUND GLOW
+   BACKGROUND
 ========================================================= */
 
-.register-background-glow {
+.register-bg-glow {
     position: absolute;
 
     width: 520px;
@@ -44,23 +49,56 @@
 
     filter: blur(110px);
 
-    opacity: 0.28;
-
     pointer-events: none;
+
+    opacity: 0.25;
 }
+
 
 .register-glow-one {
-    top: -300px;
-    left: -220px;
+    top: -320px;
+    left: -250px;
 
-    background: #2563eb;
+    background: rgba(37, 211, 102, 0.28);
 }
 
+
 .register-glow-two {
-    right: -260px;
+    right: -280px;
     bottom: -320px;
 
-    background: #10b981;
+    background: rgba(37, 211, 102, 0.20);
+}
+
+
+.register-bg-grid {
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: 0.17;
+
+    background-image:
+        linear-gradient(
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+        );
+
+    background-size: 48px 48px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.85),
+            transparent 92%
+        );
 }
 
 
@@ -73,18 +111,42 @@
 
     z-index: 2;
 
-    width: 100%;
-    max-width: 1120px;
+    width: min(1180px, 100%);
 
     display: grid;
 
     grid-template-columns:
-        minmax(0, 1fr)
-        520px;
+        minmax(0, 1.08fr)
+        minmax(420px, 0.82fr);
 
     align-items: center;
 
-    gap: 80px;
+    gap: 65px;
+}
+
+
+/* =========================================================
+   LEFT SHOWCASE
+========================================================= */
+
+.register-showcase {
+    position: relative;
+
+    min-height: 690px;
+
+    display: flex;
+    align-items: center;
+}
+
+
+.register-showcase-content {
+    width: 100%;
+
+    position: relative;
+
+    z-index: 3;
+
+    padding-left: 15px;
 }
 
 
@@ -93,8 +155,96 @@
 ========================================================= */
 
 .register-brand {
-    max-width: 540px;
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 30px;
 }
+
+
+.register-brand-logo {
+    width: 52px;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.025)
+        );
+
+    border:
+        1px solid rgba(255, 255, 255, 0.09);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.25),
+        0 0 35px rgba(37, 211, 102, 0.08);
+}
+
+
+.register-brand-logo img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    padding: 7px;
+}
+
+
+.register-brand-name {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+
+.register-brand-name strong {
+    color: #ffffff;
+
+    font-size: 20px;
+
+    line-height: 1.1;
+
+    letter-spacing: -0.4px;
+}
+
+
+.register-brand-name span {
+    color:
+        rgba(255, 255, 255, 0.38);
+
+    font-size: 10px;
+
+    line-height: 1.2;
+
+    font-weight: 600;
+
+    letter-spacing: 1.5px;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   BRAND BADGE
+========================================================= */
 
 .register-brand-badge {
     display: inline-flex;
@@ -103,24 +253,26 @@
 
     gap: 9px;
 
-    padding: 8px 14px;
+    padding: 8px 13px;
 
-    border: 1px solid
-        rgba(255, 255, 255, 0.1);
+    border:
+        1px solid rgba(37, 211, 102, 0.15);
 
     border-radius: 999px;
 
     background:
-        rgba(255, 255, 255, 0.04);
+        rgba(37, 211, 102, 0.06);
 
-    color: #d1d5db;
+    color:
+        rgba(143, 255, 181, 0.82);
 
-    font-size: 13px;
+    font-size: 10px;
 
-    font-weight: 600;
+    font-weight: 700;
 
-    backdrop-filter: blur(12px);
+    letter-spacing: 1.1px;
 }
+
 
 .register-brand-dot {
     width: 7px;
@@ -128,52 +280,89 @@
 
     border-radius: 50%;
 
-    background: #22c55e;
+    background: #25d366;
 
     box-shadow:
-        0 0 12px
-        rgba(34, 197, 94, 0.8);
+        0 0 0 4px rgba(37, 211, 102, 0.07),
+        0 0 12px rgba(37, 211, 102, 0.6);
+
+    animation:
+        register-pulse 2s infinite;
 }
+
+
+@keyframes register-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.55;
+        transform: scale(0.82);
+    }
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
 
 .register-brand h1 {
-    margin: 26px 0 20px;
+    max-width: 670px;
+
+    margin: 22px 0 0;
 
     font-size:
-        clamp(42px, 5vw, 62px);
+        clamp(44px, 5vw, 65px);
 
-    line-height: 1.05;
+    line-height: 1.02;
 
-    letter-spacing: -2.5px;
+    letter-spacing: -3px;
 
     font-weight: 750;
+
+    color: #ffffff;
 }
+
 
 .register-brand h1 span {
     display: block;
 
+    margin-top: 5px;
+
     background:
         linear-gradient(
-            90deg,
-            #60a5fa,
-            #34d399
+            100deg,
+            #25d366 0%,
+            #6df59b 50%,
+            #b0ffc8 100%
         );
 
     -webkit-background-clip: text;
     background-clip: text;
 
-    color: transparent;
+    -webkit-text-fill-color: transparent;
 }
 
+
+/* =========================================================
+   DESCRIPTION
+========================================================= */
+
 .register-description {
-    max-width: 510px;
+    max-width: 570px;
 
-    margin: 0;
+    margin: 24px 0 0;
 
-    color: #9ca3af;
+    color:
+        rgba(255, 255, 255, 0.48);
 
-    font-size: 16px;
+    font-size: 15px;
 
-    line-height: 1.7;
+    line-height: 1.75;
 }
 
 
@@ -186,62 +375,358 @@
 
     flex-direction: column;
 
-    gap: 20px;
+    gap: 18px;
 
-    margin-top: 38px;
+    margin-top: 35px;
 }
+
 
 .register-step {
     display: flex;
 
-    align-items: center;
+    align-items: flex-start;
 
-    gap: 15px;
+    gap: 13px;
 }
 
+
 .step-number {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
 
     flex-shrink: 0;
 
     display: flex;
+    align-items: center;
+    justify-content: center;
 
+    margin-top: 1px;
+
+    border:
+        1px solid rgba(37, 211, 102, 0.14);
+
+    border-radius: 10px;
+
+    background:
+        rgba(37, 211, 102, 0.06);
+
+    color:
+        rgba(109, 245, 155, 0.82);
+
+    font-size: 10px;
+
+    font-weight: 750;
+
+    letter-spacing: 0.4px;
+}
+
+
+.step-content {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.register-step strong {
+    color:
+        rgba(255, 255, 255, 0.84);
+
+    font-size: 13px;
+
+    font-weight: 650;
+}
+
+
+.register-step span {
+    color:
+        rgba(255, 255, 255, 0.34);
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   ABSTRACT VISUAL
+========================================================= */
+
+.register-visual {
+    position: absolute;
+
+    right: -5px;
+    bottom: -20px;
+
+    width: 390px;
+    height: 280px;
+
+    pointer-events: none;
+
+    opacity: 0.9;
+}
+
+
+.register-orbit {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    border:
+        1px solid rgba(37, 211, 102, 0.09);
+
+    border-radius: 50%;
+}
+
+
+.orbit-one {
+    width: 280px;
+    height: 105px;
+
+    transform:
+        translate(-50%, -50%)
+        rotate(-20deg);
+}
+
+
+.orbit-two {
+    width: 350px;
+    height: 145px;
+
+    transform:
+        translate(-50%, -50%)
+        rotate(24deg);
+
+    border-color:
+        rgba(37, 211, 102, 0.055);
+}
+
+
+.register-visual-core {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 86px;
+    height: 86px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 26px;
+
+    background:
+        radial-gradient(
+            circle at 40% 30%,
+            rgba(37, 211, 102, 0.16),
+            rgba(37, 211, 102, 0.025) 60%,
+            transparent 75%
+        );
+
+    border:
+        1px solid rgba(37, 211, 102, 0.13);
+
+    box-shadow:
+        0 0 70px rgba(37, 211, 102, 0.08);
+}
+
+
+.visual-core-dot {
+    width: 17px;
+    height: 17px;
+
+    border-radius: 50%;
+
+    background: #25d366;
+
+    box-shadow:
+        0 0 0 8px rgba(37, 211, 102, 0.07),
+        0 0 30px rgba(37, 211, 102, 0.45);
+}
+
+
+.visual-core-line {
+    position: absolute;
+
+    width: 25px;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(37, 211, 102, 0.45)
+        );
+}
+
+
+.visual-line-one {
+    right: -19px;
+    top: 25px;
+
+    transform: rotate(-20deg);
+}
+
+
+.visual-line-two {
+    left: -19px;
+    top: 50px;
+
+    transform: rotate(15deg);
+}
+
+
+.visual-line-three {
+    right: -17px;
+    bottom: 22px;
+
+    transform: rotate(28deg);
+}
+
+
+/* =========================================================
+   FLOATING CARDS
+========================================================= */
+
+.register-floating-card {
+    position: absolute;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    min-width: 185px;
+
+    padding: 10px 12px;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.07);
+
+    border-radius: 13px;
+
+    background:
+        rgba(10, 17, 13, 0.86);
+
+    box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.35);
+
+    backdrop-filter: blur(15px);
+}
+
+
+.floating-card-one {
+    left: 8px;
+    top: 20px;
+
+    animation:
+        register-float-one
+        5s ease-in-out infinite;
+}
+
+
+.floating-card-two {
+    right: 0;
+    bottom: 20px;
+
+    animation:
+        register-float-two
+        6s ease-in-out infinite;
+}
+
+
+@keyframes register-float-one {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+
+@keyframes register-float-two {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(7px);
+    }
+}
+
+
+.floating-card-icon {
+    width: 27px;
+    height: 27px;
+
+    flex-shrink: 0;
+
+    display: flex;
     align-items: center;
     justify-content: center;
 
     border:
-        1px solid
-        rgba(96, 165, 250, 0.2);
+        1px solid rgba(37, 211, 102, 0.12);
 
-    border-radius: 11px;
+    border-radius: 8px;
 
     background:
-        rgba(37, 99, 235, 0.08);
+        rgba(37, 211, 102, 0.08);
 
-    color: #60a5fa;
+    color: #25d366;
 
     font-size: 11px;
-
-    font-weight: 700;
 }
 
-.register-step strong {
-    display: block;
 
-    margin-bottom: 3px;
+.register-floating-card div:last-child {
+    display: flex;
 
-    color: #e5e7eb;
+    flex-direction: column;
 
-    font-size: 14px;
+    gap: 2px;
 }
 
-.register-step span {
-    display: block;
 
-    color: #6b7280;
+.register-floating-card strong {
+    color:
+        rgba(255, 255, 255, 0.72);
 
-    font-size: 12px;
+    font-size: 9px;
+}
+
+
+.register-floating-card span {
+    color:
+        rgba(255, 255, 255, 0.30);
+
+    font-size: 8px;
+}
+
+
+/* =========================================================
+   REGISTER PANEL
+========================================================= */
+
+.register-panel {
+    width: 100%;
+
+    display: flex;
+
+    justify-content: center;
 }
 
 
@@ -252,28 +737,55 @@
 .register-card {
     width: 100%;
 
+    max-width: 450px;
+
+    position: relative;
+
+    overflow: hidden;
+
     box-sizing: border-box;
 
-    padding: 38px;
+    padding: 38px 38px 28px;
 
     border:
-        1px solid
-        rgba(255, 255, 255, 0.1);
+        1px solid rgba(255, 255, 255, 0.08);
 
-    border-radius: 22px;
+    border-radius: 25px;
 
     background:
         linear-gradient(
             145deg,
-            rgba(255, 255, 255, 0.09),
-            rgba(255, 255, 255, 0.035)
+            rgba(20, 28, 24, 0.97),
+            rgba(10, 15, 13, 0.98)
         );
 
     box-shadow:
-        0 30px 80px
-        rgba(0, 0, 0, 0.45);
+        0 35px 90px rgba(0, 0, 0, 0.48),
+        0 0 0 1px rgba(0, 0, 0, 0.25);
 
-    backdrop-filter: blur(24px);
+    backdrop-filter: blur(25px);
+}
+
+
+.register-card-glow {
+    position: absolute;
+
+    top: -90px;
+    left: 50%;
+
+    width: 260px;
+    height: 140px;
+
+    transform: translateX(-50%);
+
+    border-radius: 50%;
+
+    background:
+        rgba(37, 211, 102, 0.10);
+
+    filter: blur(55px);
+
+    pointer-events: none;
 }
 
 
@@ -282,56 +794,101 @@
 ========================================================= */
 
 .register-header {
+    position: relative;
+
     text-align: center;
 
     margin-bottom: 28px;
 }
 
+
 .register-icon {
     width: 52px;
     height: 52px;
 
-    margin: 0 auto 17px;
+    margin: 0 auto 15px;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
-    border-radius: 15px;
+    border-radius: 16px;
 
     background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #10b981
-        );
+        rgba(37, 211, 102, 0.08);
 
-    color: #ffffff;
-
-    font-size: 25px;
+    border:
+        1px solid rgba(37, 211, 102, 0.15);
 
     box-shadow:
-        0 10px 30px
-        rgba(37, 99, 235, 0.25);
+        0 10px 30px rgba(37, 211, 102, 0.06);
 }
 
-.register-header h2 {
-    margin: 0 0 8px;
 
-    color: #ffffff;
+.register-icon-symbol {
+    color: #25d366;
 
     font-size: 25px;
 
-    letter-spacing: -0.5px;
+    line-height: 1;
+
+    font-weight: 300;
 }
 
-.register-header p {
+
+.register-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 11px;
+
+    color:
+        rgba(255, 255, 255, 0.35);
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.8px;
+}
+
+
+.register-status span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #25d366;
+
+    box-shadow:
+        0 0 9px rgba(37, 211, 102, 0.7);
+}
+
+
+.register-header h2 {
     margin: 0;
 
-    color: #8b93a1;
+    color: #ffffff;
 
-    font-size: 14px;
+    font-size: 26px;
+
+    line-height: 1.2;
+
+    letter-spacing: -0.7px;
+}
+
+
+.register-header p {
+    margin: 8px 0 0;
+
+    color:
+        rgba(255, 255, 255, 0.36);
+
+    font-size: 12px;
 }
 
 
@@ -347,73 +904,126 @@
     gap: 17px;
 }
 
+
 .register-form-grid {
     display: grid;
 
     grid-template-columns:
         1fr 1fr;
 
-    gap: 14px;
+    gap: 13px;
 }
+
 
 .form-group {
     display: flex;
 
     flex-direction: column;
+
+    gap: 7px;
 }
 
+
 .form-group label {
-    margin-bottom: 8px;
+    color:
+        rgba(255, 255, 255, 0.68);
 
-    color: #d1d5db;
-
-    font-size: 13px;
+    font-size: 11px;
 
     font-weight: 600;
 }
 
-.form-group input {
+
+/* =========================================================
+   INPUTS
+========================================================= */
+
+.register-input-wrapper {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+}
+
+
+.register-input-icon {
+    position: absolute;
+
+    left: 14px;
+
+    z-index: 2;
+
+    color:
+        rgba(255, 255, 255, 0.25);
+
+    font-size: 11px;
+
+    pointer-events: none;
+}
+
+
+.register-input-wrapper input {
     width: 100%;
+
+    height: 49px;
 
     box-sizing: border-box;
 
-    padding: 12px 13px;
+    padding:
+        0 13px 0 37px;
 
     border:
-        1px solid
-        rgba(255, 255, 255, 0.1);
+        1px solid rgba(255, 255, 255, 0.08);
 
-    border-radius: 10px;
+    border-radius: 12px;
 
     outline: none;
 
     background:
-        rgba(0, 0, 0, 0.22);
+        rgba(255, 255, 255, 0.035);
 
     color: #ffffff;
 
-    font-size: 13px;
+    font-family: inherit;
+
+    font-size: 11px;
 
     transition:
-        border-color 0.2s,
-        box-shadow 0.2s,
-        background 0.2s;
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.form-group input::placeholder {
-    color: #5f6673;
+
+.register-input-wrapper input::placeholder {
+    color:
+        rgba(255, 255, 255, 0.19);
 }
 
-.form-group input:focus {
+
+.register-input-wrapper input:hover {
     border-color:
-        rgba(96, 165, 250, 0.7);
+        rgba(255, 255, 255, 0.12);
+}
+
+
+.register-input-wrapper input:focus {
+    border-color:
+        rgba(37, 211, 102, 0.42);
 
     background:
-        rgba(0, 0, 0, 0.3);
+        rgba(37, 211, 102, 0.025);
 
     box-shadow:
-        0 0 0 3px
-        rgba(96, 165, 250, 0.1);
+        0 0 0 4px rgba(37, 211, 102, 0.06);
+}
+
+
+.password-icon {
+    font-size: 18px;
+
+    line-height: 1;
 }
 
 
@@ -428,41 +1038,71 @@
 
     gap: 9px;
 
-    padding: 12px 14px;
+    padding: 11px 12px;
 
-    border-radius: 10px;
+    border-radius: 11px;
 
-    font-size: 13px;
+    font-size: 10px;
 
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
-.register-message span {
+
+.message-icon {
+    width: 17px;
+    height: 17px;
+
     flex-shrink: 0;
 
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 9px;
+
+    font-weight: 800;
 }
+
 
 .register-message.error {
     border:
-        1px solid
-        rgba(248, 113, 113, 0.2);
+        1px solid rgba(255, 77, 77, 0.15);
 
     background:
-        rgba(127, 29, 29, 0.25);
+        rgba(255, 77, 77, 0.055);
 
-    color: #fca5a5;
+    color:
+        rgba(255, 155, 155, 0.88);
 }
+
+
+.register-message.error .message-icon {
+    background:
+        rgba(255, 77, 77, 0.13);
+
+    color: #ff7777;
+}
+
 
 .register-message.success {
     border:
-        1px solid
-        rgba(52, 211, 153, 0.2);
+        1px solid rgba(37, 211, 102, 0.15);
 
     background:
-        rgba(6, 78, 59, 0.25);
+        rgba(37, 211, 102, 0.055);
 
-    color: #6ee7b7;
+    color:
+        rgba(143, 255, 181, 0.88);
+}
+
+
+.register-message.success .message-icon {
+    background:
+        rgba(37, 211, 102, 0.13);
+
+    color: #25d366;
 }
 
 
@@ -473,57 +1113,62 @@
 .register-button {
     width: 100%;
 
-    min-height: 48px;
+    height: 51px;
 
     display: flex;
-
     align-items: center;
     justify-content: center;
 
-    gap: 10px;
+    gap: 11px;
 
-    margin-top: 3px;
+    margin-top: 2px;
 
     border: none;
 
-    border-radius: 10px;
+    border-radius: 12px;
 
     background:
         linear-gradient(
             135deg,
-            #2563eb,
-            #10b981
+            #25d366,
+            #1fbd5b
         );
 
-    color: #ffffff;
+    color: #061109;
 
-    font-size: 14px;
+    font-family: inherit;
 
-    font-weight: 700;
+    font-size: 12px;
+
+    font-weight: 750;
 
     cursor: pointer;
 
     box-shadow:
-        0 10px 25px
-        rgba(37, 99, 235, 0.2);
+        0 10px 28px rgba(37, 211, 102, 0.16);
 
     transition:
-        transform 0.2s,
-        box-shadow 0.2s,
-        opacity 0.2s;
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease,
+        opacity 0.2s ease;
 }
+
 
 .register-button:hover:not(:disabled) {
     transform: translateY(-1px);
 
+    filter: brightness(1.06);
+
     box-shadow:
-        0 14px 30px
-        rgba(37, 99, 235, 0.3);
+        0 14px 34px rgba(37, 211, 102, 0.23);
 }
+
 
 .register-button:active:not(:disabled) {
     transform: translateY(0);
 }
+
 
 .register-button:disabled {
     opacity: 0.65;
@@ -531,28 +1176,42 @@
     cursor: not-allowed;
 }
 
+
 .register-arrow {
-    font-size: 18px;
+    font-size: 17px;
+
+    line-height: 1;
+
+    transition:
+        transform 0.2s ease;
 }
+
+
+.register-button:hover:not(:disabled) .register-arrow {
+    transform: translateX(3px);
+}
+
 
 .register-spinner {
     width: 15px;
     height: 15px;
 
     border:
-        2px solid
-        rgba(255, 255, 255, 0.35);
+        2px solid rgba(6, 17, 9, 0.25);
 
-    border-top-color: #ffffff;
+    border-top-color:
+        #061109;
 
     border-radius: 50%;
 
     animation:
         register-spin
-        0.7s linear infinite;
+        0.75s linear infinite;
 }
 
+
 @keyframes register-spin {
+
     to {
         transform: rotate(360deg);
     }
@@ -570,25 +1229,30 @@
 
     gap: 12px;
 
-    margin: 24px 0 18px;
+    margin: 23px 0 18px;
+
+    color:
+        rgba(255, 255, 255, 0.20);
+
+    font-size: 9px;
 }
+
 
 .register-divider::before,
 .register-divider::after {
-    content: '';
+    content: "";
 
     flex: 1;
 
     height: 1px;
 
     background:
-        rgba(255, 255, 255, 0.08);
+        rgba(255, 255, 255, 0.065);
 }
 
-.register-divider span {
-    color: #5f6673;
 
-    font-size: 11px;
+.register-divider span {
+    flex-shrink: 0;
 }
 
 
@@ -604,21 +1268,29 @@
 
     gap: 5px;
 
-    color: #7d8593;
+    color:
+        rgba(255, 255, 255, 0.34);
 
-    font-size: 13px;
+    font-size: 11px;
 }
+
 
 .register-footer a {
-    color: #60a5fa;
+    color: #25d366;
 
-    font-weight: 600;
+    font-weight: 650;
 
     text-decoration: none;
+
+    transition:
+        color 0.2s ease;
 }
 
+
 .register-footer a:hover {
-    color: #93c5fd;
+    color: #6df59b;
+
+    text-decoration: underline;
 }
 
 
@@ -627,19 +1299,31 @@
 ========================================================= */
 
 .register-security {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
     margin-top: 22px;
 
     padding-top: 17px;
 
     border-top:
-        1px solid
-        rgba(255, 255, 255, 0.06);
+        1px solid rgba(255, 255, 255, 0.055);
 
-    text-align: center;
+    color:
+        rgba(255, 255, 255, 0.22);
 
-    color: #5f6673;
+    font-size: 9px;
+}
 
-    font-size: 11px;
+
+.security-icon {
+    font-size: 10px;
+
+    opacity: 0.7;
 }
 
 
@@ -650,84 +1334,310 @@
 .register-copyright {
     position: absolute;
 
-    z-index: 2;
+    z-index: 5;
 
-    left: 0;
-    right: 0;
+    bottom: 17px;
+    left: 50%;
 
-    bottom: 18px;
+    transform: translateX(-50%);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    width: max-content;
+
+    max-width: calc(100% - 40px);
+
+    color:
+        rgba(255, 255, 255, 0.20);
+
+    font-size: 9px;
 
     text-align: center;
+}
 
-    color: #4b5563;
 
-    font-size: 11px;
+.copyright-separator {
+    color:
+        rgba(37, 211, 102, 0.40);
 }
 
 
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE — 1050px
 ========================================================= */
 
-@media (max-width: 950px) {
-
-    .register-page {
-        padding:
-            40px 20px 70px;
-    }
+@media (max-width: 1050px) {
 
     .register-layout {
-        grid-template-columns: 1fr;
+        width: min(960px, 100%);
 
-        max-width: 560px;
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(380px, 0.85fr);
 
-        gap: 45px;
+        gap: 35px;
     }
 
-    .register-brand {
-        max-width: 560px;
 
-        margin: 0 auto;
+    .register-showcase-content {
+        padding-left: 0;
+    }
+
+
+    .register-brand h1 {
+        font-size: 51px;
+
+        letter-spacing: -2.5px;
+    }
+
+
+    .register-visual {
+        right: -80px;
+
+        transform: scale(0.88);
+
+        opacity: 0.7;
+    }
+
+
+    .register-card {
+        padding:
+            34px 32px 27px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — 850px
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .register-page {
+        overflow-y: auto;
+
+        padding:
+            40px 0 70px;
+    }
+
+
+    .register-layout {
+        width: min(520px, calc(100% - 32px));
+
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 38px;
+    }
+
+
+    .register-showcase {
+        min-height: auto;
+
+        width: 100%;
+    }
+
+
+    .register-showcase-content {
+        padding: 0;
 
         text-align: center;
     }
 
-    .register-description {
-        margin: 0 auto;
+
+    .register-brand {
+        justify-content: center;
     }
 
-    .register-steps {
-        text-align: left;
+
+    .register-brand-badge {
+        margin-bottom: 0;
     }
+
 
     .register-brand h1 {
         font-size: 46px;
+
+        letter-spacing: -2.2px;
     }
+
+
+    .register-description {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+
+    .register-steps {
+        width: max-content;
+
+        max-width: 100%;
+
+        margin-left: auto;
+        margin-right: auto;
+
+        text-align: left;
+    }
+
+
+    .register-visual {
+        display: none;
+    }
+
+
+    .register-panel {
+        width: 100%;
+    }
+
+
+    .register-card {
+        max-width: 480px;
+    }
+
 }
 
 
-@media (max-width: 600px) {
+/* =========================================================
+   RESPONSIVE — 520px
+========================================================= */
+
+@media (max-width: 520px) {
 
     .register-page {
         padding:
-            25px 15px 65px;
+            30px 0 60px;
     }
+
+
+    .register-layout {
+        width:
+            calc(100% - 24px);
+
+        gap: 28px;
+    }
+
+
+    .register-brand {
+        margin-bottom: 24px;
+    }
+
+
+    .register-brand-logo {
+        width: 48px;
+        height: 48px;
+
+        border-radius: 14px;
+    }
+
+
+    .register-brand-name strong {
+        font-size: 18px;
+    }
+
+
+    .register-brand-name span {
+        font-size: 9px;
+
+        letter-spacing: 1.2px;
+    }
+
+
+    .register-brand-badge {
+        padding: 7px 10px;
+
+        font-size: 8px;
+
+        letter-spacing: 0.9px;
+    }
+
 
     .register-brand h1 {
-        font-size: 36px;
+        font-size: 37px;
 
-        letter-spacing: -1.5px;
+        line-height: 1.05;
+
+        letter-spacing: -1.8px;
     }
+
 
     .register-description {
-        font-size: 15px;
+        margin-top: 18px;
+
+        font-size: 13px;
+
+        line-height: 1.65;
     }
+
+
+    .register-steps {
+        margin-top: 27px;
+
+        gap: 14px;
+    }
+
+
+    .step-number {
+        width: 30px;
+        height: 30px;
+
+        border-radius: 9px;
+
+        font-size: 9px;
+    }
+
+
+    .register-step strong {
+        font-size: 11px;
+    }
+
+
+    .register-step span {
+        font-size: 10px;
+    }
+
 
     .register-card {
-        padding: 28px 22px;
+        padding:
+            30px 22px 25px;
 
-        border-radius: 18px;
+        border-radius: 21px;
     }
+
+
+    .register-header {
+        margin-bottom: 26px;
+    }
+
+
+    .register-icon {
+        width: 48px;
+        height: 48px;
+
+        margin-bottom: 13px;
+    }
+
+
+    .register-header h2 {
+        font-size: 23px;
+    }
+
+
+    .register-header p {
+        font-size: 11px;
+    }
+
+
+    .register-form {
+        gap: 17px;
+    }
+
 
     .register-form-grid {
         grid-template-columns: 1fr;
@@ -735,17 +1645,70 @@
         gap: 17px;
     }
 
-    .register-steps {
-        margin-top: 28px;
+
+    .register-input-wrapper input {
+        height: 50px;
     }
 
-    .register-step span {
-        font-size: 11px;
+
+    .register-button {
+        height: 51px;
     }
+
 
     .register-footer {
         flex-direction: column;
 
-        gap: 4px;
+        gap: 5px;
+
+        text-align: center;
     }
+
+
+    .register-copyright {
+        bottom: 12px;
+
+        font-size: 8px;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE — 370px
+========================================================= */
+
+@media (max-width: 370px) {
+
+    .register-layout {
+        width:
+            calc(100% - 18px);
+    }
+
+
+    .register-brand h1 {
+        font-size: 32px;
+    }
+
+
+    .register-description {
+        font-size: 12px;
+    }
+
+
+    .register-card {
+        padding:
+            27px 18px 23px;
+    }
+
+
+    .register-header h2 {
+        font-size: 21px;
+    }
+
+
+    .register-copyright {
+        display: none;
+    }
+
 }

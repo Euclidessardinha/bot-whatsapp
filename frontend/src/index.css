@@ -1,111 +1,306 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* =========================================================
+   GLOBAL RESET — FULL WIDTH / FULL HEIGHT
+========================================================= */
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+html,
+body,
+#root {
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+html {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
 }
 
 body {
-  margin: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+
+    margin: 0;
+    padding: 0;
+
+    overflow-x: hidden;
+
+    box-sizing: border-box;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+
+    margin: 0;
+    padding: 0;
+
+    box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+/* =========================================================
+   BOX SIZING
+========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+
+/* =========================================================
+   APP SPLASH SCREEN — PREMIUM / WHATSAPP DARK
+========================================================= */
+
+#app-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 42%,
+            rgba(37, 211, 102, 0.09),
+            transparent 32%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(37, 211, 102, 0.045),
+            transparent 45%
+        ),
+        #07110d;
+
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+        opacity 0.45s ease,
+        visibility 0.45s ease;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+#app-splash.app-splash-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.app-splash-content {
+    position: relative;
+    z-index: 2;
+
+    width: min(90%, 420px);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+.app-splash-logo-wrapper {
+    position: relative;
+
+    width: 128px;
+    height: 128px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 24px;
+
+    border-radius: 32px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.025)
+        );
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    box-shadow:
+        0 0 0 1px rgba(37, 211, 102, 0.04),
+        0 18px 50px rgba(0, 0, 0, 0.42),
+        0 0 55px rgba(37, 211, 102, 0.10);
+
+    animation: appSplashLogoIn 0.7s ease both;
+}
+
+.app-splash-logo-wrapper::before {
+    content: '';
+
+    position: absolute;
+    inset: -14px;
+
+    border-radius: 42px;
+
+    background: rgba(37, 211, 102, 0.07);
+
+    filter: blur(22px);
+
+    z-index: -1;
+
+    animation: appSplashGlow 2.2s ease-in-out infinite;
+}
+
+.app-splash-logo {
+    width: 82px;
+    height: 82px;
+
+    object-fit: contain;
+
+    display: block;
+
+    filter:
+        drop-shadow(0 8px 20px rgba(0, 0, 0, 0.32))
+        drop-shadow(0 0 18px rgba(37, 211, 102, 0.12));
+}
+
+.app-splash-brand {
+    animation: appSplashBrandIn 0.8s ease 0.12s both;
+}
+
+.app-splash-brand h1 {
+    margin: 0;
+
+    color: #f4f8f5;
+
+    font-size: clamp(22px, 5vw, 30px);
+    font-weight: 800;
+
+    letter-spacing: -0.6px;
+
+    line-height: 1.15;
+}
+
+.app-splash-brand p {
+    margin: 9px 0 0;
+
+    color: #8d9b93;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    letter-spacing: 0.15px;
+}
+
+.app-splash-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    margin-top: 30px;
+
+    animation: appSplashBrandIn 0.8s ease 0.25s both;
+}
+
+.app-splash-loader span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #25d366;
+
+    box-shadow: 0 0 10px rgba(37, 211, 102, 0.35);
+
+    animation: appSplashDot 1.2s ease-in-out infinite;
+}
+
+.app-splash-loader span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.app-splash-loader span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes appSplashLogoIn {
+    from {
+        opacity: 0;
+        transform: scale(0.88) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes appSplashBrandIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes appSplashGlow {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.94);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes appSplashDot {
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0) scale(0.8);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px) scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-splash-logo-wrapper {
+        width: 108px;
+        height: 108px;
+
+        border-radius: 28px;
+    }
+
+    .app-splash-logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .app-splash-brand h1 {
+        font-size: 22px;
+    }
+
+    .app-splash-brand p {
+        font-size: 12px;
+    }
 }

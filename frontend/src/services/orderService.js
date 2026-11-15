@@ -18,7 +18,7 @@ export async function getOrders(companyId) {
             total,
             created_at,
             customers (
-                id,
+                id, 
                 phone,
                 name
             ),
@@ -47,7 +47,7 @@ export async function getOrders(companyId) {
     }
 
     return data || [];
-}
+} 
 
 
 /**

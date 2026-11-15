@@ -1,10 +1,11 @@
-
 import { useEffect, useState } from 'react';
 
 import {
     getCustomerRequests,
     updateCustomerRequestStatus
 } from '../services/requestService';
+
+import { getCurrentProfile } from '../services/authService';
 
 import '../pages/Requests.css';
 
@@ -15,18 +16,25 @@ function Requests() {
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [error, setError] = useState('');
 
-    const companyId =
-        'd3779995-5533-4198-bee3-556709331dc6';
-
     async function loadRequests() {
         try {
             setLoading(true);
             setError('');
 
-            const data =
-                await getCustomerRequests(companyId);
+            const profile = await getCurrentProfile();
 
-            setRequests(data);
+            if (!profile?.company_id) {
+                setError(
+                    'Não foi possível identificar a empresa atual.'
+                );
+                return;
+            }
+
+            const data = await getCustomerRequests(
+                profile.company_id
+            );
+
+            setRequests(data || []);
         } catch (err) {
             console.error(
                 '❌ Erro ao carregar solicitações:',
@@ -85,7 +93,6 @@ function Requests() {
                     updated_at: updated.updated_at
                 };
             });
-
         } catch (err) {
             console.error(
                 '❌ Erro ao atualizar solicitação:',
@@ -151,36 +158,88 @@ function Requests() {
         return `https://wa.me/${cleanPhone}`;
     }
 
+    function getServicePrice(service) {
+        if (!service) {
+            return null;
+        }
+
+        if (
+            service.price_type === 'fixed' &&
+            service.price != null
+        ) {
+            return `${service.price} MT`;
+        }
+
+        if (
+            service.price_type === 'from' &&
+            service.price != null
+        ) {
+            return `A partir de ${service.price} MT`;
+        }
+
+        if (service.price_type === 'quote') {
+            return 'Sob orçamento';
+        }
+
+        return null;
+    }
+
     if (loading) {
         return (
             <div className="requests-page">
-
                 <div className="requests-header">
                     <div>
+                        <div className="requests-eyebrow">
+                            ATENDIMENTO WHATSAPP
+                        </div>
+
                         <h1>Solicitações</h1>
 
                         <p>
-                            Solicitações recebidas através do
-                            WhatsApp.
+                            Gerencie as solicitações de
+                            serviços recebidas pelo seu bot.
                         </p>
                     </div>
                 </div>
 
                 <div className="requests-loading">
-                    A carregar solicitações...
-                </div>
+                    <div className="requests-loading-spinner" />
 
+                    <span>
+                        A carregar solicitações...
+                    </span>
+                </div>
             </div>
         );
     }
 
+    const pendingCount = requests.filter(
+        (request) => request.status === 'pending'
+    ).length;
+
+    const inProgressCount = requests.filter(
+        (request) => request.status === 'in_progress'
+    ).length;
+
+    const completedCount = requests.filter(
+        (request) => request.status === 'completed'
+    ).length;
+
     return (
         <div className="requests-page">
 
-            {/* CABEÇALHO */}
+            {/* =====================================================
+                HEADER
+            ====================================================== */}
+
             <div className="requests-header">
 
-                <div>
+                <div className="requests-header-content">
+
+                    <div className="requests-eyebrow">
+                        ATENDIMENTO WHATSAPP
+                    </div>
+
                     <h1>
                         Solicitações
                     </h1>
@@ -189,102 +248,151 @@ function Requests() {
                         Gerencie as solicitações de serviços
                         recebidas pelo seu bot.
                     </p>
+
                 </div>
 
                 <button
                     className="requests-refresh-button"
                     onClick={loadRequests}
+                    type="button"
                 >
-                    ↻ Atualizar
+                    <span className="refresh-icon">
+                        ↻
+                    </span>
+
+                    Atualizar
                 </button>
 
             </div>
 
-            {/* ERRO */}
+            {/* =====================================================
+                ERROR
+            ====================================================== */}
+
             {error && (
                 <div className="requests-error">
-                    {error}
+                    <span className="requests-error-icon">
+                        !
+                    </span>
+
+                    <span>
+                        {error}
+                    </span>
                 </div>
             )}
 
-            {/* RESUMO */}
+            {/* =====================================================
+                SUMMARY
+            ====================================================== */}
+
             <div className="requests-summary">
 
-                <div className="summary-card">
+                <div className="summary-card summary-total">
 
-                    <span>
-                        Total
-                    </span>
+                    <div className="summary-card-top">
+                        <span>
+                            Total
+                        </span>
 
-                    <strong>
+                        <div className="summary-icon">
+                            ▣
+                        </div>
+                    </div>
+
+                    <strong className="summary-value">
                         {requests.length}
                     </strong>
 
-                </div>
-
-                <div className="summary-card">
-
-                    <span>
-                        Pendentes
-                    </span>
-
-                    <strong>
-                        {
-                            requests.filter(
-                                (request) =>
-                                    request.status ===
-                                    'pending'
-                            ).length
-                        }
-                    </strong>
+                    <small>
+                        Solicitações recebidas
+                    </small>
 
                 </div>
 
-                <div className="summary-card">
+                <div className="summary-card summary-pending">
 
-                    <span>
-                        Em andamento
-                    </span>
+                    <div className="summary-card-top">
+                        <span>
+                            Pendentes
+                        </span>
 
-                    <strong>
-                        {
-                            requests.filter(
-                                (request) =>
-                                    request.status ===
-                                    'in_progress'
-                            ).length
-                        }
+                        <div className="summary-icon">
+                            !
+                        </div>
+                    </div>
+
+                    <strong className="summary-value">
+                        {pendingCount}
                     </strong>
+
+                    <small>
+                        Aguardam atendimento
+                    </small>
 
                 </div>
 
-                <div className="summary-card">
+                <div className="summary-card summary-progress">
 
-                    <span>
-                        Concluídas
-                    </span>
+                    <div className="summary-card-top">
+                        <span>
+                            Em andamento
+                        </span>
 
-                    <strong>
-                        {
-                            requests.filter(
-                                (request) =>
-                                    request.status ===
-                                    'completed'
-                            ).length
-                        }
+                        <div className="summary-icon">
+                            ◌
+                        </div>
+                    </div>
+
+                    <strong className="summary-value">
+                        {inProgressCount}
                     </strong>
+
+                    <small>
+                        Em processo de atendimento
+                    </small>
+
+                </div>
+
+                <div className="summary-card summary-completed">
+
+                    <div className="summary-card-top">
+                        <span>
+                            Concluídas
+                        </span>
+
+                        <div className="summary-icon">
+                            ✓
+                        </div>
+                    </div>
+
+                    <strong className="summary-value">
+                        {completedCount}
+                    </strong>
+
+                    <small>
+                        Solicitações finalizadas
+                    </small>
 
                 </div>
 
             </div>
 
-            {/* LISTA */}
+            {/* =====================================================
+                EMPTY STATE
+            ====================================================== */}
+
             {requests.length === 0 ? (
 
                 <div className="requests-empty">
 
+                    <div className="requests-empty-glow" />
+
                     <div className="requests-empty-icon">
-                        📋
+                        <span>⌁</span>
+                    </div>
+
+                    <div className="requests-empty-badge">
+                        WHATSAPP
                     </div>
 
                     <h2>
@@ -297,189 +405,214 @@ function Requests() {
                         a solicitação aparecerá aqui.
                     </p>
 
+                    <div className="requests-empty-line" />
+
                 </div>
 
             ) : (
 
+                /* =================================================
+                   TABLE
+                ================================================== */
+
                 <div className="requests-table-container">
 
-                    <table className="requests-table">
+                    <div className="requests-table-header">
 
-                        <thead>
+                        <div>
+                            <span className="table-eyebrow">
+                                CENTRAL DE ATENDIMENTO
+                            </span>
 
-                            <tr>
-                                <th>
-                                    Cliente
-                                </th>
+                            <h2>
+                                Solicitações recentes
+                            </h2>
+                        </div>
 
-                                <th>
-                                    Serviço
-                                </th>
+                        <span className="requests-count">
+                            {requests.length}{' '}
+                            {requests.length === 1
+                                ? 'solicitação'
+                                : 'solicitações'}
+                        </span>
 
-                                <th>
-                                    Solicitação
-                                </th>
+                    </div>
 
-                                <th>
-                                    Data
-                                </th>
+                    <div className="requests-table-scroll">
 
-                                <th>
-                                    Estado
-                                </th>
-                            </tr>
+                        <table className="requests-table">
 
-                        </thead>
+                            <thead>
 
-                        <tbody>
+                                <tr>
+                                    <th>
+                                        Cliente
+                                    </th>
 
-                            {requests.map(
-                                (request) => (
+                                    <th>
+                                        Serviço
+                                    </th>
 
-                                    <tr
-                                        key={request.id}
-                                        className="request-row"
-                                        onClick={() =>
-                                            openRequest(
-                                                request
-                                            )
-                                        }
-                                    >
+                                    <th>
+                                        Solicitação
+                                    </th>
 
-                                        <td>
+                                    <th>
+                                        Data
+                                    </th>
 
-                                            <div className="customer-info">
+                                    <th>
+                                        Estado
+                                    </th>
+                                </tr>
 
-                                                <strong>
+                            </thead>
+
+                            <tbody>
+
+                                {requests.map(
+                                    (request) => (
+
+                                        <tr
+                                            key={request.id}
+                                            className="request-row"
+                                            onClick={() =>
+                                                openRequest(
+                                                    request
+                                                )
+                                            }
+                                        >
+
+                                            <td>
+
+                                                <div className="customer-info">
+
+                                                    <div className="customer-avatar">
+                                                        {
+                                                            (
+                                                                request
+                                                                    .customers
+                                                                    ?.name ||
+                                                                'C'
+                                                            )
+                                                                .charAt(0)
+                                                                .toUpperCase()
+                                                        }
+                                                    </div>
+
+                                                    <div className="customer-data">
+
+                                                        <strong>
+                                                            {
+                                                                request
+                                                                    .customers
+                                                                    ?.name ||
+                                                                'Cliente'
+                                                            }
+                                                        </strong>
+
+                                                        <span>
+                                                            {
+                                                                request
+                                                                    .customers
+                                                                    ?.phone ||
+                                                                '-'
+                                                            }
+                                                        </span>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </td>
+
+                                            <td>
+
+                                                <div className="service-info">
+
+                                                    <strong>
+                                                        {
+                                                            request
+                                                                .services
+                                                                ?.name ||
+                                                            'Serviço'
+                                                        }
+                                                    </strong>
+
+                                                    {getServicePrice(
+                                                        request.services
+                                                    ) && (
+                                                        <span>
+                                                            {getServicePrice(
+                                                                request.services
+                                                            )}
+                                                        </span>
+                                                    )}
+
+                                                </div>
+
+                                            </td>
+
+                                            <td>
+
+                                                <div className="request-description">
+
                                                     {
-                                                        request
-                                                            .customers
-                                                            ?.name ||
-                                                        'Cliente'
+                                                        request.request_text ||
+                                                        'Sem descrição'
                                                     }
-                                                </strong>
 
-                                                <span>
+                                                </div>
+
+                                            </td>
+
+                                            <td>
+
+                                                <span className="request-date">
+                                                    {formatDate(
+                                                        request.created_at
+                                                    )}
+                                                </span>
+
+                                            </td>
+
+                                            <td>
+
+                                                <span
+                                                    className={getStatusClass(
+                                                        request.status
+                                                    )}
+                                                >
+                                                    <span className="status-dot" />
+
                                                     {
-                                                        request
-                                                            .customers
-                                                            ?.phone ||
-                                                        '-'
+                                                        getStatusLabel(
+                                                            request.status
+                                                        )
                                                     }
                                                 </span>
 
-                                            </div>
+                                            </td>
 
-                                        </td>
+                                        </tr>
 
-                                        <td>
+                                    )
+                                )}
 
-                                            <div className="service-info">
+                            </tbody>
 
-                                                <strong>
-                                                    {
-                                                        request
-                                                            .services
-                                                            ?.name ||
-                                                        'Serviço'
-                                                    }
-                                                </strong>
+                        </table>
 
-                                                {request.services
-                                                    ?.price_type ===
-                                                    'fixed' &&
-                                                    request.services
-                                                        ?.price != null && (
-                                                        <span>
-                                                            {
-                                                                request
-                                                                    .services
-                                                                    .price
-                                                            }{' '}
-                                                            MT
-                                                        </span>
-                                                    )}
-
-                                                {request.services
-                                                    ?.price_type ===
-                                                    'from' &&
-                                                    request.services
-                                                        ?.price != null && (
-                                                        <span>
-                                                            A partir de{' '}
-                                                            {
-                                                                request
-                                                                    .services
-                                                                    .price
-                                                            }{' '}
-                                                            MT
-                                                        </span>
-                                                    )}
-
-                                                {request.services
-                                                    ?.price_type ===
-                                                    'quote' && (
-                                                        <span>
-                                                            Sob orçamento
-                                                        </span>
-                                                    )}
-
-                                            </div>
-
-                                        </td>
-
-                                        <td>
-
-                                            <div className="request-description">
-
-                                                {
-                                                    request.request_text
-                                                }
-
-                                            </div>
-
-                                        </td>
-
-                                        <td>
-
-                                            <span className="request-date">
-                                                {formatDate(
-                                                    request.created_at
-                                                )}
-                                            </span>
-
-                                        </td>
-
-                                        <td>
-
-                                            <span
-                                                className={getStatusClass(
-                                                    request.status
-                                                )}
-                                            >
-                                                {
-                                                    getStatusLabel(
-                                                        request.status
-                                                    )
-                                                }
-                                            </span>
-
-                                        </td>
-
-                                    </tr>
-
-                                )
-                            )}
-
-                        </tbody>
-
-                    </table>
+                    </div>
 
                 </div>
 
             )}
 
-            {/* PAINEL DE DETALHES */}
+            {/* =====================================================
+                REQUEST MODAL
+            ====================================================== */}
+
             {selectedRequest && (
 
                 <div
@@ -494,23 +627,32 @@ function Requests() {
                         }
                     >
 
-                        {/* CABEÇALHO DO MODAL */}
+                        {/* MODAL HEADER */}
+
                         <div className="request-modal-header">
 
-                            <div>
+                            <div className="request-modal-title-area">
 
-                                <span className="request-modal-label">
-                                    SOLICITAÇÃO
-                                </span>
+                                <div className="request-modal-icon">
+                                    ▣
+                                </div>
 
-                                <h2>
-                                    {
-                                        selectedRequest
-                                            .services
-                                            ?.name ||
-                                        'Solicitação de serviço'
-                                    }
-                                </h2>
+                                <div>
+
+                                    <span className="request-modal-label">
+                                        SOLICITAÇÃO
+                                    </span>
+
+                                    <h2>
+                                        {
+                                            selectedRequest
+                                                .services
+                                                ?.name ||
+                                            'Solicitação de serviço'
+                                        }
+                                    </h2>
+
+                                </div>
 
                             </div>
 
@@ -518,13 +660,15 @@ function Requests() {
                                 className="request-modal-close"
                                 onClick={closeRequest}
                                 aria-label="Fechar"
+                                type="button"
                             >
                                 ✕
                             </button>
 
                         </div>
 
-                        {/* ESTADO */}
+                        {/* STATUS ATUAL */}
+
                         <div className="request-detail-status">
 
                             <span>
@@ -536,6 +680,8 @@ function Requests() {
                                     selectedRequest.status
                                 )}
                             >
+                                <span className="status-dot" />
+
                                 {
                                     getStatusLabel(
                                         selectedRequest.status
@@ -546,35 +692,58 @@ function Requests() {
                         </div>
 
                         {/* CLIENTE */}
+
                         <div className="request-detail-section">
 
                             <h3>
-                                👤 Cliente
+                                <span className="detail-section-icon">
+                                    👤
+                                </span>
+
+                                Cliente
                             </h3>
 
                             <div className="request-detail-card">
 
-                                <strong>
+                                <div className="detail-customer-avatar">
                                     {
-                                        selectedRequest
-                                            .customers
-                                            ?.name ||
-                                        'Cliente'
+                                        (
+                                            selectedRequest
+                                                .customers
+                                                ?.name ||
+                                            'C'
+                                        )
+                                            .charAt(0)
+                                            .toUpperCase()
                                     }
-                                </strong>
+                                </div>
 
-                                <span>
-                                    {
-                                        selectedRequest
-                                            .customers
-                                            ?.phone ||
-                                        'Telefone não disponível'
-                                    }
-                                </span>
+                                <div className="detail-customer-info">
+
+                                    <strong>
+                                        {
+                                            selectedRequest
+                                                .customers
+                                                ?.name ||
+                                            'Cliente'
+                                        }
+                                    </strong>
+
+                                    <span>
+                                        {
+                                            selectedRequest
+                                                .customers
+                                                ?.phone ||
+                                            'Telefone não disponível'
+                                        }
+                                    </span>
+
+                                </div>
 
                             </div>
 
                             {selectedRequest.customers?.phone && (
+
                                 <a
                                     className="whatsapp-contact-button"
                                     href={getWhatsAppLink(
@@ -583,80 +752,53 @@ function Requests() {
                                             .phone
                                     )}
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                 >
-                                    💬 Contactar no WhatsApp
+                                    <span className="whatsapp-button-icon">
+                                        ◉
+                                    </span>
+
+                                    Contactar no WhatsApp
+
+                                    <span className="whatsapp-button-arrow">
+                                        ↗
+                                    </span>
                                 </a>
+
                             )}
 
                         </div>
 
                         {/* SERVIÇO */}
+
                         <div className="request-detail-section">
 
                             <h3>
-                                🛠️ Serviço
+                                <span className="detail-section-icon">
+                                    ◈
+                                </span>
+
+                                Serviço
                             </h3>
 
-                            <div className="request-detail-card">
+                            <div className="request-service-card">
 
                                 <strong>
                                     {
                                         selectedRequest
                                             .services
                                             ?.name ||
-                                        'Serviço'
+                                        'Serviço não disponível'
                                     }
                                 </strong>
 
-                                {selectedRequest.services
-                                    ?.description && (
-                                    <span>
-                                        {
-                                            selectedRequest
-                                                .services
-                                                .description
-                                        }
-                                    </span>
-                                )}
-
-                                {selectedRequest.services
-                                    ?.price_type ===
-                                    'fixed' &&
+                                {getServicePrice(
                                     selectedRequest.services
-                                        ?.price != null && (
-                                        <span>
-                                            Preço:{' '}
-                                            {
-                                                selectedRequest
-                                                    .services
-                                                    .price
-                                            }{' '}
-                                            MT
-                                        </span>
-                                    )}
-
-                                {selectedRequest.services
-                                    ?.price_type ===
-                                    'from' &&
-                                    selectedRequest.services
-                                        ?.price != null && (
-                                        <span>
-                                            Preço a partir de{' '}
-                                            {
-                                                selectedRequest
-                                                    .services
-                                                    .price
-                                            }{' '}
-                                            MT
-                                        </span>
-                                    )}
-
-                                {selectedRequest.services
-                                    ?.price_type ===
-                                    'quote' && (
+                                ) && (
                                     <span>
-                                        Preço sob orçamento
+                                        {getServicePrice(
+                                            selectedRequest.services
+                                        )}
                                     </span>
                                 )}
 
@@ -665,16 +807,22 @@ function Requests() {
                         </div>
 
                         {/* DESCRIÇÃO */}
+
                         <div className="request-detail-section">
 
                             <h3>
-                                📝 Detalhes da solicitação
+                                <span className="detail-section-icon">
+                                    ✎
+                                </span>
+
+                                Detalhes da solicitação
                             </h3>
 
                             <div className="request-detail-description">
 
                                 {
-                                    selectedRequest.request_text
+                                    selectedRequest.request_text ||
+                                    'Nenhum detalhe informado.'
                                 }
 
                             </div>
@@ -682,10 +830,15 @@ function Requests() {
                         </div>
 
                         {/* DATAS */}
+
                         <div className="request-detail-section">
 
                             <h3>
-                                📅 Informações
+                                <span className="detail-section-icon">
+                                    ◷
+                                </span>
+
+                                Informações
                             </h3>
 
                             <div className="request-dates">
@@ -697,8 +850,7 @@ function Requests() {
 
                                     <strong>
                                         {formatDate(
-                                            selectedRequest
-                                                .created_at
+                                            selectedRequest.created_at
                                         )}
                                     </strong>
                                 </div>
@@ -710,8 +862,7 @@ function Requests() {
 
                                     <strong>
                                         {formatDate(
-                                            selectedRequest
-                                                .updated_at
+                                            selectedRequest.updated_at
                                         )}
                                     </strong>
                                 </div>
@@ -721,6 +872,7 @@ function Requests() {
                         </div>
 
                         {/* AÇÕES */}
+
                         <div className="request-actions">
 
                             <h3>
@@ -733,7 +885,7 @@ function Requests() {
                                     className={
                                         selectedRequest.status ===
                                         'pending'
-                                            ? 'active'
+                                            ? 'active pending-action'
                                             : ''
                                     }
                                     disabled={
@@ -746,7 +898,9 @@ function Requests() {
                                             'pending'
                                         )
                                     }
+                                    type="button"
                                 >
+                                    <span className="status-action-dot" />
                                     Pendente
                                 </button>
 
@@ -754,7 +908,7 @@ function Requests() {
                                     className={
                                         selectedRequest.status ===
                                         'contacted'
-                                            ? 'active'
+                                            ? 'active contacted-action'
                                             : ''
                                     }
                                     disabled={
@@ -767,7 +921,9 @@ function Requests() {
                                             'contacted'
                                         )
                                     }
+                                    type="button"
                                 >
+                                    <span className="status-action-dot" />
                                     Contactado
                                 </button>
 
@@ -775,7 +931,7 @@ function Requests() {
                                     className={
                                         selectedRequest.status ===
                                         'in_progress'
-                                            ? 'active'
+                                            ? 'active progress-action'
                                             : ''
                                     }
                                     disabled={
@@ -788,7 +944,9 @@ function Requests() {
                                             'in_progress'
                                         )
                                     }
+                                    type="button"
                                 >
+                                    <span className="status-action-dot" />
                                     Em andamento
                                 </button>
 
@@ -796,7 +954,7 @@ function Requests() {
                                     className={
                                         selectedRequest.status ===
                                         'completed'
-                                            ? 'active'
+                                            ? 'active completed-action'
                                             : ''
                                     }
                                     disabled={
@@ -809,7 +967,9 @@ function Requests() {
                                             'completed'
                                         )
                                     }
+                                    type="button"
                                 >
+                                    <span className="status-action-dot" />
                                     Concluído
                                 </button>
 
@@ -817,7 +977,7 @@ function Requests() {
                                     className={
                                         selectedRequest.status ===
                                         'cancelled'
-                                            ? 'active'
+                                            ? 'active cancelled-action'
                                             : ''
                                     }
                                     disabled={
@@ -830,11 +990,22 @@ function Requests() {
                                             'cancelled'
                                         )
                                     }
+                                    type="button"
                                 >
+                                    <span className="status-action-dot" />
                                     Cancelado
                                 </button>
 
                             </div>
+
+                            {updatingId ===
+                                selectedRequest.id && (
+                                <div className="request-updating">
+                                    <div className="request-updating-spinner" />
+
+                                    Atualizando estado...
+                                </div>
+                            )}
 
                         </div>
 

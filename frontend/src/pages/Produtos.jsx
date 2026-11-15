@@ -52,13 +52,19 @@ function Produtos() {
                     currentProfile.company_id
                 );
 
-            setProducts(data);
+            setProducts(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
         } catch (err) {
             console.error(err);
 
             setError(
                 'Não foi possível carregar os produtos.'
             );
+
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -239,6 +245,21 @@ function Produtos() {
         }
     }
 
+    const totalProducts =
+        products.length;
+
+    const availableProducts =
+        products.filter(
+            (product) =>
+                product.available === true
+        ).length;
+
+    const unavailableProducts =
+        products.filter(
+            (product) =>
+                product.available !== true
+        ).length;
+
     if (loading) {
         return (
             <div className="products-loading">
@@ -250,7 +271,12 @@ function Produtos() {
     return (
         <div className="products-page">
 
+            {/* =====================================================
+                HEADER
+            ===================================================== */}
+
             <div className="products-header">
+
                 <div>
                     <h2 className="products-title">
                         🍔 Produtos
@@ -267,7 +293,13 @@ function Produtos() {
                 >
                     + Adicionar produto
                 </button>
+
             </div>
+
+
+            {/* =====================================================
+                ERROR
+            ===================================================== */}
 
             {error && (
                 <div className="products-error">
@@ -275,81 +307,105 @@ function Produtos() {
                 </div>
             )}
 
+
+            {/* =====================================================
+                STATS
+            ===================================================== */}
+
             <div className="products-stats">
 
+                {/* TOTAL */}
+
                 <div className="stat-card">
+
                     <span className="stat-icon">
                         🍔
                     </span>
 
-                    <div>
+                    <div className="stat-content">
+
                         <p className="stat-label">
                             Total de produtos
                         </p>
 
-                        <strong className="stat-value">
-                            {products.length}
-                        </strong>
+                        <span className="stat-number">
+                            {totalProducts}
+                        </span>
+
                     </div>
+
                 </div>
 
+
+                {/* DISPONÍVEIS */}
+
                 <div className="stat-card">
+
                     <span className="stat-icon">
                         🟢
                     </span>
 
-                    <div>
+                    <div className="stat-content">
+
                         <p className="stat-label">
                             Disponíveis
                         </p>
 
                         <strong className="stat-value">
-                            {
-                                products.filter(
-                                    (product) =>
-                                        product.available
-                                ).length
-                            }
+                            {availableProducts}
                         </strong>
+
                     </div>
+
                 </div>
 
+
+                {/* INDISPONÍVEIS */}
+
                 <div className="stat-card">
+
                     <span className="stat-icon">
                         🔴
                     </span>
 
-                    <div>
+                    <div className="stat-content">
+
                         <p className="stat-label">
                             Indisponíveis
                         </p>
 
                         <strong className="stat-value">
-                            {
-                                products.filter(
-                                    (product) =>
-                                        !product.available
-                                ).length
-                            }
+                            {unavailableProducts}
                         </strong>
+
                     </div>
+
                 </div>
 
             </div>
 
+
+            {/* =====================================================
+                PRODUCTS PANEL
+            ===================================================== */}
+
             <div className="products-panel">
 
                 <div className="products-panel-header">
+
                     <h3>
                         Lista de produtos
                     </h3>
 
                     <span className="products-count">
-                        {products.length} produto(s)
+                        {totalProducts} produto(s)
                     </span>
+
                 </div>
 
+
                 {products.length === 0 ? (
+
                     <div className="products-empty">
 
                         <div className="empty-icon">
@@ -372,13 +428,17 @@ function Produtos() {
                         </button>
 
                     </div>
+
                 ) : (
+
                     <div className="products-table-wrapper">
 
                         <table className="products-table">
 
                             <thead>
+
                                 <tr>
+
                                     <th>
                                         Produto
                                     </th>
@@ -394,23 +454,23 @@ function Produtos() {
                                     <th>
                                         Ações
                                     </th>
+
                                 </tr>
+
                             </thead>
 
                             <tbody>
 
                                 {products.map(
                                     (product) => (
+
                                         <tr
-                                            key={
-                                                product.id
-                                            }
+                                            key={product.id}
                                         >
+
                                             <td>
                                                 <strong>
-                                                    {
-                                                        product.name
-                                                    }
+                                                    {product.name}
                                                 </strong>
                                             </td>
 
@@ -424,6 +484,7 @@ function Produtos() {
                                             </td>
 
                                             <td>
+
                                                 <button
                                                     onClick={() =>
                                                         toggleAvailability(
@@ -440,9 +501,11 @@ function Produtos() {
                                                         ? '● Disponível'
                                                         : '● Indisponível'}
                                                 </button>
+
                                             </td>
 
                                             <td>
+
                                                 <div className="product-actions">
 
                                                     <button
@@ -463,13 +526,17 @@ function Produtos() {
                                                                 product
                                                             )
                                                         }
+                                                        aria-label={`Apagar ${product.name}`}
                                                     >
                                                         🗑️
                                                     </button>
 
                                                 </div>
+
                                             </td>
+
                                         </tr>
+
                                     )
                                 )}
 
@@ -478,11 +545,18 @@ function Produtos() {
                         </table>
 
                     </div>
+
                 )}
 
             </div>
 
+
+            {/* =====================================================
+                MODAL
+            ===================================================== */}
+
             {showForm && (
+
                 <div className="modal-overlay">
 
                     <div className="product-modal">
@@ -490,6 +564,7 @@ function Produtos() {
                         <div className="modal-header">
 
                             <div>
+
                                 <h3>
                                     {editingProduct
                                         ? 'Editar produto'
@@ -499,16 +574,20 @@ function Produtos() {
                                 <p>
                                     Preencha as informações abaixo.
                                 </p>
+
                             </div>
 
                             <button
                                 className="modal-close"
                                 onClick={closeForm}
+                                type="button"
+                                aria-label="Fechar"
                             >
                                 ×
                             </button>
 
                         </div>
+
 
                         <form
                             onSubmit={handleSubmit}
@@ -525,6 +604,7 @@ function Produtos() {
                                 onChange={handleChange}
                                 placeholder="Ex: Classic Burger"
                             />
+
 
                             <label>
                                 Preço
@@ -548,6 +628,7 @@ function Produtos() {
 
                             </div>
 
+
                             <label className="checkbox-label">
 
                                 <input
@@ -564,6 +645,7 @@ function Produtos() {
                                 Produto disponível
 
                             </label>
+
 
                             <div className="form-actions">
 
@@ -594,6 +676,7 @@ function Produtos() {
                     </div>
 
                 </div>
+
             )}
 
         </div>

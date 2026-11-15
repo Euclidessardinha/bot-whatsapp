@@ -678,10 +678,30 @@ window.location.href = '/dashboard';
 
                 <header className="onboarding-header">
 
-                    <div className="onboarding-logo">
-                        <span className="onboarding-logo-dot"></span>
-                        WhatsApp Bot SaaS
-                    </div>
+                    ```jsx
+<div className="onboarding-logo">
+
+    <div className="onboarding-logo-image">
+        <img
+            src="/logo.png"
+            alt="WhatsBot"
+        />
+    </div>
+
+    <div className="onboarding-logo-name">
+
+        <strong>
+            WhatsBot
+        </strong>
+
+        <span>
+            Business Automation
+        </span>
+
+    </div>
+
+</div>
+```
 
                     <div className="onboarding-progress-text">
                         Etapa {step} de 3

@@ -234,6 +234,8 @@ function Dashboard() {
 
             <section className="dashboard-hero">
 
+                <div className="hero-glow"></div>
+
                 <div className="hero-content">
 
                     <div className="hero-eyebrow">
@@ -242,7 +244,7 @@ function Dashboard() {
                     </div>
 
                     <h1>
-                        Olá, {firstName} 👋
+                        Olá, {firstName} <span>👋</span>
                     </h1>
 
                     <p>
@@ -286,9 +288,13 @@ function Dashboard() {
 
             {error && (
                 <div className="dashboard-error">
-                    <span>⚠️</span>
+                    <span className="error-icon">!</span>
+
                     <div>
-                        <strong>Não foi possível atualizar os dados</strong>
+                        <strong>
+                            Não foi possível atualizar os dados
+                        </strong>
+
                         <p>{error}</p>
                     </div>
                 </div>
@@ -300,21 +306,22 @@ function Dashboard() {
 
             <section className="dashboard-metrics">
 
-                {/* PRODUTOS */}
-
                 <div className="metric-card">
 
                     <div className="metric-top">
+
                         <div className="metric-icon products">
-                            🛍️
+                            <span>▣</span>
                         </div>
 
                         <span className="metric-arrow">
                             →
                         </span>
+
                     </div>
 
                     <div className="metric-info">
+
                         <span>Produtos</span>
 
                         <strong>
@@ -326,25 +333,27 @@ function Dashboard() {
                         <small>
                             Produtos cadastrados
                         </small>
+
                     </div>
 
                 </div>
 
-                {/* PEDIDOS */}
-
                 <div className="metric-card">
 
                     <div className="metric-top">
+
                         <div className="metric-icon orders">
-                            🛒
+                            <span>◫</span>
                         </div>
 
                         <span className="metric-arrow">
                             →
                         </span>
+
                     </div>
 
                     <div className="metric-info">
+
                         <span>Pedidos</span>
 
                         <strong>
@@ -356,25 +365,27 @@ function Dashboard() {
                         <small>
                             Pedidos registrados
                         </small>
+
                     </div>
 
                 </div>
 
-                {/* CLIENTES */}
-
                 <div className="metric-card">
 
                     <div className="metric-top">
+
                         <div className="metric-icon customers">
-                            👥
+                            <span>♙</span>
                         </div>
 
                         <span className="metric-arrow">
                             →
                         </span>
+
                     </div>
 
                     <div className="metric-info">
+
                         <span>Clientes</span>
 
                         <strong>
@@ -386,25 +397,27 @@ function Dashboard() {
                         <small>
                             Clientes cadastrados
                         </small>
+
                     </div>
 
                 </div>
 
-                {/* WHATSAPP */}
-
-                <div className="metric-card">
+                <div className="metric-card whatsapp-metric">
 
                     <div className="metric-top">
+
                         <div className="metric-icon whatsapp">
-                            💬
+                            <span>◉</span>
                         </div>
 
                         <span className="metric-arrow">
                             →
                         </span>
+
                     </div>
 
                     <div className="metric-info">
+
                         <span>WhatsApp</span>
 
                         <strong>
@@ -420,6 +433,7 @@ function Dashboard() {
                                 ? `${connectedWhatsapp} conexão${connectedWhatsapp !== 1 ? 'ões' : ''} ativa${connectedWhatsapp !== 1 ? 's' : ''}`
                                 : 'Nenhuma conexão ativa'}
                         </small>
+
                     </div>
 
                 </div>
@@ -451,7 +465,7 @@ function Dashboard() {
                         </div>
 
                         <div className="panel-header-icon">
-                            🏢
+                            <span>⌂</span>
                         </div>
 
                     </div>
@@ -465,6 +479,7 @@ function Dashboard() {
                         </div>
 
                         <div className="company-profile-main">
+
                             <strong>
                                 {company?.name || 'Minha empresa'}
                             </strong>
@@ -473,6 +488,7 @@ function Dashboard() {
                                 {company?.location ||
                                     'Localização não definida'}
                             </span>
+
                         </div>
 
                     </div>
@@ -480,17 +496,27 @@ function Dashboard() {
                     <div className="company-details">
 
                         <div className="detail-item">
-                            <span>Localização</span>
+
+                            <span>
+                                Localização
+                            </span>
+
                             <strong>
                                 {company?.location || '—'}
                             </strong>
+
                         </div>
 
                         <div className="detail-item">
-                            <span>Telefone</span>
+
+                            <span>
+                                Telefone
+                            </span>
+
                             <strong>
                                 {company?.phone || '—'}
                             </strong>
+
                         </div>
 
                     </div>
@@ -499,8 +525,13 @@ function Dashboard() {
                         className="premium-button secondary"
                         onClick={() => navigate('/empresa')}
                     >
-                        <span>Editar informações</span>
-                        <span>→</span>
+                        <span>
+                            Editar informações
+                        </span>
+
+                        <span>
+                            →
+                        </span>
                     </button>
 
                 </div>
@@ -524,7 +555,7 @@ function Dashboard() {
                         </div>
 
                         <div className="bot-panel-icon">
-                            🤖
+                            <span>✦</span>
                         </div>
 
                     </div>
@@ -590,7 +621,9 @@ function Dashboard() {
                             Configurar bot
                         </span>
 
-                        <span>→</span>
+                        <span>
+                            →
+                        </span>
                     </button>
 
                 </div>
@@ -608,10 +641,11 @@ function Dashboard() {
                     <div className="whatsapp-heading">
 
                         <div className="whatsapp-heading-icon">
-                            💬
+                            <span>◉</span>
                         </div>
 
                         <div>
+
                             <span className="panel-kicker">
                                 CONECTIVIDADE
                             </span>
@@ -623,6 +657,7 @@ function Dashboard() {
                             <p>
                                 Gerencie os números conectados ao seu bot.
                             </p>
+
                         </div>
 
                     </div>
@@ -642,7 +677,7 @@ function Dashboard() {
                     <div className="whatsapp-empty">
 
                         <div className="empty-icon">
-                            💬
+                            <span>◉</span>
                         </div>
 
                         <div className="empty-content">
@@ -710,7 +745,7 @@ function Dashboard() {
                                                 `whatsapp-status-icon ${statusClass}`
                                             }
                                         >
-                                            💬
+                                            <span>◉</span>
                                         </div>
 
                                         <div className="whatsapp-row-details">

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import './Login.css';
@@ -15,18 +14,13 @@ function Login() {
         setLoading(true);
         setError('');
 
-        const {
-            error
-        } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
             email,
             password
         });
 
         if (error) {
-            console.error(
-                'Erro de login:',
-                error
-            );
+            console.error('Erro de login:', error);
 
             setError(error.message);
             setLoading(false);
@@ -40,218 +34,477 @@ function Login() {
     return (
         <div className="login-page">
 
-            <div className="login-background-glow glow-one"></div>
-            <div className="login-background-glow glow-two"></div>
+            {/* =====================================================
+                BACKGROUND
+            ===================================================== */}
 
-            <div className="login-layout">
+            <div className="login-bg-glow glow-one"></div>
+            <div className="login-bg-glow glow-two"></div>
+            <div className="login-bg-grid"></div>
 
-                {/* LADO ESQUERDO */}
 
-                <div className="login-brand">
+            <div className="login-container">
 
-                    <div className="brand-badge">
-                        <span className="brand-dot"></span>
-                        WhatsApp Bot SaaS
-                    </div>
+                {/* =================================================
+                    LADO ESQUERDO — BRAND / APRESENTAÇÃO
+                ================================================= */}
 
-                    <h1>
-                        Automatize o seu negócio
-                        <span> pelo WhatsApp.</span>
-                    </h1>
+                <section className="login-showcase">
 
-                    <p className="brand-description">
-                        Atenda clientes, receba pedidos,
-                        apresente produtos e automatize
-                        conversas através de um único painel.
-                    </p>
+                    <div className="showcase-content">
 
-                    <div className="brand-features">
+                        {/* =================================================
+                            BRAND
+                        ================================================= */}
 
-                        <div className="feature-item">
-                            <div className="feature-icon">
-                                ✓
+                        <div className="brand">
+
+                            <div className="brand-logo">
+                                <img
+                                    src="/logo.png"
+                                    alt="WhatsBot"
+                                />
                             </div>
 
-                            <div>
-                                <strong>
-                                    Atendimento automático
-                                </strong>
+                            <div className="brand-name">
+                                <strong>WhatsBot</strong>
 
                                 <span>
-                                    Respostas rápidas para os seus clientes
+                                    Business Automation
                                 </span>
                             </div>
+
                         </div>
 
-                        <div className="feature-item">
-                            <div className="feature-icon">
-                                ✓
-                            </div>
 
-                            <div>
-                                <strong>
-                                    Gestão centralizada
-                                </strong>
+                        {/* =================================================
+                            BADGE
+                        ================================================= */}
 
-                                <span>
-                                    Produtos, pedidos e clientes num só lugar
-                                </span>
-                            </div>
+                        <div className="automation-badge">
+
+                            <span className="badge-dot"></span>
+
+                            AUTOMATIZAÇÃO INTELIGENTE
+
                         </div>
 
-                        <div className="feature-item">
-                            <div className="feature-icon">
-                                ✓
-                            </div>
 
-                            <div>
-                                <strong>
-                                    Feito para o seu negócio
-                                </strong>
+                        {/* =================================================
+                            TITLE
+                        ================================================= */}
 
-                                <span>
-                                    Configure o bot conforme a sua empresa
-                                </span>
-                            </div>
-                        </div>
+                        <h1>
+                            Seu WhatsApp.
+                            <span>
+                                {' '}Trabalhando por você.
+                            </span>
+                        </h1>
 
-                    </div>
 
-                </div>
-
-                {/* CARD DE LOGIN */}
-
-                <div className="login-card">
-
-                    <div className="login-header">
-
-                        <div className="login-icon">
-                            💬
-                        </div>
-
-                        <h2>
-                            Bem-vindo de volta
-                        </h2>
-
-                        <p>
-                            Entre no seu painel para continuar.
+                        <p className="showcase-description">
+                            Automatize o atendimento da sua empresa,
+                            responda clientes, receba pedidos e mantenha
+                            o seu negócio sempre conectado.
                         </p>
 
-                    </div>
 
-                    <form
-                        className="login-form"
-                        onSubmit={handleLogin}
-                    >
+                        {/* =================================================
+                            FEATURES
+                        ================================================= */}
 
-                        <div className="form-group">
+                        <div className="showcase-features">
 
-                            <label>
-                                Email
-                            </label>
+                            <div className="showcase-feature">
 
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) =>
-                                    setEmail(e.target.value)
-                                }
-                                placeholder="seu@email.com"
-                                required
-                            />
+                                <div className="feature-check">
+                                    ✓
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        Atendimento automático
+                                    </strong>
+
+                                    <span>
+                                        Responda seus clientes 24 horas por dia.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div className="showcase-feature">
+
+                                <div className="feature-check">
+                                    ✓
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        Pedidos pelo WhatsApp
+                                    </strong>
+
+                                    <span>
+                                        Transforme conversas em pedidos.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div className="showcase-feature">
+
+                                <div className="feature-check">
+                                    ✓
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        Gestão simplificada
+                                    </strong>
+
+                                    <span>
+                                        Clientes, produtos e pedidos num só lugar.
+                                    </span>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
-                        <div className="form-group">
 
-                            <div className="password-label">
+                        {/* =================================================
+                            VISUAL DECORATIVO
+                        ================================================= */}
 
-                                <label>
-                                    Palavra-passe
+                        <div className="showcase-visual">
+
+                            <div className="visual-orbit orbit-one"></div>
+                            <div className="visual-orbit orbit-two"></div>
+
+                            <div className="visual-core">
+
+                                <div className="core-dot"></div>
+
+                                <div className="core-line line-one"></div>
+                                <div className="core-line line-two"></div>
+                                <div className="core-line line-three"></div>
+
+                            </div>
+
+
+                            <div className="visual-card card-one">
+
+                                <div className="mini-card-icon">
+                                    ✓
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Mensagem recebida
+                                    </strong>
+
+                                    <span>
+                                        Atendimento automático
+                                    </span>
+                                </div>
+
+                            </div>
+
+
+                            <div className="visual-card card-two">
+
+                                <div className="mini-card-icon">
+                                    ⚡
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Automação ativa
+                                    </strong>
+
+                                    <span>
+                                        Sistema funcionando
+                                    </span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                {/* =================================================
+                    LADO DIREITO — LOGIN
+                ================================================= */}
+
+                <section className="login-panel">
+
+                    <div className="login-card">
+
+                        {/* CARD TOP GLOW */}
+
+                        <div className="card-top-glow"></div>
+
+
+                        {/* =================================================
+                            HEADER
+                        ================================================= */}
+
+                        <div className="login-header">
+
+                            <div className="login-icon">
+
+                                <div className="login-bot-face">
+
+                                    <span></span>
+                                    <span></span>
+
+                                </div>
+
+                                <div className="login-antenna"></div>
+
+                            </div>
+
+
+                            <div className="system-status">
+
+                                <span></span>
+
+                                Sistema online
+
+                            </div>
+
+
+                            <h2>
+                                Bem-vindo de volta
+                            </h2>
+
+
+                            <p>
+                                Entre no seu painel de gestão.
+                            </p>
+
+                        </div>
+
+
+                        {/* =================================================
+                            FORM
+                        ================================================= */}
+
+                        <form
+                            className="login-form"
+                            onSubmit={handleLogin}
+                        >
+
+                            {/* EMAIL */}
+
+                            <div className="form-group">
+
+                                <label htmlFor="email">
+                                    Email
                                 </label>
 
-                                <button
-                                    type="button"
-                                    className="forgot-password"
-                                    onClick={() => {
-                                        alert(
-                                            'A recuperação de palavra-passe será adicionada em breve.'
-                                        );
-                                    }}
-                                >
-                                    Esqueceu?
-                                </button>
+                                <div className="input-wrapper">
+
+                                    <span className="input-icon">
+                                        @
+                                    </span>
+
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) =>
+                                            setEmail(e.target.value)
+                                        }
+                                        placeholder="seu@email.com"
+                                        autoComplete="email"
+                                        required
+                                    />
+
+                                </div>
 
                             </div>
 
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) =>
-                                    setPassword(
-                                        e.target.value
-                                    )
-                                }
-                                placeholder="••••••••"
-                                required
-                            />
+
+                            {/* PASSWORD */}
+
+                            <div className="form-group">
+
+                                <div className="password-label">
+
+                                    <label htmlFor="password">
+                                        Palavra-passe
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        className="forgot-password"
+                                        onClick={() => {
+                                            alert(
+                                                'A recuperação de palavra-passe será adicionada em breve.'
+                                            );
+                                        }}
+                                    >
+                                        Esqueceu?
+                                    </button>
+
+                                </div>
+
+
+                                <div className="input-wrapper">
+
+                                    <span className="input-icon password-symbol">
+                                        •
+                                    </span>
+
+                                    <input
+                                        id="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        placeholder="••••••••"
+                                        autoComplete="current-password"
+                                        required
+                                    />
+
+                                </div>
+
+                            </div>
+
+
+                            {/* ERROR */}
+
+                            {error && (
+
+                                <div className="login-message error">
+
+                                    <span className="error-icon">
+                                        !
+                                    </span>
+
+                                    <span>
+                                        {error}
+                                    </span>
+
+                                </div>
+
+                            )}
+
+
+                            {/* BUTTON */}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="login-button"
+                            >
+
+                                {loading ? (
+
+                                    <>
+                                        <span className="button-spinner"></span>
+
+                                        Entrando...
+                                    </>
+
+                                ) : (
+
+                                    <>
+                                        Entrar no painel
+
+                                        <span className="button-arrow">
+                                            →
+                                        </span>
+                                    </>
+
+                                )}
+
+                            </button>
+
+                        </form>
+
+
+                        {/* =================================================
+                            DIVIDER
+                        ================================================= */}
+
+                        <div className="login-divider">
+                            <span>ou</span>
+                        </div>
+
+
+                        {/* =================================================
+                            REGISTER
+                        ================================================= */}
+
+                        <div className="login-footer">
+
+                            <span>
+                                Ainda não tem uma conta?
+                            </span>
+
+                            <a href="/register">
+                                Criar conta
+                            </a>
 
                         </div>
 
-                        {error && (
-                            <div className="login-message error">
-                                {error}
-                            </div>
-                        )}
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="login-button"
-                        >
-                            {loading ? (
-                                <>
-                                    <span className="button-spinner"></span>
-                                    Entrando...
-                                </>
-                            ) : (
-                                <>
-                                    Entrar
-                                    <span className="button-arrow">
-                                        →
-                                    </span>
-                                </>
-                            )}
-                        </button>
+                        {/* =================================================
+                            SECURITY
+                        ================================================= */}
 
-                    </form>
+                        <div className="login-security">
 
-                    <div className="login-divider">
-                        <span>ou</span>
-                    </div>
+                            <span className="security-icon">
+                                🔒
+                            </span>
 
-                    <div className="login-footer">
+                            <span>
+                                Ambiente seguro e protegido
+                            </span>
 
-                        <span>
-                            Ainda não tem uma conta?
-                        </span>
-
-                        <a href="/register">
-                            Criar conta
-                        </a>
+                        </div>
 
                     </div>
 
-                    <div className="login-security">
-                        🔒 Os seus dados estão protegidos
-                    </div>
-
-                </div>
+                </section>
 
             </div>
 
+
+            {/* =====================================================
+                COPYRIGHT
+            ===================================================== */}
+
             <div className="login-copyright">
-                © 2026 WhatsApp Bot SaaS. Todos os direitos reservados.
+
+                <span>
+                    © 2026 WhatsBot
+                </span>
+
+                <span className="copyright-separator">
+                    •
+                </span>
+
+                <span>
+                    Automação para negócios através do WhatsApp
+                </span>
+
             </div>
 
         </div>

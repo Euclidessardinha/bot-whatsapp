@@ -1,11 +1,63 @@
 /* =========================================================
-   PEDIDOS — PREMIUM / DASHBOARD
+   PEDIDOS — PREMIUM DARK / WHATSAPP
 ========================================================= */
 
 .pedidos-page {
     width: 100%;
-    padding: 34px;
-    color: #111827;
+    min-width: 0;
+    padding: 24px 28px;
+    box-sizing: border-box;
+
+    color: #edf3ef;
+
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(37, 211, 102, 0.045),
+            transparent 28%
+        );
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.pedidos-loading {
+    min-height: 420px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 15px;
+
+    color: #7f8c85;
+}
+
+.pedidos-loading p {
+    margin: 0;
+
+    font-size: 13px;
+}
+
+.loading-spinner {
+    width: 38px;
+    height: 38px;
+
+    border: 3px solid rgba(37, 211, 102, 0.14);
+    border-top-color: #25d366;
+
+    border-radius: 50%;
+
+    animation: pedidos-spin 0.8s linear infinite;
+}
+
+@keyframes pedidos-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 
@@ -22,26 +74,30 @@
 
     gap: 24px;
 
-    margin-bottom: 28px;
-    padding: 28px 30px;
+    margin-bottom: 20px;
+    padding: 23px 26px;
 
     background:
+        radial-gradient(
+            circle at 88% 0%,
+            rgba(37, 211, 102, 0.075),
+            transparent 34%
+        ),
         linear-gradient(
             135deg,
-            #ffffff 0%,
-            #f8fafc 100%
+            #121815 0%,
+            #0f1411 100%
         );
 
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 16px;
 
     box-shadow:
-        0 8px 30px rgba(15, 23, 42, 0.055);
+        0 12px 35px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
 
     overflow: hidden;
 }
-
-/* detalhe decorativo */
 
 .pedidos-header::after {
     content: '';
@@ -51,12 +107,14 @@
     width: 190px;
     height: 190px;
 
-    right: -70px;
-    top: -100px;
+    right: -75px;
+    top: -110px;
 
     border-radius: 50%;
 
-    background: rgba(17, 24, 39, 0.035);
+    background: rgba(37, 211, 102, 0.045);
+
+    filter: blur(2px);
 
     pointer-events: none;
 }
@@ -67,24 +125,24 @@
 }
 
 .pedidos-header h1 {
-    margin: 0 0 8px;
+    margin: 0 0 7px;
 
-    font-size: 32px;
+    color: #f3f7f4;
+
+    font-size: 28px;
     line-height: 1.15;
 
-    font-weight: 800;
+    font-weight: 750;
 
-    letter-spacing: -0.8px;
-
-    color: #111827;
+    letter-spacing: -0.6px;
 }
 
 .pedidos-header p {
     margin: 0;
 
-    color: #6b7280;
+    color: #818d87;
 
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
 }
 
@@ -104,44 +162,68 @@
     gap: 8px;
 
     min-width: 132px;
+    min-height: 40px;
 
-    border: none;
+    padding: 10px 17px;
 
-    background: #111827;
-    color: #ffffff;
+    border: 1px solid rgba(37, 211, 102, 0.35);
+    border-radius: 9px;
 
-    padding: 12px 19px;
+    background: rgba(37, 211, 102, 0.10);
 
-    border-radius: 11px;
+    color: #25d366;
 
     cursor: pointer;
 
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
 
     box-shadow:
-        0 6px 16px rgba(17, 24, 39, 0.16);
+        0 5px 18px rgba(37, 211, 102, 0.06);
 
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
-        background 0.2s ease;
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 }
 
 .refresh-button:hover {
-    background: #1f2937;
+    background: #25d366;
 
-    transform: translateY(-2px);
+    color: #061109;
+
+    border-color: #25d366;
+
+    transform: translateY(-1px);
 
     box-shadow:
-        0 10px 22px rgba(17, 24, 39, 0.22);
+        0 9px 24px rgba(37, 211, 102, 0.18);
 }
 
 .refresh-button:active {
     transform: translateY(0);
+}
 
-    box-shadow:
-        0 4px 10px rgba(17, 24, 39, 0.14);
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.pedidos-error {
+    margin-bottom: 18px;
+
+    padding: 12px 15px;
+
+    background: rgba(127, 29, 29, 0.18);
+
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    border-radius: 9px;
+
+    color: #fca5a5;
+
+    font-size: 13px;
 }
 
 
@@ -155,9 +237,9 @@
     grid-template-columns:
         repeat(4, minmax(0, 1fr));
 
-    gap: 18px;
+    gap: 13px;
 
-    margin-bottom: 28px;
+    margin-bottom: 20px;
 }
 
 
@@ -171,31 +253,37 @@
     display: flex;
     align-items: center;
 
-    gap: 17px;
+    gap: 14px;
 
-    min-height: 112px;
+    min-height: 90px;
 
-    padding: 21px;
+    padding: 17px 18px;
 
-    background: #ffffff;
+    box-sizing: border-box;
 
-    border: 1px solid #e4e7ec;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.045),
+            rgba(255, 255, 255, 0.017)
+        );
 
-    border-radius: 17px;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: 12px;
 
     box-shadow:
-        0 5px 18px rgba(15, 23, 42, 0.045);
+        0 8px 24px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
 
     overflow: hidden;
 
     transition:
-        transform 0.22s ease,
-        box-shadow 0.22s ease,
-        border-color 0.22s ease;
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
-
-
-/* linha decorativa */
 
 .pedido-stat-card::before {
     content: '';
@@ -203,20 +291,17 @@
     position: absolute;
 
     left: 0;
-    top: 18px;
-    bottom: 18px;
+    top: 16px;
+    bottom: 16px;
 
-    width: 3px;
+    width: 2px;
 
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 3px 3px 0;
 
-    background: #111827;
+    background: #25d366;
 
-    opacity: 0.9;
+    opacity: 0.85;
 }
-
-
-/* brilho decorativo */
 
 .pedido-stat-card::after {
     content: '';
@@ -231,18 +316,25 @@
 
     border-radius: 50%;
 
-    background: rgba(17, 24, 39, 0.035);
+    background: rgba(37, 211, 102, 0.045);
 
     pointer-events: none;
 }
 
 .pedido-stat-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
 
-    border-color: #d8dce2;
+    border-color: rgba(37, 211, 102, 0.18);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.055),
+            rgba(37, 211, 102, 0.025)
+        );
 
     box-shadow:
-        0 14px 30px rgba(15, 23, 42, 0.09);
+        0 13px 30px rgba(0, 0, 0, 0.18);
 }
 
 
@@ -254,8 +346,8 @@
     position: relative;
     z-index: 1;
 
-    width: 55px;
-    height: 55px;
+    width: 48px;
+    height: 48px;
 
     flex-shrink: 0;
 
@@ -263,16 +355,16 @@
     align-items: center;
     justify-content: center;
 
-    border-radius: 15px;
+    border-radius: 12px;
 
-    background: #f3f4f6;
+    background: rgba(37, 211, 102, 0.09);
 
-    border: 1px solid #e5e7eb;
+    border: 1px solid rgba(37, 211, 102, 0.15);
 
-    font-size: 23px;
+    font-size: 20px;
 
     box-shadow:
-        0 4px 10px rgba(15, 23, 42, 0.05);
+        0 5px 14px rgba(0, 0, 0, 0.12);
 }
 
 
@@ -283,17 +375,19 @@
 .pedido-stat-card > div:last-child {
     position: relative;
     z-index: 1;
+
+    min-width: 0;
 }
 
 .pedido-stat-card span {
     display: block;
 
-    margin-bottom: 7px;
+    margin-bottom: 5px;
 
-    color: #6b7280;
+    color: #7f8b85;
 
-    font-size: 12px;
-    font-weight: 650;
+    font-size: 11px;
+    font-weight: 600;
 
     letter-spacing: 0.1px;
 }
@@ -301,14 +395,14 @@
 .pedido-stat-card strong {
     display: block;
 
-    color: #111827;
+    color: #edf3ef;
 
-    font-size: 29px;
+    font-size: 25px;
     line-height: 1;
 
-    font-weight: 800;
+    font-weight: 750;
 
-    letter-spacing: -0.8px;
+    letter-spacing: -0.5px;
 }
 
 
@@ -317,16 +411,25 @@
 ========================================================= */
 
 .pedidos-content {
-    background: #ffffff;
+    width: 100%;
+    max-width: 100%;
 
-    border: 1px solid #e5e7eb;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.035),
+            rgba(255, 255, 255, 0.015)
+        );
 
-    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: 13px;
 
     overflow: hidden;
 
     box-shadow:
-        0 5px 20px rgba(15, 23, 42, 0.035);
+        0 12px 32px rgba(0, 0, 0, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 
@@ -336,7 +439,12 @@
 
 .orders-table-wrapper {
     width: 100%;
+    max-width: 100%;
+
     overflow-x: auto;
+    overflow-y: hidden;
+
+    -webkit-overflow-scrolling: touch;
 }
 
 .orders-table {
@@ -347,34 +455,34 @@
 }
 
 .orders-table th {
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.025);
 
-    color: #687180;
+    color: #707d76;
 
-    padding: 15px 18px;
+    padding: 13px 17px;
 
     text-align: left;
 
-    border-bottom: 1px solid #e7e9ed;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
 
-    font-size: 11px;
-    font-weight: 750;
+    font-size: 10px;
+    font-weight: 700;
 
     text-transform: uppercase;
 
-    letter-spacing: 0.55px;
+    letter-spacing: 0.65px;
 
     white-space: nowrap;
 }
 
 .orders-table td {
-    padding: 17px 18px;
+    padding: 15px 17px;
 
-    border-bottom: 1px solid #f0f1f3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
 
-    color: #374151;
+    color: #aeb8b3;
 
-    font-size: 13px;
+    font-size: 12px;
 
     vertical-align: middle;
 }
@@ -385,7 +493,7 @@
 }
 
 .orders-table tbody tr:hover {
-    background: #fafbfc;
+    background: rgba(37, 211, 102, 0.025);
 }
 
 .orders-table tbody tr:last-child td {
@@ -393,28 +501,52 @@
 }
 
 
+/* ID DO PEDIDO */
+
+.orders-table td:first-child strong {
+    color: #dfe7e2;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    font-family: monospace;
+
+    letter-spacing: 0.2px;
+}
+
+
+/* TOTAL */
+
+.orders-table td:nth-child(4) strong {
+    color: #25d366;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
 /* =========================================================
-   CUSTOMER
+   CUSTOMER CELL
 ========================================================= */
 
 .customer-cell {
     display: flex;
     flex-direction: column;
 
-    gap: 4px;
+    gap: 3px;
 }
 
 .customer-cell strong {
-    color: #111827;
+    color: #e4ebe7;
 
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 650;
 }
 
 .customer-cell span {
-    color: #8a919d;
+    color: #6f7b75;
 
-    font-size: 12px;
+    font-size: 10px;
 }
 
 
@@ -425,13 +557,16 @@
 .order-status {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
 
-    padding: 6px 11px;
+    min-width: 78px;
+
+    padding: 5px 9px;
 
     border-radius: 999px;
 
-    font-size: 11px;
-    font-weight: 750;
+    font-size: 10px;
+    font-weight: 700;
 
     white-space: nowrap;
 
@@ -439,33 +574,33 @@
 }
 
 .status-pending {
-    background: #fff7ed;
-    color: #c2410c;
-    border-color: #fed7aa;
+    background: rgba(245, 158, 11, 0.10);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.20);
 }
 
 .status-confirmed {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-color: #bfdbfe;
+    background: rgba(59, 130, 246, 0.10);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.20);
 }
 
 .status-preparing {
-    background: #fefce8;
-    color: #a16207;
-    border-color: #fde68a;
+    background: rgba(168, 85, 247, 0.10);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.20);
 }
 
 .status-completed {
-    background: #f0fdf4;
-    color: #15803d;
-    border-color: #bbf7d0;
+    background: rgba(37, 211, 102, 0.10);
+    color: #25d366;
+    border-color: rgba(37, 211, 102, 0.20);
 }
 
 .status-cancelled {
-    background: #fef2f2;
-    color: #b91c1c;
-    border-color: #fecaca;
+    background: rgba(239, 68, 68, 0.10);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.20);
 }
 
 
@@ -476,20 +611,20 @@
 .view-order-button {
     min-width: 58px;
 
-    border: 1px solid #e1e4e8;
+    padding: 7px 11px;
 
-    background: #ffffff;
+    border: 1px solid rgba(37, 211, 102, 0.20);
 
-    color: #111827;
+    background: rgba(37, 211, 102, 0.055);
 
-    padding: 8px 13px;
+    color: #25d366;
 
-    border-radius: 9px;
+    border-radius: 7px;
 
     cursor: pointer;
 
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 650;
 
     transition:
         background 0.2s ease,
@@ -500,16 +635,16 @@
 }
 
 .view-order-button:hover {
-    background: #111827;
+    background: #25d366;
 
-    color: #ffffff;
+    color: #061109;
 
-    border-color: #111827;
+    border-color: #25d366;
 
     transform: translateY(-1px);
 
     box-shadow:
-        0 6px 14px rgba(17, 24, 39, 0.16);
+        0 6px 16px rgba(37, 211, 102, 0.15);
 }
 
 
@@ -518,48 +653,48 @@
 ========================================================= */
 
 .empty-orders {
-    padding: 90px 30px;
+    padding: 75px 30px;
 
     text-align: center;
 }
 
 .empty-icon {
-    width: 78px;
-    height: 78px;
+    width: 70px;
+    height: 70px;
 
-    margin: 0 auto 21px;
+    margin: 0 auto 18px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 22px;
+    border-radius: 18px;
 
-    background: #f4f5f7;
+    background: rgba(37, 211, 102, 0.075);
 
-    border: 1px solid #e5e7eb;
+    border: 1px solid rgba(37, 211, 102, 0.15);
 
-    font-size: 32px;
+    font-size: 29px;
 
     box-shadow:
-        0 8px 20px rgba(15, 23, 42, 0.05);
+        0 8px 25px rgba(37, 211, 102, 0.06);
 }
 
 .empty-orders h2 {
-    margin: 0 0 9px;
+    margin: 0 0 8px;
 
-    color: #111827;
+    color: #e8efeb;
 
-    font-size: 20px;
-    font-weight: 750;
+    font-size: 19px;
+    font-weight: 700;
 }
 
 .empty-orders p {
-    max-width: 450px;
+    max-width: 440px;
 
     margin: 0 auto;
 
-    color: #7b8491;
+    color: #77837c;
 
     font-size: 13px;
 
@@ -568,7 +703,7 @@
 
 
 /* =========================================================
-   MODAL
+   MODAL OVERLAY
 ========================================================= */
 
 .order-modal-overlay {
@@ -581,10 +716,10 @@
 
     padding: 24px;
 
-    background: rgba(15, 23, 42, 0.58);
+    background: rgba(0, 0, 0, 0.72);
 
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
 
     z-index: 1000;
 
@@ -601,7 +736,14 @@
     }
 }
 
+
+/* =========================================================
+   MODAL
+========================================================= */
+
 .order-modal {
+    position: relative;
+
     width: 100%;
     max-width: 620px;
 
@@ -609,28 +751,49 @@
 
     overflow-y: auto;
 
-    background: #ffffff;
+    background:
+        radial-gradient(
+            circle at 90% 0%,
+            rgba(37, 211, 102, 0.065),
+            transparent 32%
+        ),
+        #101512;
 
-    border-radius: 19px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 
-    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
 
     box-shadow:
-        0 30px 80px rgba(15, 23, 42, 0.28);
+        0 30px 80px rgba(0, 0, 0, 0.50),
+        0 0 0 1px rgba(37, 211, 102, 0.02);
 
-    animation: pedidos-modal 0.25s ease;
+    animation: pedidos-modal 0.23s ease;
 }
 
 @keyframes pedidos-modal {
     from {
         opacity: 0;
-        transform: translateY(14px) scale(0.98);
+        transform: translateY(12px) scale(0.985);
     }
 
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+.order-modal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.order-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.order-modal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.11);
+
+    border-radius: 10px;
 }
 
 
@@ -645,29 +808,29 @@
 
     gap: 20px;
 
-    padding: 24px;
+    padding: 21px 23px;
 
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.065);
 }
 
 .order-modal-header h2 {
-    margin: 0 0 6px;
+    margin: 0 0 5px;
 
-    color: #111827;
+    color: #eef4f0;
 
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 19px;
+    font-weight: 750;
 }
 
 .order-modal-header span {
-    color: #8a919d;
+    color: #707c76;
 
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .close-modal-button {
-    width: 37px;
-    height: 37px;
+    width: 34px;
+    height: 34px;
 
     display: flex;
     align-items: center;
@@ -675,72 +838,80 @@
 
     flex-shrink: 0;
 
-    border: 1px solid #e5e7eb;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 
-    background: #f8f9fa;
+    background: rgba(255, 255, 255, 0.035);
 
-    border-radius: 10px;
+    border-radius: 8px;
 
-    color: #4b5563;
+    color: #89958f;
 
-    font-size: 23px;
+    font-size: 21px;
+    line-height: 1;
 
     cursor: pointer;
 
     transition:
         background 0.2s ease,
         color 0.2s ease,
+        border-color 0.2s ease,
         transform 0.2s ease;
 }
 
 .close-modal-button:hover {
-    background: #111827;
+    background: rgba(239, 68, 68, 0.10);
 
-    color: #ffffff;
+    border-color: rgba(239, 68, 68, 0.22);
 
-    transform: rotate(4deg);
+    color: #f87171;
+
+    transform: rotate(3deg);
 }
 
 
 /* =========================================================
-   MODAL SECTIONS
+   CUSTOMER
 ========================================================= */
 
-.order-customer,
-.order-products,
-.order-status-section {
-    padding: 21px 24px;
+.order-customer {
+    padding: 18px 23px;
 
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 .order-customer h3,
 .order-products h3,
 .order-status-section h3 {
-    margin: 0 0 15px;
+    margin: 0 0 13px;
 
-    color: #111827;
+    color: #dce5df;
 
-    font-size: 14px;
-    font-weight: 750;
+    font-size: 13px;
+    font-weight: 650;
 }
 
 .order-customer p {
-    margin: 8px 0;
+    margin: 7px 0;
 
-    color: #596273;
+    color: #89958f;
 
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .order-customer p strong {
-    color: #111827;
+    color: #cbd5cf;
 }
 
 
 /* =========================================================
    PRODUCTS
 ========================================================= */
+
+.order-products {
+    padding: 18px 23px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
 
 .order-product-row {
     display: flex;
@@ -749,9 +920,9 @@
 
     gap: 20px;
 
-    padding: 13px 0;
+    padding: 12px 0;
 
-    border-bottom: 1px solid #f0f1f3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
 }
 
 .order-product-row:last-child {
@@ -767,20 +938,27 @@
     min-width: 0;
 }
 
-.order-product-row strong {
-    color: #111827;
-
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.order-product-row span {
-    color: #858d99;
+.order-product-row > div strong {
+    color: #e0e8e3;
 
     font-size: 12px;
+    font-weight: 650;
 }
 
-.order-product-row > strong:last-child {
+.order-product-row > div span {
+    color: #707c76;
+
+    font-size: 10px;
+}
+
+.order-product-row > strong {
+    flex-shrink: 0;
+
+    color: #25d366;
+
+    font-size: 12px;
+    font-weight: 700;
+
     white-space: nowrap;
 }
 
@@ -794,83 +972,93 @@
     align-items: center;
     justify-content: space-between;
 
-    padding: 21px 24px;
+    padding: 18px 23px;
 
-    background: #f8fafc;
+    background: rgba(37, 211, 102, 0.035);
 
-    border-bottom: 1px solid #edf0f3;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
 }
 
 .order-total span {
-    color: #6b7280;
+    color: #89958f;
 
-    font-size: 13px;
-    font-weight: 650;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .order-total strong {
-    color: #111827;
+    color: #25d366;
 
-    font-size: 23px;
-    font-weight: 800;
+    font-size: 21px;
+    font-weight: 750;
 
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
 }
 
 
 /* =========================================================
-   STATUS SELECT
+   STATUS SECTION
 ========================================================= */
 
 .order-status-section {
-    border-bottom: none;
+    padding: 18px 23px 22px;
 }
 
 .order-status-section select {
     width: 100%;
 
-    padding: 12px 14px;
+    min-height: 42px;
 
-    border: 1px solid #dfe3e8;
+    padding: 0 12px;
 
-    border-radius: 10px;
+    box-sizing: border-box;
 
-    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.09);
 
-    color: #111827;
-
-    font-size: 13px;
-    font-weight: 550;
+    border-radius: 8px;
 
     outline: none;
+
+    background-color: #151c18;
+
+    color: #dce5df;
+
+    font-size: 12px;
+    font-weight: 550;
 
     cursor: pointer;
 
     transition:
         border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
 .order-status-section select:hover {
-    border-color: #c7ccd4;
+    border-color: rgba(37, 211, 102, 0.25);
 }
 
 .order-status-section select:focus {
-    border-color: #111827;
+    border-color: rgba(37, 211, 102, 0.50);
 
     box-shadow:
-        0 0 0 3px rgba(17, 24, 39, 0.08);
+        0 0 0 3px rgba(37, 211, 102, 0.08);
 }
 
 .order-status-section select:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
 
     cursor: not-allowed;
 }
 
+.order-status-section option {
+    background: #151c18;
+    color: #dce5df;
+}
+
 
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE — TABLET
 ========================================================= */
 
 @media (max-width: 1100px) {
@@ -883,285 +1071,38 @@
 }
 
 
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
 @media (max-width: 760px) {
 
     .pedidos-page {
-        padding: 22px;
+        padding: 18px;
     }
 
     .pedidos-header {
         align-items: flex-start;
         flex-direction: column;
 
-        padding: 24px;
-    }
-
-    .pedidos-header h1 {
-        font-size: 28px;
-    }
-
-    .refresh-button {
-        width: 100%;
-    }
-
-}
-
-
-@media (max-width: 560px) {
-
-    .pedidos-page {
-        padding: 16px;
-    }
-
-    .pedidos-header {
-        padding: 22px;
-
-        border-radius: 16px;
-    }
-
-    .pedidos-header h1 {
-        font-size: 25px;
-    }
-
-    .pedidos-stats {
-        grid-template-columns: 1fr;
-
-        gap: 12px;
-    }
-
-    .pedido-stat-card {
-        min-height: 100px;
-
-        padding: 18px;
-    }
-
-    .pedido-stat-card strong {
-        font-size: 27px;
-    }
-
-    .pedidos-content {
-        border-radius: 15px;
-    }
-
-    .empty-orders {
-        padding: 65px 22px;
-    }
-
-    .order-modal-overlay {
-        align-items: flex-end;
-
-        padding: 10px;
-    }
-
-    .order-modal {
-        max-height: 94vh;
-
-        border-radius: 18px 18px 12px 12px;
-    }
-
-}
-
-
-@media (max-width: 380px) {
-
-    .pedidos-page {
-        padding: 13px;
-    }
-
-    .pedidos-header {
-        padding: 19px;
-    }
-
-    .pedidos-header h1 {
-        font-size: 23px;
-    }
-
-    .pedido-stat-card {
-        padding: 15px;
-    }
-
-}
-
-/* =========================================================
-   RESPONSIVIDADE FINAL
-========================================================= */
-
-/*
-   A página deve ocupar o espaço disponível do Layout
-   sem criar altura extra desnecessária.
-*/
-
-.pedidos-page {
-    box-sizing: border-box;
-    min-width: 0;
-}
-
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
-@media (min-width: 1101px) {
-
-    .pedidos-page {
-        padding: 24px 28px;
-    }
-
-    .pedidos-header {
-        padding: 22px 26px;
-        margin-bottom: 20px;
-    }
-
-    .pedidos-header h1 {
-        font-size: 28px;
-    }
-
-    .pedidos-stats {
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .pedido-stat-card {
-        min-height: 92px;
-        padding: 17px 19px;
-    }
-
-    .pedido-stat-icon {
-        width: 48px;
-        height: 48px;
-    }
-
-    .pedido-stat-card strong {
-        font-size: 25px;
-    }
-
-}
-
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 1100px) {
-
-    .pedidos-page {
-        padding: 22px;
-    }
-
-    .pedidos-header {
-        padding: 22px 24px;
-        margin-bottom: 20px;
-    }
-
-    .pedidos-stats {
-        gap: 13px;
-        margin-bottom: 20px;
-    }
-
-    .pedido-stat-card {
-        min-height: 88px;
-        padding: 16px;
-    }
-
-}
-
-
-/* =========================================================
-   MOBILE / TABLET PEQUENO
-========================================================= */
-
-@media (max-width: 760px) {
-
-    .pedidos-page {
-        width: 100%;
-        max-width: 100%;
-        padding: 16px;
-        overflow-x: hidden;
-    }
-
-    .pedidos-header {
-        width: 100%;
-        box-sizing: border-box;
-
         padding: 20px;
-
-        margin-bottom: 16px;
-
-        border-radius: 15px;
 
         gap: 16px;
     }
 
     .pedidos-header h1 {
         font-size: 25px;
-        letter-spacing: -0.5px;
-    }
-
-    .pedidos-header p {
-        font-size: 13px;
     }
 
     .refresh-button {
         width: 100%;
-        min-height: 42px;
-    }
-
-    .pedidos-stats {
-        width: 100%;
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-
-        gap: 10px;
-
-        margin-bottom: 16px;
-    }
-
-    .pedido-stat-card {
-        min-height: 82px;
-
-        padding: 14px;
-
-        gap: 11px;
-
-        border-radius: 13px;
-    }
-
-    .pedido-stat-card::before {
-        top: 14px;
-        bottom: 14px;
-    }
-
-    .pedido-stat-icon {
-        width: 42px;
-        height: 42px;
-
-        border-radius: 11px;
-
-        font-size: 19px;
-    }
-
-    .pedido-stat-card span {
-        margin-bottom: 4px;
-        font-size: 11px;
-    }
-
-    .pedido-stat-card strong {
-        font-size: 23px;
-    }
-
-    .pedidos-content {
-        width: 100%;
-        max-width: 100%;
-
-        border-radius: 13px;
     }
 
 }
 
 
 /* =========================================================
-   SMARTPHONE
+   MOBILE PEQUENO
 ========================================================= */
 
 @media (max-width: 560px) {
@@ -1173,9 +1114,7 @@
     .pedidos-header {
         padding: 18px;
 
-        margin-bottom: 14px;
-
-        border-radius: 14px;
+        border-radius: 13px;
     }
 
     .pedidos-header h1 {
@@ -1186,48 +1125,38 @@
         font-size: 12px;
     }
 
-    .refresh-button {
-        min-height: 40px;
-
-        padding: 10px 14px;
-
-        font-size: 12px;
-    }
-
     .pedidos-stats {
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
         gap: 9px;
-
-        margin-bottom: 14px;
     }
 
     .pedido-stat-card {
-        min-height: 76px;
+        min-height: 78px;
 
         padding: 12px;
 
         gap: 9px;
 
-        border-radius: 12px;
+        border-radius: 11px;
     }
 
     .pedido-stat-icon {
-        width: 37px;
-        height: 37px;
+        width: 38px;
+        height: 38px;
 
         border-radius: 9px;
 
         font-size: 17px;
     }
 
-    .pedido-stat-card strong {
-        font-size: 21px;
-    }
-
     .pedido-stat-card span {
         font-size: 10px;
+    }
+
+    .pedido-stat-card strong {
+        font-size: 21px;
     }
 
     .orders-table {
@@ -1243,11 +1172,36 @@
         padding: 55px 18px;
     }
 
+    .order-modal-overlay {
+        padding: 8px;
+
+        align-items: center;
+    }
+
+    .order-modal {
+        max-height: calc(100vh - 16px);
+
+        border-radius: 14px;
+    }
+
+    .order-modal-header,
+    .order-customer,
+    .order-products,
+    .order-status-section {
+        padding-left: 17px;
+        padding-right: 17px;
+    }
+
+    .order-total {
+        padding-left: 17px;
+        padding-right: 17px;
+    }
+
 }
 
 
 /* =========================================================
-   SMARTPHONE MUITO PEQUENO
+   MOBILE MUITO PEQUENO
 ========================================================= */
 
 @media (max-width: 400px) {
@@ -1270,6 +1224,7 @@
 
     .pedido-stat-card {
         min-height: 70px;
+
         padding: 10px;
     }
 
@@ -1288,68 +1243,7 @@
 
 
 /* =========================================================
-   EVITAR OVERFLOW HORIZONTAL
-========================================================= */
-
-.pedidos-page,
-.pedidos-content,
-.pedidos-header,
-.pedidos-stats {
-    max-width: 100%;
-}
-
-
-/* =========================================================
-   TABELA — APENAS ELA PODE ROLAR HORIZONTALMENTE
-========================================================= */
-
-.orders-table-wrapper {
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-
-    -webkit-overflow-scrolling: touch;
-}
-
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-@media (max-width: 560px) {
-
-    .order-modal-overlay {
-        padding: 8px;
-
-        align-items: center;
-    }
-
-    .order-modal {
-        width: 100%;
-
-        max-width: 100%;
-
-        max-height: calc(100vh - 16px);
-
-        border-radius: 15px;
-    }
-
-    .order-modal-header,
-    .order-customer,
-    .order-products,
-    .order-status-section {
-        padding: 16px;
-    }
-
-    .order-total {
-        padding: 16px;
-    }
-
-}
-
-
-/* =========================================================
-   ALTURA PEQUENA — NOTEBOOKS
+   NOTEBOOK — ALTURA REDUZIDA
 ========================================================= */
 
 @media (max-height: 700px) and (min-width: 761px) {
@@ -1372,6 +1266,7 @@
 
     .pedido-stat-card {
         min-height: 78px;
+
         padding-top: 13px;
         padding-bottom: 13px;
     }

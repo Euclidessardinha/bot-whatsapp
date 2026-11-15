@@ -116,8 +116,11 @@ function Layout() {
                 <div className="sidebar-logo">
 
                     <div className="brand-mark">
-                        <span>🤖</span>
-                    </div>
+    <img
+        src="/logo.png"
+        alt="LojaBot"
+    />
+</div>
 
                     <div className="logo-text">
                         <h2>LojaBot</h2>
