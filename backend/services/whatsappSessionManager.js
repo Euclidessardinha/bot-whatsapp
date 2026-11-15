@@ -967,40 +967,106 @@ async function startSession(
     // =================================================
 
     client.on(
-        'disconnected',
-        async (reason) => {
+    'disconnected',
+    async (reason) => {
 
-            console.log(
-                `⚠️ Sessão desconectada (${sessionName}):`,
-                reason
-            );
-
-
-            session.company =
-                null;
-
-            session.qr =
-                null;
-
-            session.qrImage =
-                null;
-
-            session.lastDisconnectReason =
-                reason;
-
-            session.pairingCode =
-                null;
-
-            session.pairingCodeGeneratedAt =
-                null;
+        console.log(
+            `⚠️ Sessão desconectada (${sessionName}):`,
+            reason
+        );
 
 
-            await updateSessionStatus(
-                session,
-                'disconnected'
-            );
-        }
-    );
+        session.company =
+            null;
+
+        session.qr =
+            null;
+
+        session.qrImage =
+            null;
+
+        session.lastDisconnectReason =
+            reason;
+
+        session.pairingCode =
+            null;
+
+        session.pairingCodeGeneratedAt =
+            null;
+
+
+        await updateSessionStatus(
+            session,
+            'disconnected'
+        );
+
+
+        // =================================================
+        // RECONEXÃO AUTOMÁTICA
+        // =================================================
+
+        console.log(
+            `🔄 Reconexão automática agendada para ${sessionName}...`
+        );
+
+
+        setTimeout(
+            async () => {
+
+                try {
+
+                    const currentSession =
+                        sessions.get(sessionName);
+
+
+                    /*
+                     * Se outra sessão já estiver ativa,
+                     * não iniciar outra.
+                     */
+
+                    if (
+                        currentSession &&
+                        currentSession.status !== 'disconnected' &&
+                        currentSession.status !== 'auth_failure'
+                    ) {
+
+                        console.log(
+                            `ℹ️ Sessão ${sessionName} já está ativa. Reconexão cancelada.`
+                        );
+
+                        return;
+                    }
+
+
+                    console.log(
+                        `🔄 Tentando reconectar ${sessionName}...`
+                    );
+
+
+                    await startSession(
+                        sessionName,
+                        onMessage
+                    );
+
+
+                    console.log(
+                        `✅ Reconexão iniciada para ${sessionName}.`
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        `❌ Falha na reconexão automática de ${sessionName}:`,
+                        error.message
+                    );
+
+                }
+
+            },
+            5000
+        );
+    }
+);
 
 
     // =================================================
