@@ -612,6 +612,54 @@ async function startSession(
 
     session.client = client;
 
+    session.client = client;
+
+
+// =================================================
+// DIAGNÓSTICO DA SESSÃO
+// =================================================
+
+const logSessionDiagnostics = (eventName) => {
+
+    const memory = process.memoryUsage();
+
+    console.log(
+        `🧪 WHATSAPP DIAGNÓSTICO | ${sessionName} | EVENTO: ${eventName}`
+    );
+
+    console.log(
+        `   PID: ${process.pid}`
+    );
+
+    console.log(
+        `   RSS Node: ${(memory.rss / 1024 / 1024).toFixed(1)} MB`
+    );
+
+    console.log(
+        `   Heap usado: ${(memory.heapUsed / 1024 / 1024).toFixed(1)} MB`
+    );
+
+    console.log(
+        `   Heap total: ${(memory.heapTotal / 1024 / 1024).toFixed(1)} MB`
+    );
+
+    console.log(
+        `   External: ${(memory.external / 1024 / 1024).toFixed(1)} MB`
+    );
+
+    console.log(
+        `   Session status: ${session.status}`
+    );
+
+    console.log(
+        `   Auth failure: ${session.authFailure || 'nenhuma'}`
+    );
+
+    console.log(
+        `   Last disconnect: ${session.lastDisconnectReason || 'nenhum'}`
+    );
+};
+
 
     // =================================================
     // QR CODE
@@ -680,6 +728,8 @@ async function startSession(
                 `📱 Código de associação gerado para ${sessionName}: ${code}`
             );
 
+            logSessionDiagnostics('code');
+
 
             session.pairingCode =
                 code;
@@ -707,6 +757,8 @@ async function startSession(
             console.log(
                 `🔐 Sessão autenticada: ${sessionName}`
             );
+
+            logSessionDiagnostics('authenticated');
 
 
             session.qr = null;
@@ -737,6 +789,8 @@ async function startSession(
                 message
             );
 
+            logSessionDiagnostics('auth_failure');
+
 
             session.authFailure =
                 message;
@@ -765,6 +819,8 @@ async function startSession(
             console.log(
                 `🤖 WhatsApp conectado: ${sessionName}`
             );
+
+            logSessionDiagnostics('ready');
 
 
             // =========================================
@@ -974,6 +1030,10 @@ async function startSession(
             `⚠️ Sessão desconectada (${sessionName}):`,
             reason
         );
+
+        logSessionDiagnostics(
+    `disconnected | reason=${reason}`
+);
 
 
         session.company =
