@@ -23,6 +23,7 @@ import Requests from './pages/Requests';
 import Servicos from './pages/Servicos';
 import Onboarding from './pages/Onboarding';
 import Download from './pages/Download';
+import Admin from './pages/Admin';
 
 
 function App() {
@@ -420,6 +421,11 @@ function App() {
                         path="/whatsapp"
                         element={<WhatsApp />}
                     />
+
+                    <Route
+    path="/admin"
+    element={<Admin />}
+/>
 
                 </Route>
 
