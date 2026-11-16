@@ -101,64 +101,73 @@ function Admin() {
     }
 
     function getBotStatus(company) {
-        const bot = company.bot_settings?.[0];
+    const botSettings = Array.isArray(company.bot_settings)
+        ? company.bot_settings
+        : company.bot_settings
+            ? [company.bot_settings]
+            : [];
 
-        if (!bot) {
-            return {
-                label: 'Não configurado',
-                className: 'neutral'
-            };
-        }
+    const bot = botSettings[0];
 
-        return bot.bot_enabled
-            ? {
-                  label: 'Ativo',
-                  className: 'active'
-              }
-            : {
-                  label: 'Desativado',
-                  className: 'disabled'
-              };
-    }
-
-    function getWhatsAppStatus(company) {
-        const sessions = company.whatsapp_sessions || [];
-
-        if (sessions.length === 0) {
-            return {
-                label: 'Sem sessão',
-                className: 'neutral'
-            };
-        }
-
-        const connected = sessions.find(
-            session => session.status === 'connected'
-        );
-
-        if (connected) {
-            return {
-                label: 'Conectado',
-                className: 'connected'
-            };
-        }
-
-        const qr = sessions.find(
-            session => session.status === 'qr'
-        );
-
-        if (qr) {
-            return {
-                label: 'Aguardando QR',
-                className: 'qr'
-            };
-        }
-
+    if (!bot) {
         return {
-            label: 'Desconectado',
-            className: 'disconnected'
+            label: 'Não configurado',
+            className: 'neutral'
         };
     }
 
+    return bot.bot_enabled
+        ? {
+              label: 'Ativo',
+              className: 'active'
+          }
+        : {
+              label: 'Desativado',
+              className: 'disabled'
+          };
+}
+
+function getWhatsAppStatus(company) {
+    const sessions = Array.isArray(company.whatsapp_sessions)
+        ? company.whatsapp_sessions
+        : company.whatsapp_sessions
+            ? [company.whatsapp_sessions]
+            : [];
+
+    if (sessions.length === 0) {
+        return {
+            label: 'Sem sessão',
+            className: 'neutral'
+        };
+    }
+
+    const connected = sessions.find(
+        session => session.status === 'connected'
+    );
+
+    if (connected) {
+        return {
+            label: 'Conectado',
+            className: 'connected'
+        };
+    }
+
+    const qr = sessions.find(
+        session => session.status === 'qr'
+    );
+
+    if (qr) {
+        return {
+            label: 'Aguardando QR',
+            className: 'qr'
+        };
+    }
+
+    return {
+        label: 'Desconectado',
+        className: 'disconnected'
+    };
+}
     function formatBusinessType(type) {
         const types = {
             restaurant: 'Restaurante',
