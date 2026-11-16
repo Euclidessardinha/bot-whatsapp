@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import './Layout.css';
@@ -7,8 +7,38 @@ import './Layout.css';
 function Layout() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+    async function loadUserRole() {
+        const {
+            data: { user }
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+            setIsAdmin(false);
+            return;
+        }
+
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (error) {
+            console.error('Erro ao verificar role:', error);
+            setIsAdmin(false);
+            return;
+        }
+
+        setIsAdmin(profile?.role === 'admin');
+    }
+
+    loadUserRole();
+}, []);
 
     const menuItems = [
     {
@@ -62,6 +92,14 @@ function Layout() {
         label: 'Administrador'
     }
 ];
+
+    if (isAdmin) {
+    menuItems.push({
+        path: '/admin',
+        icon: '⚙️',
+        label: 'Administrador'
+    });
+}
 
     const closeMenu = () => {
         setMenuOpen(false);
