@@ -11,52 +11,57 @@ function Layout() {
     const navigate = useNavigate();
 
     const menuItems = [
-        {
-            path: '/dashboard',
-            icon: '📊',
-            label: 'Dashboard'
-        },
-        {
-            path: '/empresa',
-            icon: '🏢',
-            label: 'Minha empresa'
-        },
-        {
-            path: '/bot',
-            icon: '🤖',
-            label: 'Configurações do bot'
-        },
-        {
-            path: '/produtos',
-            icon: '🍔',
-            label: 'Produtos'
-        },
-        {
-            path: '/servicos',
-            icon: '🌿',
-            label: 'Serviços'
-        },
-        {
-            path: '/pedidos',
-            icon: '🛒',
-            label: 'Pedidos'
-        },
-        {
-            path: '/clientes',
-            icon: '👥',
-            label: 'Clientes'
-        },
-        {
-            path: '/solicitacoes',
-            icon: '📋',
-            label: 'Solicitações'
-        },
-        {
-            path: '/whatsapp',
-            icon: '📱',
-            label: 'WhatsApp'
-        }
-    ];
+    {
+        path: '/dashboard',
+        icon: '📊',
+        label: 'Dashboard'
+    },
+    {
+        path: '/empresa',
+        icon: '🏢',
+        label: 'Minha empresa'
+    },
+    {
+        path: '/bot',
+        icon: '🤖',
+        label: 'Configurações do bot'
+    },
+    {
+        path: '/produtos',
+        icon: '🍔',
+        label: 'Produtos'
+    },
+    {
+        path: '/servicos',
+        icon: '🌿',
+        label: 'Serviços'
+    },
+    {
+        path: '/pedidos',
+        icon: '🛒',
+        label: 'Pedidos'
+    },
+    {
+        path: '/clientes',
+        icon: '👥',
+        label: 'Clientes'
+    },
+    {
+        path: '/solicitacoes',
+        icon: '📋',
+        label: 'Solicitações'
+    },
+    {
+        path: '/whatsapp',
+        icon: '📱',
+        label: 'WhatsApp'
+    },
+    {
+        path: '/admin',
+        icon: '⚙️',
+        label: 'Administrador'
+    }
+];
 
     const closeMenu = () => {
         setMenuOpen(false);
