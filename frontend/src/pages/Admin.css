@@ -177,3 +177,50 @@
         padding-right: 16px;
     }
 }
+
+
+.admin-table tbody tr {
+    transition: background 0.18s ease;
+}
+
+.admin-table tbody tr:hover {
+    background: #15171d;
+}
+
+.admin-table td:first-child {
+    min-width: 190px;
+}
+
+.admin-table td:nth-child(2) {
+    min-width: 120px;
+}
+
+.admin-table td:nth-child(3) {
+    min-width: 150px;
+}
+
+@media (max-width: 900px) {
+    .admin-companies-header {
+        padding: 18px;
+    }
+
+    .admin-table {
+        min-width: 850px;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-table {
+        min-width: 800px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 13px 16px;
+    }
+
+    .admin-company-count {
+        min-width: 30px;
+        height: 30px;
+    }
+}
