@@ -22,6 +22,7 @@ import Dashboard from './pages/Dashboard';
 import Requests from './pages/Requests';
 import Servicos from './pages/Servicos';
 import Onboarding from './pages/Onboarding';
+import Download from './pages/Download';
 
 
 function App() {
@@ -290,6 +291,11 @@ function App() {
                             )
                     }
                 />
+
+                <Route
+    path="/download"
+    element={<Download />}
+/>
 
 
                 {/* =================================================

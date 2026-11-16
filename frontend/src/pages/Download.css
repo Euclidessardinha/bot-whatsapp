@@ -1,0 +1,351 @@
+.download-page {
+    min-height: 100vh;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(37, 211, 102, 0.12),
+            transparent 38%
+        ),
+        #08090d;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.download-hero {
+    min-height: 76vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px 60px;
+}
+
+
+.download-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border: 1px solid rgba(37, 211, 102, 0.25);
+    border-radius: 999px;
+    background: rgba(37, 211, 102, 0.07);
+    color: #25d366;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin-bottom: 28px;
+}
+
+
+.download-icon {
+    width: 78px;
+    height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: rgba(37, 211, 102, 0.10);
+    border: 1px solid rgba(37, 211, 102, 0.18);
+    font-size: 38px;
+    margin-bottom: 28px;
+    box-shadow:
+        0 0 50px rgba(37, 211, 102, 0.08);
+}
+
+
+.download-hero h1 {
+    max-width: 850px;
+    margin: 0;
+    font-size: clamp(42px, 7vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -3px;
+    font-weight: 800;
+}
+
+
+.download-hero h1 span {
+    color: #25d366;
+}
+
+
+.download-description {
+    max-width: 620px;
+    margin: 28px auto 0;
+    color: #9b9faa;
+    font-size: 18px;
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   DOWNLOAD BUTTON
+========================================================= */
+
+.download-button {
+    margin-top: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 250px;
+    padding: 17px 26px;
+    border-radius: 12px;
+    background: #25d366;
+    color: #061008;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 800;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+    box-shadow:
+        0 14px 40px rgba(37, 211, 102, 0.18);
+}
+
+
+.download-button span {
+    font-size: 22px;
+    line-height: 1;
+}
+
+
+.download-button:hover {
+    transform: translateY(-3px);
+    background: #35df78;
+    box-shadow:
+        0 18px 50px rgba(37, 211, 102, 0.25);
+}
+
+
+.download-version {
+    margin-top: 15px;
+    color: #666a75;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   FEATURES
+========================================================= */
+
+.download-features {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 70px 24px 100px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+
+.download-feature {
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+
+.download-feature > span {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+
+.download-feature h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+
+.download-feature p {
+    margin: 0;
+    color: #858995;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   INSTALLATION
+========================================================= */
+
+.download-install {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 90px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 80px;
+}
+
+
+.download-section-label {
+    color: #25d366;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+
+.download-install h2 {
+    margin: 16px 0;
+    font-size: 38px;
+    line-height: 1.15;
+    letter-spacing: -1.5px;
+}
+
+
+.download-install > div:first-child p {
+    max-width: 430px;
+    color: #858995;
+    line-height: 1.7;
+}
+
+
+.download-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+
+.download-step {
+    display: flex;
+    gap: 22px;
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+
+.download-step strong {
+    min-width: 35px;
+    color: #25d366;
+    font-size: 13px;
+    padding-top: 2px;
+}
+
+
+.download-step h3 {
+    margin: 0 0 7px;
+    font-size: 15px;
+}
+
+
+.download-step p {
+    margin: 0;
+    color: #777b87;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.download-footer {
+    padding: 45px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+}
+
+
+.download-footer p {
+    margin: 0 0 8px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+.download-footer span {
+    color: #626671;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .download-hero {
+        min-height: 70vh;
+        padding-top: 60px;
+    }
+
+
+    .download-hero h1 {
+        letter-spacing: -2px;
+    }
+
+
+    .download-description {
+        font-size: 16px;
+    }
+
+
+    .download-features {
+        grid-template-columns: 1fr;
+        padding-top: 40px;
+    }
+
+
+    .download-install {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding-top: 70px;
+    }
+
+
+    .download-install h2 {
+        font-size: 32px;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .download-hero {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+
+    .download-hero h1 {
+        font-size: 42px;
+    }
+
+
+    .download-button {
+        width: 100%;
+        max-width: 330px;
+    }
+
+
+    .download-features {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+
+    .download-install {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+}

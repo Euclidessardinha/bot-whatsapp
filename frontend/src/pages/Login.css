@@ -9,9 +9,9 @@
     position: relative;
 
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-
     overflow: hidden;
 
     background:
@@ -128,8 +128,9 @@
     gap: 50px;
 
     align-items: center;
-}
 
+    flex-shrink: 0;
+}
 
 /* =========================================================
    LEFT SHOWCASE
@@ -1736,6 +1737,210 @@
 
 
     .login-copyright {
+        display: none;
+    }
+
+}
+
+/* =========================================================
+   APLICATIVO ANDROID — TOPO
+========================================================= */
+
+.login-android-download {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+
+    z-index: 10;
+
+    min-height: 44px;
+
+    padding: 6px 11px 6px 8px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    border: 1px solid rgba(37, 211, 102, 0.14);
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37, 211, 102, 0.08),
+            rgba(37, 211, 102, 0.025)
+        );
+
+    color: #ffffff;
+
+    font-family: inherit;
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.login-android-download:hover {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(37, 211, 102, 0.14),
+            rgba(37, 211, 102, 0.05)
+        );
+
+    border-color:
+        rgba(37, 211, 102, 0.28);
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 7px 20px rgba(37, 211, 102, 0.08);
+}
+
+
+/* ÍCONE */
+
+.login-android-icon {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+
+    background:
+        rgba(37, 211, 102, 0.10);
+
+    font-size: 15px;
+}
+
+
+/* TEXTO */
+
+.login-android-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+
+.login-android-text strong {
+    color: #e8f0eb;
+
+    font-size: 10px;
+
+    font-weight: 650;
+
+    white-space: nowrap;
+}
+
+
+.login-android-text small {
+    margin-top: 2px;
+
+    color: #25d366;
+
+    font-size: 9px;
+
+    font-weight: 600;
+}
+
+
+/* SETA */
+
+.login-android-action {
+    margin-left: 2px;
+
+    color: #25d366;
+
+    font-size: 16px;
+
+    transition:
+        transform 0.2s ease;
+}
+
+
+.login-android-download:hover .login-android-action {
+    transform: translateX(2px);
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .login-android-download {
+        top: 10px;
+        left: 10px;
+
+        min-height: 38px;
+
+        padding: 4px 7px 4px 5px;
+
+        gap: 5px;
+
+        border-radius: 9px;
+    }
+
+    .login-android-icon {
+        width: 27px;
+        height: 27px;
+
+        border-radius: 7px;
+
+        font-size: 13px;
+    }
+
+    .login-android-text strong {
+        font-size: 8px;
+    }
+
+    .login-android-text small {
+        font-size: 8px;
+    }
+
+    .login-android-action {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 380px) {
+
+    .login-android-text {
+        display: none;
+    }
+
+
+    .login-android-download {
+        width: 36px;
+        height: 36px;
+
+        min-height: 36px;
+
+        margin-top: 8px;
+
+        padding: 4px;
+
+        justify-content: center;
+    }
+
+
+    .login-android-icon {
+        width: 26px;
+        height: 26px;
+    }
+
+
+    .login-android-action {
         display: none;
     }
 

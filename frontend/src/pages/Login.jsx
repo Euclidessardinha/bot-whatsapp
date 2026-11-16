@@ -42,6 +42,31 @@ function Login() {
             <div className="login-bg-glow glow-two"></div>
             <div className="login-bg-grid"></div>
 
+                <button
+    type="button"
+    className="login-android-download"
+    onClick={() => {
+        window.location.href = '/download';
+    }}
+>
+    <span className="login-android-icon">
+        📱
+    </span>
+
+    <span className="login-android-text">
+        <strong>
+            Aplicativo Android
+        </strong>
+
+        <small>
+            Tenha o WhatsBot sempre consigo
+        </small>
+    </span>
+
+    <span className="login-android-action">
+        Baixar →
+    </span>
+</button>
 
             <div className="login-container">
 

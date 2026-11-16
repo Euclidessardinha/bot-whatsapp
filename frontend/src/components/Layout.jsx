@@ -263,11 +263,36 @@ function Layout() {
 
                         </div>
 
-                    </div>
+                                       </div>
+
+                    {/* Aplicativo Android */}
+                    <button
+                        className="android-download-button"
+                        onClick={() => navigate('/download')}
+                        aria-label="Baixar aplicativo Android"
+                    >
+                        <span className="android-download-icon">
+                            📱
+                        </span>
+
+                        <span className="android-download-text">
+                            <strong>
+                                Aplicativo Android
+                            </strong>
+
+                            <small>
+                                Baixar
+                            </small>
+                        </span>
+
+                        <span className="android-download-arrow">
+                            →
+                        </span>
+                    </button>
 
                     <div className="topbar-right">
 
-                        {/* Notificações */}
+                        {/* Notifica├º├╡es */}
                         <button
                             className="notification-button"
                             aria-label="Notificações"
