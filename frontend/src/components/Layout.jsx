@@ -86,11 +86,7 @@ function Layout() {
         icon: '📱',
         label: 'WhatsApp'
     },
-    {
-        path: '/admin',
-        icon: '⚙️',
-        label: 'Administrador'
-    }
+    
 ];
 
     if (isAdmin) {
