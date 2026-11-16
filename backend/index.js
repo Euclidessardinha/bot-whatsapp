@@ -40,6 +40,15 @@ const {
 // Autenticação do dashboard
 const authMiddleware = require('./middleware/authMiddleware');
 
+const adminMiddleware = require('./middleware/adminMiddleware');
+
+const {
+    getAdminSummary,
+    getAllCompanies,
+    getCompanyDetails,
+    getAllUsers
+} = require('./services/adminService');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -239,6 +248,123 @@ app.use('/api/whatsapp', authMiddleware);
 
 app.use('/api/dashboard', authMiddleware);
 
+
+// =====================================================
+// ROTAS ADMINISTRATIVAS
+// =====================================================
+
+// Todas as rotas administrativas exigem autenticação
+// e utilizador com role = admin.
+app.use('/api/admin', authMiddleware, adminMiddleware);
+
+
+// Resumo geral da plataforma
+app.get('/api/admin/summary', async (req, res) => {
+    try {
+        const summary = await getAdminSummary();
+
+        return res.json({
+            success: true,
+            summary
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao carregar resumo administrativo:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                'Não foi possível carregar o resumo administrativo.'
+        });
+    }
+});
+
+
+// Todas as empresas
+app.get('/api/admin/companies', async (req, res) => {
+    try {
+        const companies = await getAllCompanies();
+
+        return res.json({
+            success: true,
+            companies
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao carregar empresas administrativas:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                'Não foi possível carregar as empresas.'
+        });
+    }
+});
+
+
+// Detalhes de uma empresa
+app.get('/api/admin/companies/:companyId', async (req, res) => {
+    try {
+        const { companyId } = req.params;
+
+        const company = await getCompanyDetails(companyId);
+
+        if (!company) {
+            return res.status(404).json({
+                success: false,
+                message: 'Empresa não encontrada.'
+            });
+        }
+
+        return res.json({
+            success: true,
+            company
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao carregar detalhes da empresa:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                'Não foi possível carregar os detalhes da empresa.'
+        });
+    }
+});
+
+
+// Todos os utilizadores
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const users = await getAllUsers();
+
+        return res.json({
+            success: true,
+            users
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao carregar utilizadores administrativos:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                'Não foi possível carregar os utilizadores.'
+        });
+    }
+});
 
 // =====================================================
 // DASHBOARD
