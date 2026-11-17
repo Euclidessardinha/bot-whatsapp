@@ -1333,6 +1333,16 @@ await touchConversationActivity(
         return null;
     }
 
+    if (
+    settings.admin_bot_enabled === false
+) {
+    console.log(
+        `🚫 Bot bloqueado administrativamente para a empresa ${companyId}.`
+    );
+
+    return null;
+}
+
 
     const businessType =
         company.business_type || 'other';

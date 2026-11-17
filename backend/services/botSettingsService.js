@@ -1,4 +1,3 @@
-
 const supabase = require('../lib/supabase');
 
 /*
@@ -14,6 +13,7 @@ async function getBotSettings(companyId) {
         .select(`
             company_id,
             bot_enabled,
+            admin_bot_enabled,
             menu_enabled,
             orders_enabled,
             human_support_enabled
