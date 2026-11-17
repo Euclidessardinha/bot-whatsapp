@@ -1,4 +1,3 @@
-
 const supabase = require('../lib/supabase');
 
 
@@ -6,16 +5,9 @@ const supabase = require('../lib/supabase');
  * =========================================================
  * NORMALIZAÇÃO
  * =========================================================
- *
- * Exemplos:
- *
- * "Classic Burger"   -> "classic burger"
- * "CLASSIC BURGER"   -> "classic burger"
- * "Pão de Queijo"    -> "pao de queijo"
- * "Classic Burguer"  -> "classic burguer"
- * "Classic Burguers" -> "classic burguers"
  */
 function normalizeText(text) {
+
     if (!text) return '';
 
     return text
@@ -33,18 +25,6 @@ function normalizeText(text) {
  * =========================================================
  * LIMPEZA DO PEDIDO
  * =========================================================
- *
- * Remove expressões comuns usadas pelo cliente.
- *
- * Exemplos:
- *
- * "eu quero classic burger"
- *              ↓
- * "classic burger"
- *
- * "quero 2 classic burgers"
- *              ↓
- * "classic burgers"
  */
 function cleanProductRequest(text) {
 
@@ -88,14 +68,10 @@ function cleanProductRequest(text) {
 
     /**
      * Remove quantidade no início.
-     *
-     * "2 classic burger"
-     *        ↓
-     * "classic burger"
      */
     result =
         result.replace(
-            /^\d+\s+/,
+            /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
             ''
         );
 
@@ -110,14 +86,6 @@ function cleanProductRequest(text) {
  * =========================================================
  * DISTÂNCIA DE LEVENSHTEIN
  * =========================================================
- *
- * Permite detectar pequenos erros de escrita.
- *
- * Exemplos:
- *
- * burger  -> burguer
- * chicken -> chiken
- * pizza   -> piza
  */
 function levenshteinDistance(a, b) {
 
@@ -212,13 +180,7 @@ function calculateWordSimilarity(
 
 
     /**
-     * Caso de plural simples.
-     *
-     * burger
-     * burgers
-     *
-     * burger
-     * burguers
+     * Plural simples.
      */
     const singularA =
         wordA.endsWith('s')
@@ -241,13 +203,7 @@ function calculateWordSimilarity(
 
 
     /**
-     * Verifica se uma palavra contém a outra.
-     *
-     * burger
-     * burguer
-     *
-     * chicken
-     * chickens
+     * Pequenas variações de escrita.
      */
     if (
         wordA.includes(wordB) ||
@@ -292,9 +248,6 @@ function calculateWordSimilarity(
  * =========================================================
  * PONTUAÇÃO DO PRODUTO
  * =========================================================
- *
- * Compara o texto enviado pelo cliente
- * com o nome real do produto.
  */
 function calculateProductScore(
     searchText,
@@ -322,11 +275,8 @@ function calculateProductScore(
 
 
     /**
-     * =====================================================
-     * CORRESPONDÊNCIA EXATA
-     * =====================================================
+     * Correspondência exata.
      */
-
     if (
         search === product
     ) {
@@ -336,18 +286,8 @@ function calculateProductScore(
 
 
     /**
-     * =====================================================
-     * TEXTO COMPLETO CONTIDO
-     * =====================================================
-     *
-     * Exemplo:
-     *
-     * "classic burger please"
-     *
-     * não chega aqui normalmente por causa
-     * da limpeza, mas mantemos esta proteção.
+     * Texto completo contido.
      */
-
     if (
         search.includes(product)
     ) {
@@ -365,11 +305,8 @@ function calculateProductScore(
 
 
     /**
-     * =====================================================
-     * COMPARAÇÃO POR PALAVRAS
-     * =====================================================
+     * Comparação por palavras.
      */
-
     const searchWords =
         search.split(' ');
 
@@ -413,11 +350,6 @@ function calculateProductScore(
         }
 
 
-        /**
-         * Consideramos a palavra
-         * correspondente se a semelhança
-         * for suficientemente alta.
-         */
         if (
             bestSimilarity >= 75
         ) {
@@ -438,28 +370,10 @@ function calculateProductScore(
     }
 
 
-    /**
-     * Média de semelhança
-     */
     const averageSimilarity =
         totalSimilarity /
         matchedWords;
 
-
-    /**
-     * Cobertura das palavras.
-     *
-     * Exemplo:
-     *
-     * Cliente:
-     * "classic burguers"
-     *
-     * Produto:
-     * "classic burger"
-     *
-     * 2 de 2 palavras
-     * correspondem.
-     */
 
     const wordCoverage =
         matchedWords /
@@ -468,13 +382,6 @@ function calculateProductScore(
             productWords.length
         );
 
-
-    /**
-     * Pontuação final.
-     *
-     * A cobertura das palavras
-     * tem bastante peso.
-     */
 
     const score =
         (
@@ -493,17 +400,183 @@ function calculateProductScore(
 
 /**
  * =========================================================
- * BUSCAR PRODUTO PELO NOME
+ * BUSCAR ALIASES DOS PRODUTOS
  * =========================================================
  *
- * A pesquisa é feita somente dentro
- * da empresa informada.
+ * Busca somente aliases pertencentes aos produtos
+ * da empresa atual.
  *
- * Isso mantém o sistema multi-tenant.
+ * IMPORTANTE:
+ * Nunca buscamos aliases de outras empresas.
  */
-async function getProductByName(
+async function getProductAliases(
     companyId,
-    productName
+    productIds
+) {
+
+    if (
+        !companyId ||
+        !productIds ||
+        !productIds.length
+    ) {
+
+        return [];
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+
+            .from('product_aliases')
+
+            .select(
+                'id, company_id, product_id, alias'
+            )
+
+            .eq(
+                'company_id',
+                companyId
+            )
+
+            .in(
+                'product_id',
+                productIds
+            );
+
+
+        if (error) {
+
+            console.error(
+                '❌ Erro ao buscar aliases de produtos:',
+                error
+            );
+
+            return [];
+        }
+
+
+        return data || [];
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar aliases:',
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/**
+ * =========================================================
+ * AVALIAR MELHOR MATCH
+ * =========================================================
+ *
+ * Compara o texto pesquisado com:
+ *
+ * 1. nome do produto;
+ * 2. todos os aliases do produto.
+ *
+ * O melhor resultado vence.
+ */
+function calculateBestProductMatch(
+    searchText,
+    product,
+    aliases = []
+) {
+
+    /**
+     * Match pelo nome original.
+     */
+    const nameScore =
+        calculateProductScore(
+            searchText,
+            product.name
+        );
+
+
+    let bestScore =
+        nameScore;
+
+    let bestMatchType =
+        'name';
+
+    let bestAlias =
+        null;
+
+
+    /**
+     * Match pelos aliases.
+     */
+    for (
+        const alias
+        of aliases
+    ) {
+
+        const aliasScore =
+            calculateProductScore(
+                searchText,
+                alias.alias
+            );
+
+
+        if (
+            aliasScore >
+            bestScore
+        ) {
+
+            bestScore =
+                aliasScore;
+
+            bestMatchType =
+                'alias';
+
+            bestAlias =
+                alias.alias;
+        }
+    }
+
+
+    return {
+
+        score: bestScore,
+
+        matchType:
+            bestMatchType,
+
+        matchedAlias:
+            bestAlias
+    };
+}
+
+
+/**
+ * =========================================================
+ * BUSCAR CANDIDATOS DE PRODUTO
+ * =========================================================
+ *
+ * Retorna vários candidatos ordenados por confiança.
+ *
+ * IMPORTANTE:
+ * A pesquisa continua limitada ao company_id.
+ *
+ * Agora o produto pode ser encontrado por:
+ *
+ * - nome;
+ * - alias;
+ * - variação aproximada do nome;
+ * - variação aproximada do alias.
+ */
+async function getProductCandidates(
+    companyId,
+    productName,
+    options = {}
 ) {
 
     if (
@@ -511,129 +584,344 @@ async function getProductByName(
         !productName
     ) {
 
-        return null;
+        return [];
     }
 
 
-    /**
-     * Buscar somente produtos
-     * disponíveis daquela empresa.
-     */
     const {
-        data,
-        error
-    } = await supabase
-
-        .from('products')
-
-        .select('*')
-
-        .eq(
-            'company_id',
-            companyId
-        )
-
-        .eq(
-            'available',
-            true
-        );
+        minScore = 60,
+        limit = 5
+    } = options;
 
 
-    if (error) {
+    try {
 
-        console.error(
-            '❌ Erro ao buscar produtos:',
+        /**
+         * =====================================================
+         * 1. BUSCAR PRODUTOS DA EMPRESA
+         * =====================================================
+         */
+        const {
+            data,
             error
-        );
+        } = await supabase
 
-        return null;
-    }
+            .from('products')
 
+            .select('*')
 
-    if (
-        !data ||
-        data.length === 0
-    ) {
+            .eq(
+                'company_id',
+                companyId
+            )
 
-        return null;
-    }
-
-
-    /**
-     * =====================================================
-     * ENCONTRAR MELHOR CORRESPONDÊNCIA
-     * =====================================================
-     */
-
-    let bestProduct = null;
-
-    let bestScore = 0;
-
-
-    for (
-        const product
-        of data
-    ) {
-
-        const score =
-            calculateProductScore(
-                productName,
-                product.name
+            .eq(
+                'available',
+                true
             );
 
 
-        console.log(
-            `🔎 Produto: "${product.name}" | ` +
-            `Pesquisa: "${productName}" | ` +
-            `Score: ${score}`
-        );
+        if (error) {
+
+            console.error(
+                '❌ Erro ao buscar candidatos de produtos:',
+                error
+            );
+
+            return [];
+        }
 
 
         if (
-            score > bestScore
+            !data ||
+            data.length === 0
         ) {
 
-            bestScore =
-                score;
-
-            bestProduct =
-                product;
+            return [];
         }
+
+
+        /**
+         * =====================================================
+         * 2. BUSCAR ALIASES
+         * =====================================================
+         */
+        const productIds =
+            data.map(
+                product =>
+                    product.id
+            );
+
+
+        const aliases =
+            await getProductAliases(
+                companyId,
+                productIds
+            );
+
+
+        /**
+         * =====================================================
+         * 3. AGRUPAR ALIASES POR PRODUTO
+         * =====================================================
+         */
+        const aliasesByProduct =
+            new Map();
+
+
+        for (
+            const alias
+            of aliases
+        ) {
+
+            if (
+                !aliasesByProduct.has(
+                    alias.product_id
+                )
+            ) {
+
+                aliasesByProduct.set(
+                    alias.product_id,
+                    []
+                );
+            }
+
+
+            aliasesByProduct
+                .get(alias.product_id)
+                .push(alias);
+        }
+
+
+        /**
+         * =====================================================
+         * 4. CALCULAR CANDIDATOS
+         * =====================================================
+         */
+        const candidates = [];
+
+
+        for (
+            const product
+            of data
+        ) {
+
+            const productAliases =
+                aliasesByProduct.get(
+                    product.id
+                ) || [];
+
+
+            const match =
+                calculateBestProductMatch(
+                    productName,
+                    product,
+                    productAliases
+                );
+
+
+            if (
+                match.score < minScore
+            ) {
+
+                continue;
+            }
+
+
+            const score =
+                match.score;
+
+
+            candidates.push({
+
+                product,
+
+                score,
+
+                confidence:
+                    Number(
+                        (
+                            score / 100
+                        ).toFixed(2)
+                    ),
+
+                matchType:
+                    score === 100
+                        ? 'exact'
+                        : score >= 94
+                            ? 'strong'
+                            : score >= 80
+                                ? 'fuzzy'
+                                : 'weak',
+
+                /**
+                 * Indica se o melhor match veio
+                 * do nome ou de um alias.
+                 */
+                matchSource:
+                    match.matchType,
+
+                /**
+                 * Preenchido somente quando
+                 * o alias venceu o nome.
+                 */
+                matchedAlias:
+                    match.matchedAlias
+
+            });
+        }
+
+
+        /**
+         * =====================================================
+         * 5. ORDENAR POR CONFIANÇA
+         * =====================================================
+         */
+        candidates.sort(
+            (a, b) =>
+                b.score -
+                a.score
+        );
+
+
+        return candidates.slice(
+            0,
+            limit
+        );
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar candidatos:',
+            error
+        );
+
+        return [];
     }
+}
 
 
-    /**
-     * =====================================================
-     * LIMITE DE SEGURANÇA
-     * =====================================================
-     *
-     * Evita que qualquer mensagem parecida
-     * seja interpretada como produto.
-     */
+/**
+ * =========================================================
+ * BUSCAR PRODUTO PELO NOME
+ * =========================================================
+ *
+ * Mantém a função existente para não quebrar
+ * o restante do sistema.
+ *
+ * Agora utiliza:
+ *
+ * - nome;
+ * - aliases;
+ * - fuzzy matching;
+ * - proteção contra ambiguidade.
+ */
+async function getProductByName(
+    companyId,
+    productName
+) {
+
+    const candidates =
+        await getProductCandidates(
+            companyId,
+            productName
+        );
+
 
     if (
-        bestScore < 60
+        !candidates.length
     ) {
 
         console.log(
-            `❌ Nenhum produto suficientemente parecido. ` +
-            `Melhor score: ${bestScore}`
+            '❌ Nenhum produto encontrado para:',
+            productName
         );
 
         return null;
     }
 
 
-    console.log(
-        `✅ Produto encontrado: "${bestProduct.name}" ` +
-        `(score ${bestScore})`
-    );
+    const best =
+        candidates[0];
 
 
-    return bestProduct;
+    /**
+     * =====================================================
+     * SEGURANÇA CONTRA AMBIGUIDADE
+     * =====================================================
+     *
+     * Se dois produtos possuem scores muito próximos,
+     * não escolhemos arbitrariamente.
+     *
+     * Exemplo:
+     *
+     * Coca-Cola       86
+     * Coca-Cola Zero  84
+     *
+     * Diferença = 2
+     *
+     * Nesse caso retornamos null.
+     *
+     * A mesma proteção continua funcionando quando
+     * os matches vêm de aliases.
+     */
+    const second =
+        candidates[1];
+
+
+    if (
+        second &&
+        best.score < 95 &&
+        (
+            best.score -
+            second.score
+        ) < 5
+    ) {
+
+        console.log(
+            `⚠️ Produto ambíguo: ` +
+            `"${best.product.name}" (${best.score}) ` +
+            `vs ` +
+            `"${second.product.name}" (${second.score})`
+        );
+
+        return null;
+    }
+
+
+    /**
+     * =====================================================
+     * LOG DO MATCH
+     * =====================================================
+     */
+    if (
+        best.matchSource === 'alias'
+    ) {
+
+        console.log(
+            `✅ Produto encontrado por alias: ` +
+            `"${best.product.name}" ` +
+            `via "${best.matchedAlias}" ` +
+            `(score ${best.score}, ` +
+            `confidence ${best.confidence})`
+        );
+
+    } else {
+
+        console.log(
+            `✅ Produto encontrado: ` +
+            `"${best.product.name}" ` +
+            `(score ${best.score}, ` +
+            `confidence ${best.confidence})`
+        );
+    }
+
+
+    return best.product;
 }
 
 
 module.exports = {
-    getProductByName
+    getProductByName,
+    getProductCandidates
 };

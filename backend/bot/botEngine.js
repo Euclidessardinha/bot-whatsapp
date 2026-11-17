@@ -1,4 +1,3 @@
-
 const supabase = require('../lib/supabase');
 
 const {
@@ -32,8 +31,8 @@ const {
 } = require('../services/requestService');
 
 const {
-    detectIntent
-} = require('../services/intentService');
+    analyzeMessage
+} = require('./intelligence/knowledgeEngine');
 
 
 /**
@@ -45,7 +44,6 @@ const {
 async function getCompany(companyId) {
 
     if (!companyId) {
-
         return null;
     }
 
@@ -53,18 +51,10 @@ async function getCompany(companyId) {
         data,
         error
     } = await supabase
-
         .from('companies')
-
         .select('*')
-
-        .eq(
-            'id',
-            companyId
-        )
-
+        .eq('id', companyId)
         .single();
-
 
     if (error) {
 
@@ -75,7 +65,6 @@ async function getCompany(companyId) {
 
         return null;
     }
-
 
     return data;
 }
@@ -90,34 +79,18 @@ async function getCompany(companyId) {
 async function getProducts(companyId) {
 
     if (!companyId) {
-
         return [];
     }
-
 
     const {
         data,
         error
     } = await supabase
-
         .from('products')
-
         .select('*')
-
-        .eq(
-            'company_id',
-            companyId
-        )
-
-        .eq(
-            'available',
-            true
-        )
-
-        .order(
-            'name'
-        );
-
+        .eq('company_id', companyId)
+        .eq('available', true)
+        .order('name');
 
     if (error) {
 
@@ -129,25 +102,16 @@ async function getProducts(companyId) {
         return [];
     }
 
-
     return data || [];
 }
 
 
 /**
  * =========================================================
- * MENU PRINCIPAL
+ * AÇÕES DO MENU PRINCIPAL
  * =========================================================
  */
 
-/**
- * =========================================================
- * AÇÕES DO MENU PRINCIPAL
- * =========================================================
- *
- * Esta função é a única fonte de verdade dos números
- * apresentados ao cliente.
- */
 function getMainMenuActions(
     company,
     settings
@@ -159,62 +123,84 @@ function getMainMenuActions(
     const actions = [];
 
 
-    /**
-     * VER MENU / SERVIÇOS
+    /*
+     * =====================================================
+     * EMPRESAS DE SERVIÇOS
+     * =====================================================
      */
+
     if (
-        settings.menu_enabled
+        businessType === 'services'
     ) {
 
-        actions.push({
-            intent:
-                businessType === 'service'
-                    ? 'services'
-                    : 'menu',
+        if (
+            settings.menu_enabled
+        ) {
 
-            label:
-                businessType === 'service'
-                    ? 'Ver os nossos serviços'
-                    : 'Ver o menu'
+            actions.push({
+                intent: 'services',
+                label: 'Ver os nossos serviços'
+            });
+        }
+
+
+        actions.push({
+            intent: 'service_request',
+            label: 'Solicitar um serviço / orçamento'
         });
+
     }
 
 
-    /**
-     * PEDIDO / SOLICITAÇÃO DE SERVIÇO
+    /*
+     * =====================================================
+     * EMPRESAS COM PRODUTOS / PEDIDOS
+     * =====================================================
      */
-    if (
-        settings.orders_enabled
-    ) {
 
-        actions.push({
-            intent:
-                businessType === 'service'
-                    ? 'service_request'
-                    : 'order',
+    else {
 
-            label:
-                businessType === 'service'
-                    ? 'Solicitar um serviço / orçamento'
-                    : 'Fazer um pedido'
-        });
+        if (
+            settings.menu_enabled
+        ) {
+
+            actions.push({
+                intent: 'menu',
+                label: 'Ver o menu'
+            });
+        }
+
+
+        if (
+            settings.orders_enabled
+        ) {
+
+            actions.push({
+                intent: 'order',
+                label: 'Fazer um pedido'
+            });
+        }
     }
 
 
-    /**
+    /*
+     * =====================================================
      * LOCALIZAÇÃO
-     *
-     * A localização fica sempre disponível.
+     * =====================================================
      */
+
     actions.push({
         intent: 'location',
         label: 'Ver localização'
     });
 
 
-    /**
-     * ATENDENTE
+    /*
+     * =====================================================
+     * ATENDIMENTO HUMANO
+     * =====================================================
      */
+
     if (
         settings.human_support_enabled
     ) {
@@ -226,9 +212,6 @@ function getMainMenuActions(
     }
 
 
-    /**
-     * Atribui os números automaticamente.
-     */
     return actions.map(
         (action, index) => ({
             ...action,
@@ -237,12 +220,12 @@ function getMainMenuActions(
     );
 }
 
-
 /**
  * =========================================================
  * MENU PRINCIPAL
  * =========================================================
  */
+
 function getMainMenu(
     company,
     settings
@@ -257,7 +240,6 @@ function getMainMenu(
             company,
             settings
         );
-
 
     let menu =
         `${welcomeMessage}\n\n` +
@@ -279,13 +261,14 @@ function getMainMenu(
 
     return menu;
 }
+
+
 /**
  * =========================================================
- * MENU DE OPÇÕES APÓS UMA AÇÃO
+ * MENU DE OPÇÕES
  * =========================================================
- *
- * Não inclui a mensagem de boas-vindas novamente.
  */
+
 function getMenuOptions(
     company,
     settings
@@ -296,7 +279,6 @@ function getMenuOptions(
             company,
             settings
         );
-
 
     let menu =
         'O que deseja fazer agora?\n\n';
@@ -585,8 +567,7 @@ function addProductToCart(
                 product.unit_price
             ),
 
-        quantity:
-            quantity,
+        quantity,
 
         subtotal:
             Number(
@@ -710,11 +691,13 @@ function formatCartForEditing(
 
 /**
  * =========================================================
- * HORÁRIOS DE FUNCIONAMENTO
+ * HORÁRIOS
  * =========================================================
  */
 
-function formatBusinessHours(businessHours) {
+function formatBusinessHours(
+    businessHours
+) {
 
     if (
         !businessHours ||
@@ -807,13 +790,9 @@ function formatBusinessHours(businessHours) {
 }
 
 
-/**
- * =========================================================
- * VERIFICAR SE A EMPRESA ESTÁ ABERTA
- * =========================================================
- */
-
-function getCurrentBusinessStatus(businessHours) {
+function getCurrentBusinessStatus(
+    businessHours
+) {
 
     if (
         !businessHours ||
@@ -843,9 +822,7 @@ function getCurrentBusinessStatus(businessHours) {
 
 
     const currentDay =
-        dayNames[
-            now.getDay()
-        ];
+        dayNames[now.getDay()];
 
 
     const today =
@@ -917,25 +894,19 @@ function getCurrentBusinessStatus(businessHours) {
         closeMinute;
 
 
-    const isOpen =
-        currentMinutes >= openMinutes &&
-        currentMinutes < closeMinutes;
-
-
     return {
         configured: true,
-        isOpen: isOpen,
+
+        isOpen:
+            currentMinutes >= openMinutes &&
+            currentMinutes < closeMinutes,
+
         day: currentDay,
+
         schedule: today
     };
 }
 
-
-/**
- * =========================================================
- * PRÓXIMO HORÁRIO DE FUNCIONAMENTO
- * =========================================================
- */
 
 function getNextOpening(
     businessHours
@@ -1025,13 +996,8 @@ function getNextOpening(
 
 /**
  * =========================================================
- * EXPIRAÇÃO DA CONVERSA
+ * EXPIRAÇÃO
  * =========================================================
- *
- * Se o cliente ficar muito tempo sem responder,
- * o fluxo atual é encerrado automaticamente.
- *
- * 60 minutos = 1 hora.
  */
 
 const CONVERSATION_TIMEOUT_MINUTES = 60;
@@ -1042,28 +1008,23 @@ function hasConversationExpired(
 ) {
 
     if (!updatedAt) {
-
         return true;
     }
 
 
     const lastActivity =
-        new Date(
-            updatedAt
-        );
+        new Date(updatedAt);
 
 
     const now =
         new Date();
 
 
-    const differenceMilliseconds =
-        now.getTime() -
-        lastActivity.getTime();
-
-
     const differenceMinutes =
-        differenceMilliseconds /
+        (
+            now.getTime() -
+            lastActivity.getTime()
+        ) /
         (1000 * 60);
 
 
@@ -1076,7 +1037,7 @@ function hasConversationExpired(
 
 /**
  * =========================================================
- * INTENÇÕES QUE PODEM INTERROMPER UM FLUXO
+ * INTERRUPÇÕES
  * =========================================================
  */
 
@@ -1087,33 +1048,397 @@ function shouldInterruptConversation(
     const interruptingIntents = [
 
         'greeting',
-
         'cancel',
-
         'help',
-
         'goodbye',
-
         'menu',
-
         'order',
-
         'services',
-
         'service_request',
-
         'location',
-
         'hours',
-
         'price',
-
         'attendant'
     ];
 
 
     return interruptingIntents.includes(
         intent
+    );
+}
+
+
+/**
+ * =========================================================
+ * RESOLUÇÃO INTELIGENTE DE PRODUTO
+ * =========================================================
+ */
+
+async function resolveProductCandidate(
+    companyId,
+    productCandidate
+) {
+
+    if (
+        !companyId ||
+        !productCandidate
+    ) {
+
+        return null;
+    }
+
+
+    const candidate =
+        String(
+            productCandidate
+        )
+            .trim();
+
+
+    if (!candidate) {
+        return null;
+    }
+
+
+    try {
+
+        const product =
+            await getProductByName(
+                companyId,
+                candidate
+            );
+
+
+        return product || null;
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro ao resolver produto:',
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/**
+ * =========================================================
+ * RESOLUÇÃO INTELIGENTE DE SERVIÇO
+ * =========================================================
+ *
+ * O serviceService é responsável por procurar:
+ *
+ * 1. nome real do serviço
+ * 2. alias da empresa
+ *
+ * Sempre utilizando companyId.
+ * =========================================================
+ */
+
+async function resolveServiceCandidate(
+    companyId,
+    serviceCandidate
+) {
+
+    if (
+        !companyId ||
+        !serviceCandidate
+    ) {
+
+        return null;
+    }
+
+
+    const candidate =
+        String(
+            serviceCandidate
+        )
+            .trim();
+
+
+    if (!candidate) {
+        return null;
+    }
+
+
+    try {
+
+        const service =
+            await getServiceByName(
+                companyId,
+                candidate
+            );
+
+
+        return service || null;
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro ao resolver serviço:',
+            error
+        );
+
+        return null;
+    }
+}
+
+
+/**
+ * =========================================================
+ * NORMALIZA QUANTIDADE
+ * =========================================================
+ */
+
+function getIntelligenceQuantity(
+    intelligence
+) {
+
+    const quantity =
+        intelligence?.entities?.quantity;
+
+
+    if (
+        quantity === null ||
+        quantity === undefined
+    ) {
+
+        return null;
+    }
+
+
+    const parsed =
+        parseInt(
+            quantity,
+            10
+        );
+
+
+    if (
+        isNaN(parsed) ||
+        parsed <= 0
+    ) {
+
+        return null;
+    }
+
+
+    return parsed;
+}
+
+
+/**
+ * =========================================================
+ * MEMÓRIA CONTEXTUAL DE PRODUTO
+ * =========================================================
+ */
+
+function createProductContext(product) {
+
+    if (!product) {
+        return null;
+    }
+
+    return {
+        product_id:
+            product.product_id || product.id,
+
+        product_name:
+            product.product_name || product.name,
+
+        unit_price:
+            Number(
+                product.unit_price ?? product.price ?? 0
+            )
+    };
+}
+
+
+function getLastProduct(context) {
+
+    if (
+        context?.lastProduct
+    ) {
+        return context.lastProduct;
+    }
+
+    if (
+        context?.currentProduct
+    ) {
+        return context.currentProduct;
+    }
+
+    if (
+        context?.product_id &&
+        context?.product_name
+    ) {
+        return {
+            product_id:
+                context.product_id,
+
+            product_name:
+                context.product_name,
+
+            unit_price:
+                Number(
+                    context.unit_price || 0
+                )
+        };
+    }
+
+    return null;
+}
+
+
+/**
+ * =========================================================
+ * RESOLUÇÃO DE REFERÊNCIAS CONTEXTUAIS
+ * =========================================================
+ */
+
+function isContextualProductReference(text) {
+
+    if (!text) return false;
+
+    const value = String(text)
+        .toLowerCase()
+        .trim();
+
+    return (
+        /^(esse|essa|aquele|aquela)$/i.test(value) ||
+        /^(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value) ||
+        /^(esse|essa|aquele|aquela)\s+(mesmo|mesma)$/i.test(value) ||
+        /^(o|a)\s+mesm[oa]$/i.test(value) ||
+        /^(quero|manda|adiciona|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)$/i.test(value) ||
+        /^(quero|manda|adiciona|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value)
+    );
+}
+
+
+function resolveContextualProduct(
+    context,
+    text
+) {
+
+    if (!isContextualProductReference(text)) {
+        return null;
+    }
+
+    return getLastProduct(context);
+}
+
+
+/**
+ * =========================================================
+ * DETECÇÃO DE CONFIRMAÇÃO
+ * =========================================================
+ */
+
+function isPositiveConfirmation(text) {
+
+    if (!text) return false;
+
+    return /^(sim|s|yes|pode|podes|quero|quero sim|pode ser|claro|ok|okay|adiciona|adicionar|manda|manda vir)$/i
+        .test(String(text).trim());
+}
+
+
+function isNegativeConfirmation(text) {
+
+    if (!text) return false;
+
+    return /^(não|nao|n|no|não quero|nao quero|deixa|deixa estar|cancelar|cancela)$/i
+        .test(String(text).trim());
+}
+
+
+/**
+ * =========================================================
+ * QUANTIDADE + REFERÊNCIA CONTEXTUAL
+ * =========================================================
+ */
+
+function extractContextualQuantity(text) {
+
+    if (!text) return null;
+
+    const value = String(text)
+        .toLowerCase()
+        .trim();
+
+    const match = value.match(
+        /\b(\d+|um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez)\b/
+    );
+
+    if (!match) return null;
+
+    const numbers = {
+        um: 1,
+        uma: 1,
+        dois: 2,
+        duas: 2,
+        tres: 3,
+        três: 3,
+        quatro: 4,
+        cinco: 5,
+        seis: 6,
+        sete: 7,
+        oito: 8,
+        nove: 9,
+        dez: 10
+    };
+
+    const valueFound = match[1];
+
+    return numbers[valueFound] || parseInt(valueFound, 10);
+}
+
+
+function rememberProduct(
+    context,
+    product
+) {
+
+    const productContext =
+        createProductContext(product);
+
+
+    if (!productContext) {
+        return context;
+    }
+
+
+    return {
+        ...context,
+
+        lastProduct:
+            productContext,
+
+        currentProduct:
+            productContext
+    };
+}
+
+
+function getCartProductIndex(
+    cart,
+    productId
+) {
+
+    if (
+        !Array.isArray(cart) ||
+        !productId
+    ) {
+        return -1;
+    }
+
+
+    return cart.findIndex(
+        item =>
+            String(item.product_id) ===
+            String(productId)
     );
 }
 
@@ -1130,41 +1455,236 @@ async function processMessage(
     conversationId
 ) {
 
+    const rawMessage =
+        String(messageText || '').trim();
+
+
+    if (!rawMessage) {
+        return null;
+    }
+
+
     /**
      * =====================================================
-     * DETECTAR INTENÇÃO
+     * ESTADO DA CONVERSA
      * =====================================================
-     *
-     * Agora a interpretação da linguagem natural é feita
-     * pelo intentService.
      */
 
-    const detectedIntent =
-        detectIntent(
-            messageText
+    let conversationState =
+        await getConversationState(
+            companyId,
+            conversationId
         );
 
 
+    let state =
+        conversationState?.state ||
+        'idle';
+
+
+    let context =
+        conversationState?.context ||
+        {};
+
+
     /**
-     * O intentService já devolve o texto normalizado.
+     * =====================================================
+     * EXPIRAÇÃO
+     * =====================================================
      */
 
-    const texto =
-        detectedIntent.text;
+    if (
+        conversationState &&
+        hasConversationExpired(
+            conversationState.updated_at
+        )
+    ) {
+
+        await clearConversationState(
+            companyId,
+            conversationId
+        );
+
+
+        conversationState =
+            null;
+
+
+        state =
+            'idle';
+
+
+        context =
+            {};
+    }
 
 
     /**
-     * Converte a intenção para minúsculas para manter
-     * compatibilidade com os handlers existentes.
+     * Atualiza atividade da conversa.
      */
+
+    if (
+        conversationState
+    ) {
+
+        await touchConversationActivity(
+            companyId,
+            conversationId
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * EMPRESA
+     * =====================================================
+     */
+
+    const company =
+        await getCompany(
+            companyId
+        );
+
+
+    if (
+        !company
+    ) {
+
+        console.error(
+            '❌ Empresa não encontrada:',
+            companyId
+        );
+
+        return null;
+    }
+
+
+    /**
+     * =====================================================
+     * CONFIGURAÇÕES DO BOT
+     * =====================================================
+     */
+
+    const settings =
+        await getBotSettings(
+            companyId
+        );
+
+
+    if (
+        !settings
+    ) {
+
+        console.error(
+            '❌ Configurações do bot não encontradas.'
+        );
+
+        return null;
+    }
+
+
+    /**
+     * =====================================================
+     * BOT DESATIVADO
+     * =====================================================
+     */
+
+    if (
+        !settings.bot_enabled ||
+        settings.admin_bot_enabled === false
+    ) {
+
+        return null;
+    }
+
+
+    const businessType =
+        company.business_type || 'other';
+
+
+    /**
+     * =====================================================
+     * CENTRO DE INTELIGÊNCIA CONVERSACIONAL
+     * =====================================================
+     */
+
+    const intelligence =
+        analyzeMessage({
+
+            message:
+                rawMessage,
+
+            state,
+
+            context
+        });
+
+
+    /**
+     * =====================================================
+     * ENTIDADES EXTRAÍDAS PELO CÉREBRO
+     * =====================================================
+     */
+
+    const entities =
+        intelligence.entities || {};
+
+
+    const productCandidate =
+        entities.productCandidate ||
+        null;
+
+
+    const serviceCandidate =
+        entities.serviceCandidate ||
+        null;
+
+
+    const intelligenceQuantity =
+        getIntelligenceQuantity(
+            intelligence
+        );
+
+
+    let texto =
+        intelligence.normalizedText;
+
 
     let intent =
-        detectedIntent.intent.toLowerCase();
+        String(
+            intelligence.intent || 'unknown'
+        ).toLowerCase();
 
 
     /**
-     * Compatibilidade entre os nomes do intentService
-     * e os nomes utilizados neste botEngine.
+     * =====================================================
+     * REFERÊNCIA CONTEXTUAL DE PRODUTO
+     * =====================================================
+     */
+
+    let contextualProduct =
+        resolveContextualProduct(
+            context,
+            texto
+        );
+
+
+    let resolvedProductCandidate =
+        productCandidate;
+
+
+    if (
+        !resolvedProductCandidate &&
+        contextualProduct
+    ) {
+
+        resolvedProductCandidate =
+            contextualProduct.product_name;
+    }
+
+
+    /**
+     * Compatibilidade com nomes antigos.
      */
 
     if (
@@ -1184,240 +1704,92 @@ async function processMessage(
 
 
     /**
-     * =====================================================
-     * ESTADO DA CONVERSA
-     * =====================================================
+     * Log temporário do cérebro.
      */
-
-const conversationState =
-    await getConversationState(
-        companyId,
-        conversationId
-    );
-
-
-if (
-    !conversationState
-) {
-
-    return (
-        '❌ Não foi possível carregar ' +
-        'o estado da conversa.'
-    );
-}
-
-
-/**
- * =====================================================
- * ESTADO INICIAL DA CONVERSA
- * =====================================================
- */
-
-let state =
-    conversationState.state || 'idle';
-
-
-let context =
-    conversationState.context || {};
-
-
-/**
- * =====================================================
- * VERIFICAR SE A CONVERSA EXPIROU
- * =====================================================
- */
-
-const conversationExpired =
-    hasConversationExpired(
-        conversationState.updated_at
-    );
-
-
-if (
-    conversationExpired &&
-    state !== 'idle'
-) {
 
     console.log(
-        `⏰ Conversa ${conversationId} expirou. ` +
-        `Estado anterior: ${state}`
+        '🧠 INTELIGÊNCIA CONVERSACIONAL:',
+        {
+            message: rawMessage,
+            state,
+            context,
+            intent,
+            situation:
+                intelligence.situation,
+            behavior:
+                intelligence.behavior,
+            confidence:
+                intelligence.confidence,
+            entities
+        }
     );
-
-
-    await clearConversationState(
-        companyId,
-        conversationId
-    );
-
-
-    state =
-        'idle';
-
-
-    context =
-        {};
-}
-
-
-/**
- * =====================================================
- * ATUALIZAR ÚLTIMA ATIVIDADE
- * =====================================================
- *
- * A partir daqui consideramos que o cliente voltou
- * a estar ativo.
- */
-
-await touchConversationActivity(
-    companyId,
-    conversationId
-);
 
 
     /**
      * =====================================================
-     * EMPRESA
+     * PROTEGER FLUXOS DESATIVADOS
      * =====================================================
      */
 
-    const company =
-        await getCompany(
-            companyId
-        );
+    const menuStates = [
+        'viewing_menu',
+        'viewing_services',
+        'viewing_service'
+    ];
+
+
+    const orderStates = [
+        'waiting_product',
+        'waiting_quantity',
+        'cart_menu',
+        'editing_cart',
+        'editing_cart_item',
+        'confirming_order',
+        'service_request'
+    ];
 
 
     if (
-        !company
+        !settings.menu_enabled &&
+        menuStates.includes(state)
     ) {
+
+        await clearConversationState(
+            companyId,
+            conversationId
+        );
+
 
         return (
-            '❌ Não foi possível carregar ' +
-            'as informações da empresa.'
+            'ℹ️ O menu e a consulta de produtos ou serviços ' +
+            'não estão disponíveis neste momento.'
         );
     }
 
 
-    /**
-     * =====================================================
-     * CONFIGURAÇÕES
-     * =====================================================
-     */
+    if (
+        !settings.orders_enabled &&
+        orderStates.includes(state)
+    ) {
 
-    const settings =
-        await getBotSettings(
-            companyId
+        await clearConversationState(
+            companyId,
+            conversationId
         );
 
-
-    if (
-        !settings
-    ) {
 
         return (
-            '❌ Não foi possível carregar ' +
-            'as configurações do bot.'
+            'ℹ️ Os pedidos e solicitações estão ' +
+            'temporariamente desativados.\n\n' +
+            'Pode continuar a consultar as informações da empresa.'
         );
     }
 
 
     /**
-     * =====================================================
-     * BOT DESATIVADO
-     * =====================================================
-     */
-
-    if (
-        !settings.bot_enabled
-    ) {
-
-        return null;
-    }
-
-    if (
-    settings.admin_bot_enabled === false
-) {
-    console.log(
-        `🚫 Bot bloqueado administrativamente para a empresa ${companyId}.`
-    );
-
-    return null;
-}
-
-
-    const businessType =
-        company.business_type || 'other';
-
-
-      /**
  * =====================================================
- * PROTEGER FLUXOS QUANDO UMA OPÇÃO É DESATIVADA
- * =====================================================
- */
-
-// Fluxos que dependem do menu
-const menuStates = [
-    'viewing_menu',
-    'viewing_services',
-    'viewing_service'
-];
-
-// Fluxos que dependem de pedidos
-const orderStates = [
-    'waiting_product',
-    'waiting_quantity',
-    'cart_menu',
-    'editing_cart',
-    'editing_cart_item',
-    'confirming_order',
-    'service_request'
-];
-
-// Se o menu foi desativado durante uma consulta
-if (
-    !settings.menu_enabled &&
-    menuStates.includes(state)
-) {
-    await clearConversationState(companyId,conversationId);
-
-    return (
-        'ℹ️ O menu e a consulta de produtos ou serviços ' +
-        'não estão disponíveis neste momento.'
-    );
-}
-
-// Se os pedidos foram desativados durante uma operação
-if (
-    !settings.orders_enabled &&
-    orderStates.includes(state)
-) {
-    await clearConversationState(companyId, conversationId);
-
-    return (
-        'ℹ️ Os pedidos e solicitações estão ' +
-        'temporariamente desativados.\n\n' +
-        'Pode continuar a consultar as informações da empresa.'
-    );
-}  
-
-/**
- * =========================================================
- * COMANDOS QUE PODEM INTERROMPER QUALQUER FLUXO
- * =========================================================
- *
- * Algumas intenções devem ter prioridade sobre o estado
- * atual da conversa.
- *
- * Exemplo:
- *
- * Bot: Quantas unidades deseja?
- * Cliente: Olá
- *
- * O "Olá" deve reiniciar a conversa.
- */
-
-
-/**
  * SAUDAÇÃO
+ * =====================================================
  */
 
 if (
@@ -1430,144 +1802,650 @@ if (
     );
 
 
-    return getMainMenu(
-        company,
-        settings
-    );
-}
+    state = 'idle';
+    context = {};
 
 
-/**
- * CANCELAMENTO
- */
-
-if (
-    intent === 'cancel'
-) {
-
-    await clearConversationState(
-        companyId,
-        conversationId
-    );
+    const welcomeMessage =
+        company.welcome_message ||
+        `👋 Olá! Bem-vindo à ${company.name}!`;
 
 
     return (
-
-        '❌ A operação atual foi cancelada.\n\n' +
-
-        getMainMenu(
-            company,
-            settings
-        )
+        `${welcomeMessage}\n\n` +
+        'Como posso ajudar? 😊'
     );
 }
 
 
-/**
- * AJUDA
- */
+    /**
+     * =====================================================
+     * CANCELAMENTO
+     * =====================================================
+     */
 
-if (
-    intent === 'help'
-) {
+    if (
+        intent === 'cancel'
+    ) {
 
-    await clearConversationState(
-        companyId,
-        conversationId
-    );
-
-
-    return getMainMenu(
-        company,
-        settings
-    );
-}
-
-
-/**
- * =====================================================
- * INTERRUPÇÃO DE FLUXO
- * =====================================================
- *
- * Se o cliente estiver no meio de uma operação e enviar
- * uma intenção completamente diferente, abandonamos
- * o fluxo atual e tratamos a nova intenção.
- *
- * Exemplo:
- *
- * Bot: Quantas unidades deseja?
- *
- * Cliente: Onde ficam?
- *
- * Resultado:
- *
- * waiting_quantity
- *        ↓
- *     location
- */
-
-if (
-    state !== 'idle' &&
-    shouldInterruptConversation(intent) &&
-    state !== 'service_request'
-) {
-
-    console.log(
-        `🔄 Interrompendo fluxo "${state}" ` +
-        `para tratar "${intent}".`
-    );
-
-
-    await clearConversationState(
-        companyId,
-        conversationId
-    );
-
-
-    state =
-        'idle';
-
-
-    context =
-        {};
-}
-        
-
-
-/**
- * =====================================================
- * NÚMEROS DO MENU PRINCIPAL
- * =====================================================
- *
- * Os números são obtidos dinamicamente através
- * de getMainMenuActions().
- */
-if (
-    state === 'idle'
-) {
-
-    const menuActions =
-        getMainMenuActions(
-            company,
-            settings
+        await clearConversationState(
+            companyId,
+            conversationId
         );
 
 
-    const selectedAction =
-        menuActions.find(
-            action =>
-                action.number === texto
+        return (
+            '❌ A operação atual foi cancelada.\n\n' +
+            getMainMenu(
+                company,
+                settings
+            )
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * AJUDA
+     * =====================================================
+     */
+
+    if (
+        intent === 'help'
+    ) {
+
+        await clearConversationState(
+            companyId,
+            conversationId
+        );
+
+
+        return getMainMenu(
+            company,
+            settings
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * INTERRUPÇÃO DE FLUXO
+     * =====================================================
+     */
+
+    if (
+        state !== 'idle' &&
+        shouldInterruptConversation(intent) &&
+        state !== 'service_request'
+    ) {
+
+        console.log(
+            `🔄 Interrompendo fluxo "${state}" ` +
+            `para tratar "${intent}".`
+        );
+
+
+        await clearConversationState(
+            companyId,
+            conversationId
+        );
+
+
+        state = 'idle';
+        context = {};
+    }
+
+
+    /**
+     * =====================================================
+     * CONSULTA DE PREÇO DE PRODUTO
+     * =====================================================
+     */
+
+    if (
+        productCandidate &&
+        (
+            intent === 'price' ||
+            /quanto custa|qual o preco|qual o valor|quanto e/i
+                .test(texto)
+        )
+    ) {
+
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                productCandidate
+            );
+
+
+        if (!product) {
+
+            return (
+                `🤔 Não encontrei *${productCandidate}* no nosso menu.`
+            );
+
+        }
+
+
+        return (
+            `🍔 *${product.name}*\n\n` +
+            `💰 Preço: *${product.price} MT*`
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * CONSULTA DE DISPONIBILIDADE
+     * =====================================================
+     */
+
+    if (
+        productCandidate &&
+        (
+            /^(tem|tens)\s+/i.test(texto) ||
+            /voces tem/i.test(texto) ||
+            /voce tem/i.test(texto)
+        )
+    ) {
+
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                productCandidate
+            );
+
+
+        if (!product) {
+
+            return (
+                `❌ Não temos *${productCandidate}* disponível no menu.`
+            );
+
+        }
+
+
+        return (
+            `✅ Sim, temos *${product.name}*.\n\n` +
+            `💰 Preço: *${product.price} MT*\n\n` +
+            'Deseja adicionar ao pedido?'
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * RESOLUÇÃO DE PRODUTO POR CONTEXTO
+     * =====================================================
+     */
+
+    if (
+        contextualProduct &&
+        !productCandidate &&
+        businessType !== 'services' &&
+        settings.orders_enabled
+    ) {
+
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                contextualProduct.product_name
+            );
+
+
+        if (product) {
+
+            const productContext =
+                createProductContext({
+                    id:
+                        product.id,
+
+                    name:
+                        product.name,
+
+                    price:
+                        product.price
+                });
+
+
+            if (intelligenceQuantity) {
+
+                const currentCart =
+                    Array.isArray(context.cart)
+                        ? context.cart
+                        : [];
+
+
+                const cart =
+                    addProductToCart(
+                        currentCart,
+                        productContext,
+                        intelligenceQuantity
+                    );
+
+
+                const newContext =
+                    rememberProduct(
+                        {
+                            ...context,
+                            cart
+                        },
+                        productContext
+                    );
+
+
+                const total =
+                    calculateCartTotal(
+                        cart
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'cart_menu',
+                    {
+                        ...newContext,
+                        total
+                    }
+                );
+
+
+                return (
+                    `✅ Adicionei *${product.name}* ` +
+                    `(${intelligenceQuantity}x) ao seu pedido.\n\n` +
+                    `${formatCart(cart)}\n\n` +
+                    `💵 Total: *${total} MT*`
+                );
+            }
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'waiting_quantity',
+                {
+                    ...context,
+
+                    lastProduct:
+                        productContext,
+
+                    currentProduct:
+                        productContext,
+
+                    cart:
+                        Array.isArray(context.cart)
+                            ? context.cart
+                            : []
+                }
+            );
+
+
+            return (
+                `🍔 *${product.name}*\n\n` +
+                `💰 Preço: *${product.price} MT*\n\n` +
+                `Quantas unidades deseja?`
+            );
+        }
+    }
+
+
+    /**
+     * =====================================================
+     * CONFIRMAÇÃO CONTEXTUAL
+     * =====================================================
+     */
+
+    if (
+        context.awaitingConfirmation === true &&
+        isPositiveConfirmation(texto)
+    ) {
+
+        const confirmedProduct =
+            getLastProduct(context);
+
+
+        if (confirmedProduct) {
+
+            const currentCart =
+                Array.isArray(context.cart)
+                    ? context.cart
+                    : [];
+
+
+            const cart =
+                addProductToCart(
+                    currentCart,
+                    confirmedProduct,
+                    1
+                );
+
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+                        cart,
+                        awaitingConfirmation: false
+                    },
+                    confirmedProduct
+                );
+
+
+            const total =
+                calculateCartTotal(
+                    cart
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...newContext,
+                    total
+                }
+            );
+
+
+            return (
+                `✅ Adicionei *${confirmedProduct.product_name}* ao seu pedido.\n\n` +
+                `${formatCart(cart)}\n\n` +
+                `💵 Total: *${total} MT*\n\n` +
+                `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
+            );
+        }
+    }
+
+
+    /**
+     * =====================================================
+     * RECUSA DE CONFIRMAÇÃO
+     * =====================================================
+     */
+
+    if (
+        context.awaitingConfirmation === true &&
+        isNegativeConfirmation(texto)
+    ) {
+
+        await updateConversationState(
+            companyId,
+            conversationId,
+            'viewing_product',
+            {
+                ...context,
+                awaitingConfirmation: false
+            }
+        );
+
+
+        return (
+            `Tudo bem 👍 Não adicionei esse produto.\n\n` +
+            `Posso ajudar com mais alguma coisa?`
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * REFERÊNCIA CONTEXTUAL + QUANTIDADE
+     * =====================================================
+     */
+
+    const contextualQuantity =
+        extractContextualQuantity(
+            texto
         );
 
 
     if (
-        selectedAction
+        contextualProduct &&
+        contextualQuantity &&
+        businessType !== 'services' &&
+        settings.orders_enabled
     ) {
 
-        intent =
-            selectedAction.intent;
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                contextualProduct.product_name
+            );
+
+
+        if (product) {
+
+            const productContext =
+                createProductContext({
+                    id:
+                        product.id,
+
+                    name:
+                        product.name,
+
+                    price:
+                        product.price
+                });
+
+
+            const currentCart =
+                Array.isArray(context.cart)
+                    ? context.cart
+                    : [];
+
+
+            const cart =
+                addProductToCart(
+                    currentCart,
+                    productContext,
+                    contextualQuantity
+                );
+
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+                        cart,
+                        awaitingConfirmation: false
+                    },
+                    productContext
+                );
+
+
+            const total =
+                calculateCartTotal(
+                    cart
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...newContext,
+                    total
+                }
+            );
+
+
+            return (
+                `✅ Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
+                `${formatCart(cart)}\n\n` +
+                `💵 Total: *${total} MT*\n\n` +
+                `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
+            );
+        }
     }
-}
+
+
+    /**
+     * =====================================================
+     * RESOLUÇÃO INTELIGENTE DE PRODUTO
+     * =====================================================
+     */
+
+    if (
+        productCandidate &&
+        businessType !== 'services' &&
+        settings.orders_enabled
+    ) {
+
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                productCandidate
+            );
+
+
+        if (product) {
+
+            const productContext =
+                createProductContext({
+                    id:
+                        product.id,
+
+                    name:
+                        product.name,
+
+                    price:
+                        product.price
+                });
+
+
+            if (
+                intelligenceQuantity
+            ) {
+
+                const currentCart =
+                    Array.isArray(context.cart)
+                        ? context.cart
+                        : [];
+
+
+                const cart =
+                    addProductToCart(
+                        currentCart,
+                        productContext,
+                        intelligenceQuantity
+                    );
+
+
+                const newContext =
+                    rememberProduct(
+                        {
+                            ...context,
+                            cart
+                        },
+                        productContext
+                    );
+
+
+                const total =
+                    calculateCartTotal(
+                        cart
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+
+                    'cart_menu',
+
+                    {
+                        ...newContext,
+                        total
+                    }
+                );
+
+
+                return (
+                    `✅ *${intelligenceQuantity}x ${product.name}* ` +
+                    'adicionado ao pedido.\n\n' +
+
+                    `${formatCart(cart)}\n\n` +
+
+                    'O que deseja fazer?\n\n' +
+
+                    '1️⃣ Adicionar outro produto\n' +
+                    '2️⃣ Finalizar pedido\n' +
+                    '3️⃣ Alterar carrinho\n' +
+                    '4️⃣ Cancelar pedido'
+                );
+            }
+
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context
+                    },
+                    productContext
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'waiting_quantity',
+
+                {
+                    ...newContext,
+
+                    cart:
+                        Array.isArray(context.cart)
+                            ? context.cart
+                            : []
+                }
+            );
+
+
+            return (
+                `🍔 *${product.name}*\n\n` +
+                `💰 Preço: ${product.price} MT\n\n` +
+                'Quantas unidades deseja?'
+            );
+        }
+    }
+
+
+    /**
+     * =====================================================
+     * NÚMERO DO MENU PRINCIPAL
+     * =====================================================
+     */
+
+    if (
+        state === 'idle'
+    ) {
+
+        const menuActions =
+            getMainMenuActions(
+                company,
+                settings
+            );
+
+
+        const selectedAction =
+            menuActions.find(
+                action =>
+                    action.number === texto
+            );
+
+
+        if (
+            selectedAction
+        ) {
+
+            intent =
+                selectedAction.intent;
+        }
+    }
+
 
     /**
      * =====================================================
@@ -1603,12 +2481,11 @@ if (
             );
 
 
-        let service =
-            null;
+        let service = null;
 
 
         /**
-         * Escolha pelo número
+         * 1. Seleção por número.
          */
 
         if (
@@ -1625,7 +2502,38 @@ if (
 
 
         /**
-         * Escolha pelo nome
+         * 2. Seleção inteligente:
+         *
+         * Knowledge Engine
+         *       ↓
+         * serviceCandidate
+         *       ↓
+         * resolveServiceCandidate()
+         *       ↓
+         * serviceService
+         *       ↓
+         * nome ou alias da empresa
+         */
+
+        if (
+            !service &&
+            serviceCandidate
+        ) {
+
+            service =
+                await resolveServiceCandidate(
+                    companyId,
+                    serviceCandidate
+                );
+        }
+
+
+        /**
+         * 3. Fallback para o texto original.
+         *
+         * Isto preserva compatibilidade com mensagens
+         * simples que o Knowledge Engine não tenha
+         * convertido em candidato.
          */
 
         if (
@@ -1633,7 +2541,7 @@ if (
         ) {
 
             service =
-                await getServiceByName(
+                await resolveServiceCandidate(
                     companyId,
                     messageText.trim()
                 );
@@ -1646,7 +2554,6 @@ if (
 
             await updateConversationState(
                 companyId,
-
                 conversationId,
 
                 'viewing_service',
@@ -1695,7 +2602,6 @@ if (
 
 
             return (
-
                 `🌿 *${service.name}*\n\n` +
 
                 (
@@ -1721,62 +2627,59 @@ if (
     }
 
 
-
     /**
- * =====================================================
- * PREÇO DO SERVIÇO
- * =====================================================
- *
- * Permite que o cliente pergunte pelo preço enquanto
- * está vendo os detalhes de um serviço.
- */
-if (
-    state === 'viewing_service' &&
-    intent === 'price'
-) {
-
-    let price =
-        'Sob orçamento';
-
+     * =====================================================
+     * PREÇO DO SERVIÇO
+     * =====================================================
+     */
 
     if (
-        context.price_type === 'fixed' &&
-        context.price !== null &&
-        context.price !== undefined
+        state === 'viewing_service' &&
+        intent === 'price'
     ) {
 
-        price =
-            `${context.price} MT`;
+        let price =
+            'Sob orçamento';
+
+
+        if (
+            context.price_type === 'fixed' &&
+            context.price !== null &&
+            context.price !== undefined
+        ) {
+
+            price =
+                `${context.price} MT`;
+        }
+
+
+        if (
+            context.price_type === 'from' &&
+            context.price !== null &&
+            context.price !== undefined
+        ) {
+
+            price =
+                `A partir de ${context.price} MT`;
+        }
+
+
+        return (
+            `💰 *Preço: ${price}*\n\n` +
+
+            `🌿 Serviço: ${context.service_name}\n\n` +
+
+            'Deseja solicitar este serviço?\n\n' +
+
+            '1️⃣ Sim\n' +
+            '2️⃣ Voltar aos serviços'
+        );
     }
-
-
-    if (
-        context.price_type === 'from' &&
-        context.price !== null &&
-        context.price !== undefined
-    ) {
-
-        price =
-            `A partir de ${context.price} MT`;
-    }
-
-
-    return (
-        `💰 *Preço: ${price}*\n\n` +
-
-        `🌿 Serviço: ${context.service_name}\n\n` +
-
-        'Deseja solicitar este serviço?\n\n' +
-
-        '1️⃣ Sim\n' +
-        '2️⃣ Voltar aos serviços'
-    );
-}
 
 
     /**
      * =====================================================
-     * SERVIÇOS — DETALHES
+     * SERVIÇO SELECIONADO
      * =====================================================
      */
 
@@ -1786,8 +2689,7 @@ if (
 
         if (
             texto === '1' ||
-            texto === 'sim' ||
-            texto === 's'
+            intent === 'confirm'
         ) {
 
             await updateConversationState(
@@ -1803,7 +2705,6 @@ if (
 
 
             return (
-
                 `📋 *Solicitação de ${context.service_name}*\n\n` +
 
                 'Explique brevemente o que precisa.\n\n' +
@@ -1818,8 +2719,7 @@ if (
 
         if (
             texto === '2' ||
-            texto === 'nao' ||
-            texto === 'não' ||
+            intent === 'deny' ||
             texto === 'voltar'
         ) {
 
@@ -1834,16 +2734,13 @@ if (
 
 
             return await showServicesMenu(
-
                 companyId,
-
                 company.name
             );
         }
 
 
         return (
-
             '🤔 Escolha uma opção:\n\n' +
 
             '1️⃣ Sim\n' +
@@ -1878,7 +2775,7 @@ if (
 
 
         const customerId =
-            conversationState.customer_id;
+            conversationState?.customer_id;
 
 
         if (
@@ -1891,9 +2788,7 @@ if (
 
 
             return (
-
                 '❌ Não foi possível identificar o seu cadastro.\n\n' +
-
                 'Por favor, tente novamente.'
             );
         }
@@ -1905,15 +2800,10 @@ if (
 
         const request =
             await createCustomerRequest(
-
                 companyId,
-
                 customerId,
-
                 conversationId,
-
                 serviceId,
-
                 requestText
             );
 
@@ -1928,9 +2818,7 @@ if (
 
 
             return (
-
                 '❌ Não foi possível registrar a sua solicitação.\n\n' +
-
                 'Por favor, tente novamente.'
             );
         }
@@ -1949,7 +2837,6 @@ if (
 
 
         return (
-
             '✅ *Solicitação registrada com sucesso!*\n\n' +
 
             `🌿 Serviço: ${serviceName}\n` +
@@ -2010,6 +2897,19 @@ if (
                 ];
 
 
+            const productContext =
+                createProductContext({
+                    id:
+                        product.id,
+
+                    name:
+                        product.name,
+
+                    price:
+                        product.price
+                });
+
+
             await updateConversationState(
                 companyId,
                 conversationId,
@@ -2017,20 +2917,15 @@ if (
                 'viewing_product',
 
                 {
-                    product_id:
-                        product.id,
-
-                    product_name:
-                        product.name,
-
-                    unit_price:
-                        product.price
+                    ...rememberProduct(
+                        context,
+                        productContext
+                    )
                 }
             );
 
 
             return (
-
                 `🍔 *${product.name}*\n\n` +
 
                 `💰 Preço: ${product.price} MT\n\n` +
@@ -2054,6 +2949,19 @@ if (
             product
         ) {
 
+            const productContext =
+                createProductContext({
+                    id:
+                        product.id,
+
+                    name:
+                        product.name,
+
+                    price:
+                        product.price
+                });
+
+
             await updateConversationState(
                 companyId,
                 conversationId,
@@ -2061,20 +2969,15 @@ if (
                 'viewing_product',
 
                 {
-                    product_id:
-                        product.id,
-
-                    product_name:
-                        product.name,
-
-                    unit_price:
-                        product.price
+                    ...rememberProduct(
+                        context,
+                        productContext
+                    )
                 }
             );
 
 
             return (
-
                 `🍔 *${product.name}*\n\n` +
 
                 `💰 Preço: ${product.price} MT\n\n` +
@@ -2088,11 +2991,8 @@ if (
 
 
         return (
-
             '❌ Não encontrei esse produto.\n\n' +
-
-            'Digite o número do produto ' +
-            'ou o nome do produto.'
+            'Digite o número do produto ou o nome do produto.'
         );
     }
 
@@ -2109,8 +3009,7 @@ if (
 
         if (
             texto === '1' ||
-            texto === 'sim' ||
-            texto === 's' ||
+            intent === 'confirm' ||
             texto === 'pedido'
         ) {
 
@@ -2138,6 +3037,12 @@ if (
                     unit_price:
                         product.unit_price,
 
+                    lastProduct:
+                        product.lastProduct,
+
+                    currentProduct:
+                        product.currentProduct,
+
                     cart:
                         currentCart
                 }
@@ -2145,7 +3050,6 @@ if (
 
 
             return (
-
                 `🍔 *${product.product_name}*\n\n` +
 
                 `💰 Preço: ${product.unit_price} MT\n\n` +
@@ -2157,8 +3061,7 @@ if (
 
         if (
             texto === '2' ||
-            texto === 'nao' ||
-            texto === 'não' ||
+            intent === 'deny' ||
             texto === 'voltar'
         ) {
 
@@ -2173,16 +3076,13 @@ if (
 
 
             return await showProductsMenu(
-
                 companyId,
-
                 company.name
             );
         }
 
 
         return (
-
             '🤔 Escolha uma opção:\n\n' +
 
             '1️⃣ Sim, fazer pedido\n' +
@@ -2208,8 +3108,7 @@ if (
             );
 
 
-        let product =
-            null;
+        let product = null;
 
 
         if (
@@ -2237,6 +3136,19 @@ if (
 
 
         if (
+            !product &&
+            productCandidate
+        ) {
+
+            product =
+                await resolveProductCandidate(
+                    companyId,
+                    productCandidate
+                );
+        }
+
+
+        if (
             !product
         ) {
 
@@ -2253,17 +3165,27 @@ if (
         ) {
 
             return (
-
                 '❌ Não encontrei esse produto.\n\n' +
-
-                'Digite o nome ou número ' +
-                'do produto.'
+                'Digite o nome ou número do produto.'
             );
         }
 
 
         const currentCart =
             context.cart || [];
+
+
+        const productContext =
+            createProductContext({
+                id:
+                    product.id,
+
+                name:
+                    product.name,
+
+                price:
+                    product.price
+            });
 
 
         await updateConversationState(
@@ -2273,14 +3195,10 @@ if (
             'waiting_quantity',
 
             {
-                product_id:
-                    product.id,
-
-                product_name:
-                    product.name,
-
-                unit_price:
-                    product.price,
+                ...rememberProduct(
+                    context,
+                    productContext
+                ),
 
                 cart:
                     currentCart
@@ -2289,7 +3207,6 @@ if (
 
 
         return (
-
             `🍔 *${product.name}*\n\n` +
 
             `💰 Preço: ${product.price} MT\n\n` +
@@ -2309,59 +3226,104 @@ if (
         state === 'waiting_quantity'
     ) {
 
-        const quantity =
-            parseInt(
-                texto,
-                10
-            );
+        let quantity =
+            intelligenceQuantity;
 
 
         if (
-            isNaN(quantity) ||
+            !quantity
+        ) {
+
+            const parsed =
+                parseInt(
+                    texto,
+                    10
+                );
+
+
+            if (
+                !isNaN(parsed) &&
+                parsed > 0
+            ) {
+
+                quantity =
+                    parsed;
+            }
+        }
+
+
+        if (
+            !quantity ||
             quantity <= 0
         ) {
 
             return (
+                '❌ Não consegui identificar a quantidade.\n\n' +
 
-                '❌ Quantidade inválida.\n\n' +
+                'Por favor, diga quantas unidades deseja.\n\n' +
 
-                'Digite apenas um número ' +
-                'maior que zero.'
+                'Exemplo: *2*, *dois* ou *quero três*.'
             );
         }
 
 
         const product =
+            context.currentProduct ||
+            getLastProduct(context) ||
             context;
 
 
+        if (
+            !product?.product_id
+        ) {
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'waiting_product',
+
+                {
+                    cart:
+                        context.cart || []
+                }
+            );
+
+
+            return (
+                '🤔 Não consegui identificar o produto.\n\n' +
+                'Qual produto deseja adicionar?'
+            );
+        }
+
+
         let cart =
-            context.cart || [];
+            Array.isArray(context.cart)
+                ? context.cart
+                : [];
 
 
-        const cartProduct = {
-
-            product_id:
-                product.product_id,
-
-            product_name:
-                product.product_name,
-
-            unit_price:
-                Number(
-                    product.unit_price
-                )
-        };
+        const cartProduct =
+            createProductContext(
+                product
+            );
 
 
         cart =
             addProductToCart(
-
                 cart,
-
                 cartProduct,
-
                 quantity
+            );
+
+
+        const newContext =
+            rememberProduct(
+                {
+                    ...context,
+                    cart
+                },
+                cartProduct
             );
 
 
@@ -2378,18 +3340,14 @@ if (
             'cart_menu',
 
             {
-                cart:
-                    cart,
-
-                total:
-                    total
+                ...newContext,
+                total
             }
         );
 
 
         return (
-
-            `✅ *${quantity}x ${product.product_name}* ` +
+            `✅ *${quantity}x ${cartProduct.product_name}* ` +
             'adicionado ao pedido.\n\n' +
 
             `${formatCart(cart)}\n\n` +
@@ -2414,13 +3372,533 @@ if (
         state === 'cart_menu'
     ) {
 
-        const cart =
-            context.cart || [];
+        let cart =
+            Array.isArray(context.cart)
+                ? context.cart
+                : [];
 
+
+        const lastProduct =
+            getLastProduct(context);
+
+
+        /**
+         * =================================================
+         * ADICIONAR MAIS DO ÚLTIMO PRODUTO
+         * =================================================
+         */
+
+        if (
+            lastProduct &&
+            intelligenceQuantity &&
+            (
+                entities.addAction ||
+                /mais|adiciona|adicionar|quero|manda/i.test(
+                    texto
+                )
+            )
+        ) {
+
+            const quantity =
+                intelligenceQuantity;
+
+
+            const updatedCart =
+                addProductToCart(
+                    cart,
+                    lastProduct,
+                    quantity
+                );
+
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+                        cart: updatedCart
+                    },
+                    lastProduct
+                );
+
+
+            const total =
+                calculateCartTotal(
+                    updatedCart
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'cart_menu',
+
+                {
+                    ...newContext,
+                    total
+                }
+            );
+
+
+            return (
+                `✅ Adicionei mais *${quantity}x ${lastProduct.product_name}*.\n\n` +
+
+                `${formatCart(updatedCart)}\n\n` +
+
+                'O que deseja fazer?\n\n' +
+
+                '1️⃣ Adicionar outro produto\n' +
+                '2️⃣ Finalizar pedido\n' +
+                '3️⃣ Alterar carrinho\n' +
+                '4️⃣ Cancelar pedido'
+            );
+        }
+
+
+        /**
+         * =================================================
+         * "O MESMO"
+         * =================================================
+         */
+
+        if (
+            lastProduct &&
+            /^(o mesmo|a mesma|igual|esse mesmo|essa mesma)$/i.test(
+                texto
+            )
+        ) {
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'waiting_quantity',
+
+                {
+                    ...rememberProduct(
+                        context,
+                        lastProduct
+                    ),
+
+                    cart
+                }
+            );
+
+
+            return (
+                `🍔 *${lastProduct.product_name}*\n\n` +
+
+                'Quantas unidades deseja adicionar?'
+            );
+        }
+
+
+        /**
+         * =================================================
+         * "MAIS UM"
+         * =================================================
+         */
+
+        if (
+            lastProduct &&
+            intelligenceQuantity === 1 &&
+            /mais|adiciona|adicionar|quero|manda/i.test(texto)
+        ) {
+
+            const updatedCart =
+                addProductToCart(
+                    cart,
+                    lastProduct,
+                    1
+                );
+
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+                        cart: updatedCart
+                    },
+                    lastProduct
+                );
+
+
+            const total =
+                calculateCartTotal(
+                    updatedCart
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'cart_menu',
+
+                {
+                    ...newContext,
+                    total
+                }
+            );
+
+
+            return (
+                `✅ Adicionei mais *1x ${lastProduct.product_name}*.\n\n` +
+
+                `${formatCart(updatedCart)}\n\n` +
+
+                'O que deseja fazer?\n\n' +
+
+                '1️⃣ Adicionar outro produto\n' +
+                '2️⃣ Finalizar pedido\n' +
+                '3️⃣ Alterar carrinho\n' +
+                '4️⃣ Cancelar pedido'
+            );
+        }
+
+
+        /**
+         * =================================================
+         * TOTAL DO CARRINHO
+         * =================================================
+         */
+
+        if (
+            /quanto|total|deu|pagar|fica|valor/i.test(texto) &&
+            !productCandidate
+        ) {
+
+            const total =
+                calculateCartTotal(
+                    cart
+                );
+
+
+            return (
+                `${formatCart(cart)}\n\n` +
+
+                `💵 O total atual é *${total} MT*.\n\n` +
+
+                'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+            );
+        }
+
+
+        /**
+         * =================================================
+         * REMOVER PRODUTO
+         * =================================================
+         */
+
+        if (
+            entities.removeAction &&
+            (
+                productCandidate ||
+                entities.productPosition ||
+                entities.reference
+            )
+        ) {
+
+            let itemIndex = -1;
+
+
+            if (
+                entities.productPosition
+            ) {
+
+                itemIndex =
+                    Number(
+                        entities.productPosition
+                    ) - 1;
+            }
+
+
+            if (
+                itemIndex < 0 &&
+                productCandidate
+            ) {
+
+                const product =
+                    await resolveProductCandidate(
+                        companyId,
+                        productCandidate
+                    );
+
+
+                if (product) {
+
+                    itemIndex =
+                        getCartProductIndex(
+                            cart,
+                            product.id
+                        );
+                }
+            }
+
+
+            if (
+                itemIndex < 0 &&
+                entities.reference === 'last'
+            ) {
+
+                itemIndex =
+                    cart.length - 1;
+            }
+
+
+            if (
+                itemIndex >= 0 &&
+                itemIndex < cart.length
+            ) {
+
+                const removed =
+                    cart[itemIndex];
+
+
+                cart =
+                    cart.filter(
+                        (_, index) =>
+                            index !== itemIndex
+                    );
+
+
+                const total =
+                    calculateCartTotal(
+                        cart
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'cart_menu',
+                    {
+                        ...context,
+
+                        cart,
+
+                        total,
+
+                        lastProduct:
+                            null,
+
+                        currentProduct:
+                            null
+                    }
+                );
+
+
+                if (
+                    !cart.length
+                ) {
+
+                    return (
+                        `🗑️ *${removed.product_name}* ` +
+                        'foi removido do pedido.\n\n' +
+                        'O carrinho está vazio.\n\n' +
+                        'Deseja adicionar algum produto?'
+                    );
+                }
+
+
+                return (
+                    `🗑️ *${removed.product_name}* ` +
+                    'foi removido do pedido.\n\n' +
+                    `${formatCart(cart)}\n\n` +
+                    `💵 Total: *${total} MT*\n\n` +
+                    'O que deseja fazer?\n\n' +
+                    '1️⃣ Adicionar outro produto\n' +
+                    '2️⃣ Finalizar pedido\n' +
+                    '3️⃣ Alterar carrinho\n' +
+                    '4️⃣ Cancelar pedido'
+                );
+            }
+
+
+            return (
+                '🤔 Não consegui identificar qual produto deseja remover.\n\n' +
+                `${formatCart(cart)}`
+            );
+        }
+
+
+        /**
+         * =================================================
+         * ALTERAR QUANTIDADE
+         * =================================================
+         */
+
+        if (
+            entities.editAction &&
+            productCandidate &&
+            intelligenceQuantity
+        ) {
+
+            const product =
+                await resolveProductCandidate(
+                    companyId,
+                    productCandidate
+                );
+
+
+            if (product) {
+
+                const index =
+                    getCartProductIndex(
+                        cart,
+                        product.id
+                    );
+
+
+                if (
+                    index >= 0
+                ) {
+
+                    cart[index] =
+                        {
+                            ...cart[index],
+
+                            quantity:
+                                intelligenceQuantity,
+
+                            subtotal:
+                                Number(
+                                    cart[index].unit_price
+                                ) *
+                                intelligenceQuantity
+                        };
+
+
+                    const total =
+                        calculateCartTotal(
+                            cart
+                        );
+
+
+                    const productContext =
+                        createProductContext(
+                            product
+                        );
+
+
+                    await updateConversationState(
+                        companyId,
+                        conversationId,
+                        'cart_menu',
+                        {
+                            ...context,
+
+                            cart,
+
+                            total,
+
+                            lastProduct:
+                                productContext,
+
+                            currentProduct:
+                                productContext
+                        }
+                    );
+
+
+                    return (
+                        `✏️ Atualizei *${product.name}* ` +
+                        `para *${intelligenceQuantity} unidades*.\n\n` +
+
+                        `${formatCart(cart)}\n\n` +
+
+                        `💵 Total: *${total} MT*\n\n` +
+
+                        'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+                    );
+                }
+            }
+        }
+
+
+        /**
+         * =================================================
+         * SELECIONAR ITEM PARA SUBSTITUIÇÃO
+         * =================================================
+         */
+
+        if (
+            entities.editAction &&
+            !productCandidate &&
+            entities.productPosition !== null &&
+            entities.productPosition !== undefined
+        ) {
+
+            let itemIndex;
+
+
+            if (
+                entities.productPosition === 'last'
+            ) {
+
+                itemIndex =
+                    cart.length - 1;
+
+            } else {
+
+                itemIndex =
+                    Number(
+                        entities.productPosition
+                    ) - 1;
+            }
+
+
+            if (
+                itemIndex >= 0 &&
+                itemIndex < cart.length
+            ) {
+
+                const selectedProduct =
+                    cart[itemIndex];
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'editing_cart_item',
+                    {
+                        ...context,
+
+                        cart,
+
+                        editingCartIndex:
+                            itemIndex,
+
+                        editingCartProduct:
+                            selectedProduct
+                    }
+                );
+
+
+                return (
+                    `🔄 O produto selecionado é *${selectedProduct.product_name}*.\n\n` +
+
+                    'Qual produto deseja colocar no lugar?'
+                );
+            }
+
+
+            return (
+                '🤔 Não encontrei esse produto no seu carrinho.\n\n' +
+                `${formatCart(cart)}`
+            );
+        }
+
+
+        /**
+         * =================================================
+         * OPÇÕES DO CARRINHO
+         * =================================================
+         */
 
         if (
             texto === '1' ||
-            texto === 'sim' ||
+            intent === 'confirm' ||
             texto === 'adicionar' ||
             texto === 'outro'
         ) {
@@ -2432,16 +3910,13 @@ if (
                 'waiting_product',
 
                 {
-                    cart:
-                        cart
+                    cart
                 }
             );
 
 
             return (
-
                 '➕ *Adicionar outro produto*\n\n' +
-
                 'Qual produto deseja adicionar?'
             );
         }
@@ -2457,9 +3932,7 @@ if (
                 cart.length === 0
             ) {
 
-                return (
-                    '🛒 O seu carrinho está vazio.'
-                );
+                return '🛒 O seu carrinho está vazio.';
             }
 
 
@@ -2476,17 +3949,13 @@ if (
                 'confirming_order',
 
                 {
-                    cart:
-                        cart,
-
-                    total:
-                        total
+                    cart,
+                    total
                 }
             );
 
 
             return (
-
                 `${formatCart(cart)}\n\n` +
 
                 'Deseja confirmar o pedido?\n\n' +
@@ -2508,9 +3977,7 @@ if (
                 cart.length === 0
             ) {
 
-                return (
-                    '🛒 O seu carrinho está vazio.'
-                );
+                return '🛒 O seu carrinho está vazio.';
             }
 
 
@@ -2521,8 +3988,7 @@ if (
                 'editing_cart',
 
                 {
-                    cart:
-                        cart
+                    cart
                 }
             );
 
@@ -2535,7 +4001,7 @@ if (
 
         if (
             texto === '4' ||
-            texto === 'cancelar'
+            intent === 'cancel'
         ) {
 
             await clearConversationState(
@@ -2552,7 +4018,6 @@ if (
 
 
         return (
-
             `${formatCart(cart)}\n\n` +
 
             '🤔 Escolha uma opção:\n\n' +
@@ -2562,6 +4027,149 @@ if (
             '3️⃣ Alterar carrinho\n' +
             '4️⃣ Cancelar pedido'
         );
+    }
+
+
+    /**
+     * =====================================================
+     * REMOVER PRODUTO DO CARRINHO
+     * =====================================================
+     */
+
+    if (
+        entities.removeAction &&
+        (
+            productCandidate ||
+            entities.productPosition ||
+            entities.reference
+        )
+    ) {
+
+        const cart =
+            Array.isArray(context.cart)
+                ? context.cart
+                : [];
+
+
+        let itemIndex = -1;
+
+
+        if (
+            entities.productPosition
+        ) {
+
+            itemIndex =
+                Number(
+                    entities.productPosition
+                ) - 1;
+        }
+
+
+        if (
+            itemIndex < 0 &&
+            productCandidate
+        ) {
+
+            const product =
+                await resolveProductCandidate(
+                    companyId,
+                    productCandidate
+                );
+
+
+            if (product) {
+
+                itemIndex =
+                    getCartProductIndex(
+                        cart,
+                        product.id
+                    );
+            }
+        }
+
+
+        if (
+            itemIndex < 0 &&
+            entities.reference === 'last'
+        ) {
+
+            itemIndex =
+                cart.length - 1;
+        }
+
+
+        if (
+            itemIndex >= 0 &&
+            itemIndex < cart.length
+        ) {
+
+            const removed =
+                cart[itemIndex];
+
+
+            const updatedCart =
+                cart.filter(
+                    (_, index) =>
+                        index !== itemIndex
+                );
+
+
+            const total =
+                calculateCartTotal(
+                    updatedCart
+                );
+
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...context,
+
+                    cart:
+                        updatedCart,
+
+                    total,
+
+                    lastProduct:
+                        null,
+
+                    currentProduct:
+                        null
+                }
+            );
+
+
+            if (
+                !updatedCart.length
+            ) {
+
+                return (
+                    `🗑️ *${removed.product_name}* ` +
+                    'foi removido do pedido.\n\n' +
+                    'O carrinho está vazio.\n\n' +
+                    'Deseja adicionar algum produto?'
+                );
+            }
+
+
+            return (
+                `🗑️ *${removed.product_name}* ` +
+                'foi removido do pedido.\n\n' +
+
+                `${formatCart(updatedCart)}\n\n` +
+
+                `💵 Total: *${total} MT*\n\n` +
+
+                'O que deseja fazer?\n\n' +
+
+                '1️⃣ Adicionar outro produto\n' +
+                '2️⃣ Finalizar pedido\n' +
+                '3️⃣ Alterar carrinho\n' +
+                '4️⃣ Cancelar pedido'
+            );
+        }
     }
 
 
@@ -2598,8 +4206,7 @@ if (
                 'cart_menu',
 
                 {
-                    cart:
-                        cart,
+                    cart,
 
                     total:
                         calculateCartTotal(
@@ -2610,7 +4217,6 @@ if (
 
 
             return (
-
                 `${formatCart(cart)}\n\n` +
 
                 'O que deseja fazer?\n\n' +
@@ -2648,8 +4254,7 @@ if (
             'editing_cart_item',
 
             {
-                cart:
-                    cart,
+                cart,
 
                 item_index:
                     selectedNumber - 1
@@ -2658,7 +4263,6 @@ if (
 
 
         return (
-
             `✏️ *${item.product_name}*\n\n` +
 
             `Quantidade atual: ${item.quantity}\n` +
@@ -2671,6 +4275,558 @@ if (
 
             'Digite *voltar* para voltar.'
         );
+    }
+
+
+    /**
+     * =====================================================
+     * SUBSTITUIÇÃO CONTEXTUAL DE PRODUTO
+     * =====================================================
+     */
+
+    if (
+        state === 'editing_cart_item' &&
+        context.editingCartIndex !== null &&
+        context.editingCartIndex !== undefined
+    ) {
+
+        const cart =
+            Array.isArray(context.cart)
+                ? context.cart
+                : [];
+
+
+        const editingIndex =
+            Number(
+                context.editingCartIndex
+            );
+
+
+        if (
+            editingIndex < 0 ||
+            editingIndex >= cart.length
+        ) {
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...context,
+                    cart,
+                    editingCartIndex: null,
+                    editingCartProduct: null
+                }
+            );
+
+
+            return (
+                '🤔 Não consegui identificar o item que deseja substituir.'
+            );
+        }
+
+
+        let replacementProduct = null;
+
+
+        const contextualReplacement =
+            resolveContextualProduct(
+                context,
+                texto
+            );
+
+
+        if (
+            contextualReplacement
+        ) {
+
+            replacementProduct =
+                await resolveProductCandidate(
+                    companyId,
+                    contextualReplacement.product_name
+                );
+        }
+
+
+        if (
+            !replacementProduct &&
+            productCandidate
+        ) {
+
+            replacementProduct =
+                await resolveProductCandidate(
+                    companyId,
+                    productCandidate
+                );
+        }
+
+
+        if (
+            !replacementProduct
+        ) {
+
+            const cleanedCandidate =
+                texto
+                    .replace(
+                        /^(quero|quero um|quero uma|manda|adiciona|coloca|troca por|substitui por)\s+/i,
+                        ''
+                    )
+                    .trim();
+
+
+            if (
+                cleanedCandidate
+            ) {
+
+                replacementProduct =
+                    await resolveProductCandidate(
+                        companyId,
+                        cleanedCandidate
+                    );
+            }
+        }
+
+
+        if (
+            !replacementProduct
+        ) {
+
+            return (
+                `🤔 Não encontrei *${texto}* no nosso menu.\n\n` +
+                `Qual produto deseja colocar no lugar?`
+            );
+        }
+
+
+        const oldProduct =
+            cart[editingIndex];
+
+
+        const quantity =
+            Number(
+                oldProduct.quantity || 1
+            );
+
+
+        const replacement = {
+
+            product_id:
+                replacementProduct.id,
+
+            product_name:
+                replacementProduct.name,
+
+            unit_price:
+                Number(
+                    replacementProduct.price || 0
+                ),
+
+            quantity,
+
+            subtotal:
+                Number(
+                    replacementProduct.price || 0
+                ) * quantity
+        };
+
+
+        cart[editingIndex] =
+            replacement;
+
+
+        const total =
+            calculateCartTotal(
+                cart
+            );
+
+
+        const productContext =
+            createProductContext(
+                replacementProduct
+            );
+
+
+        await updateConversationState(
+            companyId,
+            conversationId,
+            'cart_menu',
+            {
+                ...context,
+
+                cart,
+
+                total,
+
+                editingCartIndex:
+                    null,
+
+                editingCartProduct:
+                    null,
+
+                lastProduct:
+                    productContext,
+
+                currentProduct:
+                    productContext,
+
+                awaitingConfirmation:
+                    false
+            }
+        );
+
+
+        return (
+            `✅ *${oldProduct.product_name}* foi substituído por ` +
+            `*${replacementProduct.name}*.\n\n` +
+
+            `${formatCart(cart)}\n\n` +
+
+            `💵 Total: *${total} MT*\n\n` +
+
+            `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
+        );
+    }
+
+
+    /**
+     * =====================================================
+     * INTENÇÃO + REFERÊNCIA CONTEXTUAL
+     * =====================================================
+     */
+
+    if (
+        contextualProduct &&
+        businessType !== 'services'
+    ) {
+
+        const contextualProductName =
+            contextualProduct.product_name;
+
+
+        /**
+         * PREÇO
+         */
+
+        if (
+            intent === 'price' ||
+            /quanto custa|qual o preco|qual o preço|quanto e|quanto é/i
+                .test(texto)
+        ) {
+
+            const product =
+                await resolveProductCandidate(
+                    companyId,
+                    contextualProductName
+                );
+
+
+            if (product) {
+
+                const productContext =
+                    createProductContext(
+                        product
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'viewing_product',
+                    {
+                        ...context,
+
+                        lastProduct:
+                            productContext,
+
+                        currentProduct:
+                            productContext,
+
+                        awaitingConfirmation:
+                            false
+                    }
+                );
+
+
+                return (
+                    `🍔 *${product.name}*\n\n` +
+                    `💰 Preço: *${product.price} MT*`
+                );
+            }
+        }
+
+
+        /**
+         * DISPONIBILIDADE
+         */
+
+        if (
+            /tem\s+(mais\s+)?(desse|desse produto)/i.test(texto) ||
+            /ainda tem/i.test(texto)
+        ) {
+
+            const product =
+                await resolveProductCandidate(
+                    companyId,
+                    contextualProductName
+                );
+
+
+            if (product) {
+
+                const productContext =
+                    createProductContext(
+                        product
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'viewing_product',
+                    {
+                        ...context,
+
+                        lastProduct:
+                            productContext,
+
+                        currentProduct:
+                            productContext,
+
+                        awaitingConfirmation:
+                            true
+                    }
+                );
+
+
+                return (
+                    `✅ Sim, temos *${product.name}*.\n\n` +
+                    `💰 Preço: *${product.price} MT*\n\n` +
+                    `Deseja adicionar ao pedido?`
+                );
+            }
+        }
+
+
+        /**
+         * ADICIONAR PRODUTO CONTEXTUAL
+         */
+
+        if (
+            /^(adiciona|adicionar|coloca|manda|quero|quero mais|manda mais)/i
+                .test(texto)
+        ) {
+
+            const product =
+                await resolveProductCandidate(
+                    companyId,
+                    contextualProductName
+                );
+
+
+            if (product) {
+
+                const productContext =
+                    createProductContext(
+                        product
+                    );
+
+
+                /**
+                 * Se informou quantidade,
+                 * adiciona imediatamente.
+                 */
+
+                if (
+                    contextualQuantity
+                ) {
+
+                    const currentCart =
+                        Array.isArray(context.cart)
+                            ? context.cart
+                            : [];
+
+
+                    const cart =
+                        addProductToCart(
+                            currentCart,
+                            productContext,
+                            contextualQuantity
+                        );
+
+
+                    const newContext =
+                        rememberProduct(
+                            {
+                                ...context,
+
+                                cart,
+
+                                awaitingConfirmation:
+                                    false
+                            },
+                            productContext
+                        );
+
+
+                    const total =
+                        calculateCartTotal(
+                            cart
+                        );
+
+
+                    await updateConversationState(
+                        companyId,
+                        conversationId,
+                        'cart_menu',
+                        {
+                            ...newContext,
+                            total
+                        }
+                    );
+
+
+                    return (
+                        `✅ Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
+                        `${formatCart(cart)}\n\n` +
+                        `💵 Total: *${total} MT*\n\n` +
+                        `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
+                    );
+                }
+
+
+                /**
+                 * Sem quantidade:
+                 * NÃO assumir 1.
+                 */
+
+                const newContext =
+                    rememberProduct(
+                        {
+                            ...context,
+
+                            awaitingConfirmation:
+                                false
+                        },
+                        productContext
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'waiting_quantity',
+                    {
+                        ...newContext,
+
+                        cart:
+                            Array.isArray(context.cart)
+                                ? context.cart
+                                : []
+                    }
+                );
+
+
+                return (
+                    `🍔 *${product.name}*\n\n` +
+                    `💰 Preço: *${product.price} MT*\n\n` +
+                    `Quantas unidades deseja?`
+                );
+            }
+        }
+
+
+        /**
+         * REMOVER
+         */
+
+        if (
+            /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
+                .test(texto)
+        ) {
+
+            const cart =
+                Array.isArray(context.cart)
+                    ? context.cart
+                    : [];
+
+
+            /**
+             * CORREÇÃO:
+             *
+             * contextualProduct é um objeto.
+             *
+             * getCartProductIndex() espera
+             * o product_id.
+             */
+
+            const index =
+                getCartProductIndex(
+                    cart,
+                    contextualProduct.product_id
+                );
+
+
+            if (
+                index !== -1
+            ) {
+
+                const removedProduct =
+                    cart[index];
+
+
+                cart.splice(
+                    index,
+                    1
+                );
+
+
+                const total =
+                    calculateCartTotal(
+                        cart
+                    );
+
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'cart_menu',
+                    {
+                        ...context,
+
+                        cart,
+
+                        total,
+
+                        lastProduct:
+                            null,
+
+                        currentProduct:
+                            null,
+
+                        awaitingConfirmation:
+                            false
+                    }
+                );
+
+
+                if (
+                    !cart.length
+                ) {
+
+                    return (
+                        `🗑️ Removi *${removedProduct.product_name}* do pedido.\n\n` +
+                        `O seu carrinho está vazio.`
+                    );
+                }
+
+
+                return (
+                    `🗑️ Removi *${removedProduct.product_name}* do pedido.\n\n` +
+                    `${formatCart(cart)}\n\n` +
+                    `💵 Total: *${total} MT*`
+                );
+            }
+        }
     }
 
 
@@ -2705,8 +4861,7 @@ if (
                 'editing_cart',
 
                 {
-                    cart:
-                        cart
+                    cart
                 }
             );
 
@@ -2717,11 +4872,20 @@ if (
         }
 
 
-        const quantity =
-            parseInt(
-                texto,
-                10
-            );
+        let quantity =
+            intelligenceQuantity;
+
+
+        if (
+            !quantity
+        ) {
+
+            quantity =
+                parseInt(
+                    texto,
+                    10
+                );
+        }
 
 
         if (
@@ -2748,8 +4912,7 @@ if (
                 'editing_cart',
 
                 {
-                    cart:
-                        cart
+                    cart
                 }
             );
 
@@ -2765,11 +4928,8 @@ if (
 
 
         updateProductQuantity(
-
             cart,
-
             itemIndex,
-
             quantity
         );
 
@@ -2785,11 +4945,8 @@ if (
 
 
             return (
-
                 `🗑️ *${productName}* foi removido.\n\n` +
-
                 '🛒 O carrinho está vazio.\n\n' +
-
                 'Digite *Olá* para começar novamente.'
             );
         }
@@ -2808,11 +4965,8 @@ if (
             'cart_menu',
 
             {
-                cart:
-                    cart,
-
-                total:
-                    total
+                cart,
+                total
             }
         );
 
@@ -2830,9 +4984,7 @@ if (
         ) {
 
             return (
-
-                `🗑️ *${productName}* foi removido ` +
-                'do pedido.\n\n' +
+                `🗑️ *${productName}* foi removido do pedido.\n\n` +
 
                 `${formatCart(cart)}\n\n` +
 
@@ -2847,9 +4999,7 @@ if (
 
 
         return (
-
-            `✅ Quantidade de *${productName}* ` +
-            'atualizada.\n\n' +
+            `✅ Quantidade de *${productName}* atualizada.\n\n` +
 
             `${formatCart(cart)}\n\n` +
 
@@ -2875,8 +5025,7 @@ if (
 
         if (
             texto === '1' ||
-            texto === 'sim' ||
-            texto === 's' ||
+            intent === 'confirm' ||
             texto === 'confirmar'
         ) {
 
@@ -2897,11 +5046,8 @@ if (
 
             const order =
                 await createOrder(
-
                     companyId,
-
-                    conversationState.customer_id,
-
+                    conversationState?.customer_id,
                     conversationId
                 );
 
@@ -2924,13 +5070,9 @@ if (
                 const orderItem =
                     await addOrderItem(
                         companyId,
-
                         order.id,
-
                         item.product_id,
-
-                        item.quantity,
-
+                        item.quantity
                     );
 
 
@@ -2977,8 +5119,7 @@ if (
             );
 
 
-            let resumo =
-                '';
+            let resumo = '';
 
 
             cart.forEach(
@@ -2996,7 +5137,6 @@ if (
 
 
             return (
-
                 '✅ *Pedido confirmado com sucesso!*\n\n' +
 
                 `${resumo}\n` +
@@ -3015,10 +5155,8 @@ if (
 
         if (
             texto === '2' ||
-            texto === 'nao' ||
-            texto === 'não' ||
-            texto === 'n' ||
-            texto === 'cancelar'
+            intent === 'deny' ||
+            intent === 'cancel'
         ) {
 
             await clearConversationState(
@@ -3035,7 +5173,6 @@ if (
 
 
         return (
-
             '🤔 Por favor, escolha uma opção:\n\n' +
 
             '1️⃣ Confirmar pedido\n' +
@@ -3055,12 +5192,11 @@ if (
     ) {
 
         if (
-            businessType !== 'service'
+            businessType !== 'services'
         ) {
 
             return (
-                'ℹ️ Esta empresa trabalha principalmente ' +
-                'com produtos.'
+                'ℹ️ Esta empresa trabalha principalmente com produtos.'
             );
         }
 
@@ -3070,8 +5206,7 @@ if (
         ) {
 
             return (
-                'ℹ️ Os serviços não estão disponíveis ' +
-                'neste momento.'
+                'ℹ️ Os serviços não estão disponíveis neste momento.'
             );
         }
 
@@ -3087,9 +5222,7 @@ if (
 
 
         return await showServicesMenu(
-
             companyId,
-
             company.name
         );
     }
@@ -3106,61 +5239,26 @@ if (
     ) {
 
         if (
-            businessType !== 'service'
+            businessType !== 'services'
         ) {
 
             return (
-                'ℹ️ Esta opção não está disponível ' +
-                'para este negócio.'
+                'ℹ️ Esta opção não está disponível para este negócio.'
             );
         }
 
-
-        if (
-            !settings.orders_enabled
-        ) {
-
-            return (
-                'ℹ️ As solicitações de serviço ' +
-                'não estão disponíveis neste momento.'
-            );
-        }
 
 
         await updateConversationState(
             companyId,
-    conversationId,
-    'viewing_services',
-    {}
-);
+            conversationId,
 
-return await showServicesMenu(
-    companyId,
-    company.name
-);
-    }
+            'viewing_services',
+
+            {}
+        );
 
 
-    /**
-     * =====================================================
-     * MENU DE PRODUTOS
-     * =====================================================
-     */
-
-    if (
-    intent === 'menu'
-    ) {
-
-        if (!settings.menu_enabled) {
-            return (
-                'ℹ️ O menu não está disponível ' +
-                'neste momento.'
-            );
-        }
-
-    if (
-        businessType === 'service'
-    ) {
         return await showServicesMenu(
             companyId,
             company.name
@@ -3168,13 +5266,43 @@ return await showServicesMenu(
     }
 
 
+    /**
+     * =====================================================
+     * MENU
+     * =====================================================
+     */
+
+    if (
+        intent === 'menu'
+    ) {
+
         if (
             !settings.menu_enabled
         ) {
 
             return (
-                'ℹ️ O menu não está disponível ' +
-                'neste momento.'
+                'ℹ️ O menu não está disponível neste momento.'
+            );
+        }
+
+
+        if (
+            businessType === 'services'
+        ) {
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+
+                'viewing_services',
+
+                {}
+            );
+
+
+            return await showServicesMenu(
+                companyId,
+                company.name
             );
         }
 
@@ -3207,9 +5335,7 @@ return await showServicesMenu(
 
 
         return await showProductsMenu(
-
             companyId,
-
             company.name
         );
     }
@@ -3222,35 +5348,27 @@ return await showServicesMenu(
      */
 
     if (
-    intent === 'order'
+        intent === 'order'
     ) {
-
-        if (!settings.orders_enabled) {
-            return (
-                'ℹ️ Os pedidos não estão disponíveis ' +
-                'neste momento.'
-            );  
-        }
-
-        if (
-            businessType === 'service'
-        ) {
-
-            return (
-                '🌿 Este negócio trabalha com serviços.\n\n' +
-                'Digite *1* para ver os serviços ou *2* ' +
-                'para solicitar um serviço/orçamento.'
-            );
-        }
-
 
         if (
             !settings.orders_enabled
         ) {
 
             return (
-                'ℹ️ Os pedidos não estão disponíveis ' +
-                'neste momento.'
+                'ℹ️ Os pedidos não estão disponíveis neste momento.'
+            );
+        }
+
+
+        if (
+            businessType === 'services'
+        ) {
+
+            return (
+                '🌿 Este negócio trabalha com serviços.\n\n' +
+                'Digite *1* para ver os serviços ou *2* ' +
+                'para solicitar um serviço/orçamento.'
             );
         }
 
@@ -3268,7 +5386,6 @@ return await showServicesMenu(
 
 
         return (
-
             '🛒 *Vamos fazer o seu pedido!*\n\n' +
 
             'Qual produto deseja?'
@@ -3287,13 +5404,12 @@ return await showServicesMenu(
     ) {
 
         return (
-
             `📍 *${company.name}*\n\n` +
 
-            `${
+            (
                 company.location ||
                 'Localização não configurada.'
-            }`
+            )
         );
     }
 
@@ -3302,39 +5418,33 @@ return await showServicesMenu(
      * =====================================================
      * HORÁRIO
      * =====================================================
-     *
-     * A intenção já é reconhecida pelo intentService.
-     *
-     * Como o campo de horário ainda não faz parte da
-     * estrutura confirmada da empresa, não inventamos
-     * informação.
      */
 
     if (
-    intent === 'hours'
-) {
-
-    const formattedHours =
-        formatBusinessHours(
-            company.business_hours
-        );
-
-
-    if (
-        !company.business_hours
+        intent === 'hours'
     ) {
 
-        return formattedHours;
+        const formattedHours =
+            formatBusinessHours(
+                company.business_hours
+            );
+
+
+        if (
+            !company.business_hours
+        ) {
+
+            return formattedHours;
+        }
+
+
+        return (
+            `🕒 *Horário de funcionamento ${company.name}*\n\n` +
+
+            formattedHours
+        );
     }
 
-
-    return (
-
-        `🕒 *Horário de funcionamento ${company.name}*\n\n` +
-
-        formattedHours
-    );
-}
 
     /**
      * =====================================================
@@ -3347,7 +5457,7 @@ return await showServicesMenu(
     ) {
 
         if (
-            businessType === 'service'
+            businessType === 'services'
         ) {
 
             if (
@@ -3355,8 +5465,7 @@ return await showServicesMenu(
             ) {
 
                 return (
-                    'ℹ️ Os serviços não estão disponíveis ' +
-                    'neste momento.'
+                    'ℹ️ Os serviços não estão disponíveis neste momento.'
                 );
             }
 
@@ -3372,9 +5481,7 @@ return await showServicesMenu(
 
 
             return await showServicesMenu(
-
                 companyId,
-
                 company.name
             );
         }
@@ -3385,8 +5492,7 @@ return await showServicesMenu(
         ) {
 
             return (
-                'ℹ️ O menu não está disponível ' +
-                'neste momento.'
+                'ℹ️ O menu não está disponível neste momento.'
             );
         }
 
@@ -3402,9 +5508,7 @@ return await showServicesMenu(
 
 
         return await showProductsMenu(
-
             companyId,
-
             company.name
         );
     }
@@ -3432,9 +5536,7 @@ return await showServicesMenu(
 
 
         return (
-
-            '👤 Um atendente irá falar consigo ' +
-            'em breve.\n\n' +
+            '👤 Um atendente irá falar consigo em breve.\n\n' +
 
             `Obrigado por contactar a ${company.name}!`
         );
@@ -3469,7 +5571,6 @@ return await showServicesMenu(
     ) {
 
         return (
-
             '😊 De nada! Estamos sempre à disposição.\n\n' +
 
             getMenuOptions(
@@ -3497,7 +5598,6 @@ return await showServicesMenu(
 
 
         return (
-
             '👋 Até logo!\n\n' +
 
             `Obrigado por entrar em contacto com ${company.name}.`
@@ -3522,7 +5622,6 @@ return await showServicesMenu(
 
 
         return (
-
             '❌ A operação atual foi cancelada.\n\n' +
 
             getMainMenu(
@@ -3535,12 +5634,11 @@ return await showServicesMenu(
 
     /**
      * =====================================================
-     * MENSAGEM NÃO RECONHECIDA
+     * NÃO RECONHECIDO
      * =====================================================
      */
 
     return (
-
         '🤔 Desculpe, não entendi.\n\n' +
 
         'Pode escrever de várias formas, por exemplo:\n\n' +
@@ -3564,7 +5662,5 @@ return await showServicesMenu(
  */
 
 module.exports = {
-
     processMessage
-
 };
