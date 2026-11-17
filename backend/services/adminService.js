@@ -17,7 +17,7 @@ async function getAdminSummary() {
 
         supabase
             .from('bot_settings')
-            .select('id, bot_enabled'),
+            .select('id, bot_enabled, admin_bot_enabled'),
 
         supabase
             .from('whatsapp_sessions')
@@ -49,7 +49,10 @@ async function getAdminSummary() {
         bots: {
             total: botSettings.length,
             enabled: botSettings.filter(bot => bot.bot_enabled).length,
-            disabled: botSettings.filter(bot => !bot.bot_enabled).length
+            disabled: botSettings.filter(bot => !bot.bot_enabled).length,
+            admin_blocked: botSettings.filter(
+                bot => bot.admin_bot_enabled === false
+            ).length
         },
         whatsapp: {
             total: whatsappSessions.length,
@@ -78,6 +81,7 @@ async function getAllCompanies() {
             created_at,
             bot_settings (
                 bot_enabled,
+                admin_bot_enabled,
                 menu_enabled,
                 orders_enabled,
                 human_support_enabled
@@ -116,6 +120,7 @@ async function getCompanyDetails(companyId) {
             bot_settings (
                 id,
                 bot_enabled,
+                admin_bot_enabled,
                 menu_enabled,
                 orders_enabled,
                 human_support_enabled
@@ -185,9 +190,68 @@ async function getAllUsers() {
     return data || [];
 }
 
+/**
+ * =====================================================
+ * BLOQUEIO ADMINISTRATIVO DO BOT
+ * =====================================================
+ */
+
+async function setAdminBotStatus(companyId, enabled) {
+    if (!companyId) {
+        throw new Error('O ID da empresa é obrigatório.');
+    }
+
+    if (typeof enabled !== 'boolean') {
+        throw new Error(
+            'O estado administrativo do bot deve ser booleano.'
+        );
+    }
+
+    const { data, error } = await supabase
+        .from('bot_settings')
+        .update({
+            admin_bot_enabled: enabled
+        })
+        .eq('company_id', companyId)
+        .select(`
+            company_id,
+            bot_enabled,
+            admin_bot_enabled
+        `)
+        .maybeSingle();
+
+    if (error) {
+        console.error(
+            '❌ Erro ao alterar estado administrativo do bot:',
+            error
+        );
+
+        throw error;
+    }
+
+    if (!data) {
+        throw new Error(
+            'Não foram encontradas configurações do bot para esta empresa.'
+        );
+    }
+
+    return data;
+}
+
+async function blockCompanyBot(companyId) {
+    return setAdminBotStatus(companyId, false);
+}
+
+async function unblockCompanyBot(companyId) {
+    return setAdminBotStatus(companyId, true);
+}
+
 module.exports = {
     getAdminSummary,
     getAllCompanies,
     getCompanyDetails,
-    getAllUsers
+    getAllUsers,
+    setAdminBotStatus,
+    blockCompanyBot,
+    unblockCompanyBot
 };

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import './Admin.css';
@@ -11,6 +12,10 @@ function Admin() {
     const [companiesLoading, setCompaniesLoading] = useState(true);
     const [error, setError] = useState('');
     const [companiesError, setCompaniesError] = useState('');
+
+    const [botActionLoading, setBotActionLoading] = useState(false);
+    const [botActionError, setBotActionError] = useState('');
+    const [botActionSuccess, setBotActionSuccess] = useState('');
 
     useEffect(() => {
         loadAdminData();
@@ -143,6 +148,13 @@ function Admin() {
             };
         }
 
+        if (bot.admin_bot_enabled === false) {
+            return {
+                label: 'Bloqueado pelo admin',
+                className: 'admin-blocked'
+            };
+        }
+
         return bot.bot_enabled
             ? {
                   label: 'Ativo',
@@ -242,10 +254,150 @@ function Admin() {
 
     function openCompanyDetails(company) {
         setSelectedCompany(company);
+        setBotActionError('');
+        setBotActionSuccess('');
     }
 
     function closeCompanyDetails() {
         setSelectedCompany(null);
+        setBotActionError('');
+        setBotActionSuccess('');
+    }
+
+    async function handleAdminBotToggle() {
+        if (!selectedCompany) {
+            return;
+        }
+
+        const bot = getBotSettings(selectedCompany);
+
+        if (!bot) {
+            setBotActionError(
+                'Esta empresa não possui configurações de bot.'
+            );
+            return;
+        }
+
+        const isCurrentlyBlocked =
+            bot.admin_bot_enabled === false;
+
+        const action = isCurrentlyBlocked
+            ? 'unblock'
+            : 'block';
+
+        const confirmationMessage =
+            isCurrentlyBlocked
+                ? `Desbloquear o bot de "${selectedCompany.name}"? O bot poderá voltar a responder normalmente.`
+                : `Bloquear o bot de "${selectedCompany.name}"? O WhatsApp continuará conectado, mas o bot deixará de responder aos clientes.`;
+
+        const confirmed =
+            window.confirm(
+                confirmationMessage
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setBotActionLoading(true);
+            setBotActionError('');
+            setBotActionSuccess('');
+
+            const accessToken =
+                await getAccessToken();
+
+            const response = await fetch(
+                `https://bot-whatsapp-production-b00c8a02.up.railway.app/api/admin/companies/${selectedCompany.id}/bot/${action}`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization:
+                            `Bearer ${accessToken}`
+                    }
+                }
+            );
+
+            const data =
+                await response.json();
+
+            if (
+                !response.ok ||
+                !data.success
+            ) {
+                throw new Error(
+                    data.message ||
+                    'Não foi possível alterar o estado administrativo do bot.'
+                );
+            }
+
+            const updatedBot =
+                data.bot;
+
+            setSelectedCompany(
+                previous => {
+                    if (!previous) {
+                        return previous;
+                    }
+
+                    return {
+                        ...previous,
+                        bot_settings: [
+                            {
+                                ...getBotSettings(previous),
+                                ...updatedBot
+                            }
+                        ]
+                    };
+                }
+            );
+
+            setCompanies(
+                previousCompanies =>
+                    previousCompanies.map(
+                        company => {
+                            if (
+                                company.id !==
+                                selectedCompany.id
+                            ) {
+                                return company;
+                            }
+
+                            return {
+                                ...company,
+                                bot_settings: [
+                                    {
+                                        ...getBotSettings(company),
+                                        ...updatedBot
+                                    }
+                                ]
+                            };
+                        }
+                    )
+            );
+
+            setBotActionSuccess(
+                isCurrentlyBlocked
+                    ? 'Bot desbloqueado com sucesso.'
+                    : 'Bot bloqueado com sucesso.'
+            );
+
+            await loadSummary();
+
+        } catch (err) {
+            console.error(
+                'Erro ao alterar estado administrativo do bot:',
+                err
+            );
+
+            setBotActionError(
+                err.message ||
+                'Não foi possível alterar o estado do bot.'
+            );
+
+        } finally {
+            setBotActionLoading(false);
+        }
     }
 
     if (loading) {
@@ -301,6 +453,9 @@ function Admin() {
         selectedCompany
             ? getWhatsAppStatus(selectedCompany)
             : null;
+
+    const selectedBotBlocked =
+        selectedBot?.admin_bot_enabled === false;
 
     return (
         <div className="admin-page">
@@ -416,6 +571,18 @@ function Admin() {
 
                             <strong>
                                 {summary.bots.disabled}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span className="status-dot admin-blocked"></span>
+
+                            <span>
+                                Bloqueados pelo admin
+                            </span>
+
+                            <strong>
+                                {summary.bots.admin_blocked || 0}
                             </strong>
                         </div>
 
@@ -771,6 +938,19 @@ function Admin() {
                                     )}
                                 </div>
 
+                                {selectedBotBlocked && (
+                                    <div className="admin-bot-block-notice">
+                                        <strong>
+                                            Bot bloqueado administrativamente
+                                        </strong>
+
+                                        <span>
+                                            O WhatsApp permanece conectado,
+                                            mas o bot não responde aos clientes.
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className="admin-detail-grid">
 
                                     <div className="admin-detail-item">
@@ -791,6 +971,26 @@ function Admin() {
                                                     selectedBot?.bot_enabled
                                                 ).label
                                             }
+                                        </strong>
+
+                                    </div>
+
+                                    <div className="admin-detail-item">
+
+                                        <span>
+                                            Estado administrativo
+                                        </span>
+
+                                        <strong
+                                            className={
+                                                selectedBotBlocked
+                                                    ? 'detail-admin-blocked'
+                                                    : 'detail-active'
+                                            }
+                                        >
+                                            {selectedBotBlocked
+                                                ? 'Bloqueado'
+                                                : 'Permitido'}
                                         </strong>
 
                                     </div>
@@ -862,6 +1062,55 @@ function Admin() {
                                     </div>
 
                                 </div>
+
+                                <div className="admin-bot-control">
+
+                                    <div className="admin-bot-control-text">
+
+                                        <strong>
+                                            Controle administrativo
+                                        </strong>
+
+                                        <span>
+                                            {selectedBotBlocked
+                                                ? 'O bot está impedido de responder aos clientes desta empresa.'
+                                                : 'O bot está autorizado a responder normalmente.'}
+                                        </span>
+
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            selectedBotBlocked
+                                                ? 'admin-bot-action admin-bot-action-unblock'
+                                                : 'admin-bot-action admin-bot-action-block'
+                                        }
+                                        onClick={handleAdminBotToggle}
+                                        disabled={
+                                            botActionLoading
+                                        }
+                                    >
+                                        {botActionLoading
+                                            ? 'A processar...'
+                                            : selectedBotBlocked
+                                                ? 'Desbloquear bot'
+                                                : 'Bloquear bot'}
+                                    </button>
+
+                                </div>
+
+                                {botActionError && (
+                                    <div className="admin-bot-action-message error">
+                                        {botActionError}
+                                    </div>
+                                )}
+
+                                {botActionSuccess && (
+                                    <div className="admin-bot-action-message success">
+                                        {botActionSuccess}
+                                    </div>
+                                )}
 
                             </div>
 

@@ -46,7 +46,9 @@ const {
     getAdminSummary,
     getAllCompanies,
     getCompanyDetails,
-    getAllUsers
+    getAllUsers,
+    blockCompanyBot,
+    unblockCompanyBot
 } = require('./services/adminService');
 
 const app = express();
@@ -365,6 +367,70 @@ app.get('/api/admin/users', async (req, res) => {
         });
     }
 });
+
+// =====================================================
+// BLOQUEAR BOT DE UMA EMPRESA
+// =====================================================
+
+app.patch('/api/admin/companies/:companyId/bot/block', async (req, res) => {
+    try {
+        const { companyId } = req.params;
+
+        const result = await blockCompanyBot(companyId);
+
+        return res.json({
+            success: true,
+            message: 'Bot da empresa bloqueado administrativamente.',
+            bot: result
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao bloquear bot da empresa:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message ||
+                'Não foi possível bloquear o bot da empresa.'
+        });
+    }
+});
+
+
+// =====================================================
+// DESBLOQUEAR BOT DE UMA EMPRESA
+// =====================================================
+
+app.patch('/api/admin/companies/:companyId/bot/unblock', async (req, res) => {
+    try {
+        const { companyId } = req.params;
+
+        const result = await unblockCompanyBot(companyId);
+
+        return res.json({
+            success: true,
+            message: 'Bot da empresa desbloqueado administrativamente.',
+            bot: result
+        });
+
+    } catch (error) {
+        console.error(
+            'Erro ao desbloquear bot da empresa:',
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message ||
+                'Não foi possível desbloquear o bot da empresa.'
+        });
+    }
+});
+
 
 // =====================================================
 // DASHBOARD

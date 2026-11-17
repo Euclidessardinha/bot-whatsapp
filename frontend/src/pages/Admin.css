@@ -423,6 +423,195 @@
     border-color: rgba(245, 158, 11, 0.18);
 }
 
+
+
+/* =========================================================
+   BOT — BLOQUEIO ADMINISTRATIVO
+   ========================================================= */
+
+.status-dot.admin-blocked,
+.admin-status-badge.admin-blocked .status-dot {
+    background: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.10);
+}
+
+.admin-status-badge.admin-blocked {
+    color: #fdba74;
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.20);
+}
+
+/* =========================================================
+   AVISO DE BLOQUEIO ADMINISTRATIVO
+   ========================================================= */
+
+.admin-bot-block-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-bottom: 14px;
+    padding: 13px 14px;
+
+    background: rgba(249, 115, 22, 0.06);
+    border: 1px solid rgba(249, 115, 22, 0.18);
+    border-radius: 10px;
+}
+
+.admin-bot-block-notice strong {
+    color: #fdba74;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.admin-bot-block-notice span {
+    color: #a1a4ad;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   ESTADO ADMINISTRATIVO NOS DETALHES
+   ========================================================= */
+
+.admin-detail-item strong.detail-admin-blocked {
+    color: #fdba74;
+}
+
+/* =========================================================
+   CONTROLE ADMINISTRATIVO DO BOT
+   ========================================================= */
+
+.admin-bot-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    margin-top: 14px;
+    padding: 16px;
+
+    background: #0d0f13;
+    border: 1px solid #252830;
+    border-radius: 11px;
+}
+
+.admin-bot-control-text {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.admin-bot-control-text strong {
+    color: #dfe1e6;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.admin-bot-control-text span {
+    color: #777b86;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   BOTÃO DE AÇÃO DO ADMIN
+   ========================================================= */
+
+.admin-bot-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 142px;
+    min-height: 38px;
+    flex: 0 0 auto;
+
+    padding: 0 15px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+/* Bloquear */
+
+.admin-bot-action-block {
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.08);
+    color: #fca5a5;
+}
+
+.admin-bot-action-block:hover {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.38);
+    color: #fecaca;
+}
+
+/* Desbloquear */
+
+.admin-bot-action-unblock {
+    border: 1px solid rgba(34, 197, 94, 0.22);
+    background: rgba(34, 197, 94, 0.08);
+    color: #86efac;
+}
+
+.admin-bot-action-unblock:hover {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #bbf7d0;
+}
+
+.admin-bot-action:active {
+    transform: translateY(1px);
+}
+
+.admin-bot-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* =========================================================
+   MENSAGENS DA AÇÃO ADMINISTRATIVA
+   ========================================================= */
+
+.admin-bot-action-message {
+    margin-top: 10px;
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.admin-bot-action-message.success {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.16);
+}
+
+.admin-bot-action-message.error {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.16);
+}
+
+
+
 /* =========================================================
    LOADING
    ========================================================= */
@@ -615,6 +804,16 @@
     .admin-table td {
         padding: 13px 14px;
     }
+
+        .admin-bot-control {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .admin-bot-action {
+        width: 100%;
+    }
 }
 
 @media (max-width: 420px) {
@@ -640,6 +839,14 @@
 
     .admin-card strong {
         font-size: 24px;
+    }
+
+        .admin-bot-control {
+        padding: 13px;
+    }
+
+    .admin-bot-action {
+        min-height: 40px;
     }
 }
 
@@ -1031,6 +1238,16 @@
     .admin-company-modal-footer code {
         width: 100%;
         max-width: 100%;
+    }
+
+        .admin-bot-control {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .admin-bot-action {
+        width: 100%;
     }
 }
 
