@@ -1,4 +1,4 @@
-const {
+﻿const {
     detectIntent,
     normalizeText
 } = require('../../services/intentService');
@@ -16,26 +16,39 @@ const {
  * KNOWLEDGE ENGINE
  * =========================================================
  *
- * Centro de Inteligência Conversacional.
+ * Centro de InteligÃªncia Conversacional.
  *
  * Responsabilidades:
  *
  * 1. Normalizar a mensagem
- * 2. Detectar intenção inicial
+ * 2. Detectar intenÃ§Ã£o inicial
  * 3. Interpretar a mensagem dentro do contexto
  * 4. Extrair entidades
- * 5. Identificar ações
- * 6. Identificar alvo da ação
+ * 5. Identificar aÃ§Ãµes
+ * 6. Identificar alvo da aÃ§Ã£o
  * 7. Identificar comportamento esperado
- * 8. Determinar situação conversacional
+ * 8. Determinar situaÃ§Ã£o conversacional
  *
  * IMPORTANTE:
  *
- * O intentService fornece uma intenção inicial.
- * Essa intenção é uma evidência, não uma verdade absoluta.
+ * O intentService fornece uma intenÃ§Ã£o inicial.
+ * Essa intenÃ§Ã£o Ã© uma evidÃªncia, nÃ£o uma verdade absoluta.
  *
  * O contexto da conversa pode determinar o comportamento
  * real que o cliente pretende executar.
+ *
+ * O Knowledge Engine NÃƒO resolve produtos ou serviÃ§os
+ * diretamente no banco.
+ *
+ * Ele produz candidatos linguÃ­sticos.
+ *
+ * A resoluÃ§Ã£o concreta continua sendo responsabilidade de:
+ *
+ * productService
+ * serviceService
+ * botEngine
+ *
+ * Isso preserva o isolamento multi-tenant.
  * =========================================================
  */
 
@@ -102,7 +115,7 @@ const NEGATIVE_WORDS = [
 
 /**
  * =========================================================
- * REFERÊNCIAS / SELEÇÕES
+ * REFERÃŠNCIAS / SELEÃ‡Ã•ES
  * =========================================================
  */
 
@@ -170,7 +183,7 @@ const REFERENCE_STATES = [
 
 /**
  * =========================================================
- * ESTADOS ONDE UMA MENSAGEM PODE SER UM ITEM DIRETO
+ * ESTADOS DE SELEÃ‡ÃƒO DE PRODUTO
  * =========================================================
  */
 
@@ -186,6 +199,13 @@ const PRODUCT_SELECTION_STATES = [
     'idle'
 ];
 
+
+/**
+ * =========================================================
+ * ESTADOS DE SELEÃ‡ÃƒO DE SERVIÃ‡O
+ * =========================================================
+ */
+
 const SERVICE_SELECTION_STATES = [
     'viewing_services',
     'viewing_service',
@@ -196,7 +216,7 @@ const SERVICE_SELECTION_STATES = [
 
 /**
  * =========================================================
- * NORMALIZAÇÃO
+ * NORMALIZAÃ‡ÃƒO
  * =========================================================
  */
 
@@ -211,7 +231,7 @@ function normalizeForComparison(text) {
 
 /**
  * =========================================================
- * AFIRMAÇÃO
+ * AFIRMAÃ‡ÃƒO
  * =========================================================
  */
 
@@ -229,7 +249,7 @@ function isAffirmative(text) {
 
 /**
  * =========================================================
- * NEGAÇÃO
+ * NEGAÃ‡ÃƒO
  * =========================================================
  */
 
@@ -247,7 +267,7 @@ function isNegative(text) {
 
 /**
  * =========================================================
- * REFERÊNCIA / SELEÇÃO
+ * REFERÃŠNCIA / SELEÃ‡ÃƒO
  * =========================================================
  */
 
@@ -265,7 +285,7 @@ function isReferenceConfirmation(text) {
 
 /**
  * =========================================================
- * NÚMEROS POR EXTENSO
+ * NÃšMEROS POR EXTENSO
  * =========================================================
  */
 
@@ -302,6 +322,9 @@ function extractQuantity(text) {
     }
 
 
+    /**
+     * Mensagem composta apenas por nÃºmero.
+     */
     const numericOnly =
         normalized.match(/^\d+$/);
 
@@ -314,6 +337,9 @@ function extractQuantity(text) {
     }
 
 
+    /**
+     * NÃºmero em algarismos.
+     */
     const digitMatch =
         normalized.match(
             /\b(\d+)\b/
@@ -328,6 +354,9 @@ function extractQuantity(text) {
     }
 
 
+    /**
+     * NÃºmero por extenso.
+     */
     for (
         const [word, value]
         of Object.entries(NUMBER_WORDS)
@@ -355,7 +384,7 @@ function extractQuantity(text) {
 
 /**
  * =========================================================
- * POSIÇÃO DO PRODUTO
+ * POSIÃ‡ÃƒO DO PRODUTO
  * =========================================================
  */
 
@@ -365,17 +394,38 @@ function extractProductPosition(text) {
         normalizeForComparison(text);
 
     const positions = {
+
         primeiro: 1,
         primeira: 1,
+
         segundo: 2,
         segunda: 2,
+
         terceiro: 3,
         terceira: 3,
+
         quarto: 4,
         quarta: 4,
+
         quinto: 5,
-        quinta: 5
+        quinta: 5,
+
+        sexto: 6,
+        sexta: 6,
+
+        setimo: 7,
+        setima: 7,
+
+        oitavo: 8,
+        oitava: 8,
+
+        nono: 9,
+        nona: 9,
+
+        decimo: 10,
+        decima: 10
     };
+
 
     for (
         const [word, position]
@@ -414,7 +464,7 @@ function extractProductPosition(text) {
 
 /**
  * =========================================================
- * REFERÊNCIA CONTEXTUAL
+ * REFERÃŠNCIA CONTEXTUAL
  * =========================================================
  */
 
@@ -422,6 +472,7 @@ function extractReference(text) {
 
     const normalized =
         normalizeForComparison(text);
+
 
     if (
         /\b(o mesmo|a mesma|esse mesmo|essa mesma|aquele mesmo|aquela mesma)\b/
@@ -459,7 +510,7 @@ function extractReference(text) {
 
 /**
  * =========================================================
- * AÇÃO DE ADICIONAR
+ * AÃ‡ÃƒO DE ADICIONAR
  * =========================================================
  */
 
@@ -469,20 +520,36 @@ function isAddAction(text) {
         normalizeForComparison(text);
 
     const phrases = [
+
         'adiciona',
         'adicionar',
+
         'add',
+
         'acrescenta',
         'acrescentar',
+
         'coloca',
         'colocar',
+
         'manda',
         'mandar',
+
         'quero',
         'vou querer',
+
         'pode adicionar',
-        'pode colocar'
+        'pode colocar',
+
+        'quero pedir',
+
+        'peÃ§o',
+        'peco',
+
+        'pede',
+        'pedir'
     ];
+
 
     return phrases.some(
         phrase =>
@@ -491,12 +558,13 @@ function isAddAction(text) {
                 `${phrase} `
             )
     );
+
 }
 
 
 /**
  * =========================================================
- * AÇÃO DE REMOVER
+ * AÃ‡ÃƒO DE REMOVER
  * =========================================================
  */
 
@@ -506,21 +574,37 @@ function isRemoveAction(text) {
         normalizeForComparison(text);
 
     const phrases = [
+
         'remove',
         'remover',
+
         'retira',
         'retirar',
+
         'tira',
         'tirar',
+
         'elimina',
         'eliminar',
+
         'nao quero',
         'nao quero mais',
+
+        'quero remover',
+        'quero tirar',
+        'quero eliminar',
+
+        'pode remover',
+        'pode tirar',
+        'pode eliminar',
+
         'remove esse',
         'remove essa',
+
         'tira esse',
         'tira essa'
     ];
+
 
     return phrases.some(
         phrase =>
@@ -529,12 +613,13 @@ function isRemoveAction(text) {
                 `${phrase} `
             )
     );
+
 }
 
 
 /**
  * =========================================================
- * AÇÃO DE ALTERAR
+ * AÃ‡ÃƒO DE ALTERAR
  * =========================================================
  */
 
@@ -544,17 +629,23 @@ function isEditAction(text) {
         normalizeForComparison(text);
 
     const phrases = [
+
         'muda',
         'mudar',
+
         'troca',
         'trocar',
+
         'altera',
         'alterar',
+
         'modifica',
         'modificar',
+
         'substitui',
         'substituir'
     ];
+
 
     return phrases.some(
         phrase =>
@@ -563,12 +654,111 @@ function isEditAction(text) {
                 `${phrase} `
             )
     );
+
 }
 
 
 /**
  * =========================================================
- * DETECTA SUBSTITUIÇÃO
+ * AÃ‡ÃƒO DE ALTERAR QUANTIDADE
+ * =========================================================
+ */
+
+function isQuantityEditAction(
+    text,
+    state,
+    quantity
+) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (quantity === null) {
+        return false;
+    }
+
+    /**
+     * Se o fluxo jÃ¡ estÃ¡ perguntando a quantidade,
+     * qualquer quantidade vÃ¡lida pode ser a resposta.
+     *
+     * Ex:
+     * Bot: Quantas unidades?
+     * Cliente: 3
+     */
+    if (
+        state === 'editing_cart_item' ||
+        state === 'waiting_quantity'
+    ) {
+
+        return true;
+    }
+
+    /**
+     * AlteraÃ§Ã£o explÃ­cita.
+     */
+   if (
+    /\b(muda|mudar|altera|alterar|modifica|modificar|troca|trocar)\b/
+        .test(normalized)
+) {
+
+    return true;
+}
+
+    /**
+     * Aumentar / diminuir.
+     */
+    if (
+        /\b(aumenta|aumentar|reduz|reduzir|diminui|diminuir)\b/
+            .test(normalized)
+    ) {
+
+        return true;
+    }
+
+
+    /**
+     * "muda para 3"
+     * "altera para 4"
+     * "passa para 5"
+     * "fica com 2"
+     * "fica em 3"
+     * "fica 3"
+     */
+    if (
+    /\b(fica|passa|muda|altera|modifica)\b/.test(normalized) &&
+    /\b(para|em|com|a)?\s*\d+\b/.test(normalized)
+) {
+
+    return true;
+}
+
+    /**
+     * NÃºmero + contexto de alteraÃ§Ã£o.
+     *
+     * "quero ficar com 3"
+     * "quero 3 unidades"
+     *
+     * SÃ³ vale em estados de ediÃ§Ã£o.
+     */
+    if (
+        (
+            state === 'editing_cart' ||
+            state === 'editing_cart_item'
+        ) &&
+        (
+            /\bquero\b/.test(normalized) ||
+            /\bficar com\b/.test(normalized)
+        )
+    ) {
+
+        return true;
+    }
+
+    return false;
+}
+/**
+ * =========================================================
+ * DETECTA SUBSTITUIÃ‡ÃƒO
  * =========================================================
  */
 
@@ -582,44 +772,7 @@ function isReplaceAction(text) {
             .test(normalized) &&
         /\bpor\b/.test(normalized)
     );
-}
 
-
-/**
- * =========================================================
- * DETECTA ALTERAÇÃO DE QUANTIDADE
- * =========================================================
- */
-
-function isQuantityEditAction(
-    text,
-    state,
-    quantity
-) {
-
-    const normalized =
-        normalizeForComparison(text);
-
-    if (!quantity) {
-        return false;
-    }
-
-
-    if (
-        state === 'editing_cart_item'
-    ) {
-
-        return true;
-
-    }
-
-
-    return (
-        /\b(muda|mudar|altera|alterar|modifica|modificar)\b/
-            .test(normalized) &&
-        /\b(quantidade|qtd|unidades|unidade)\b/
-            .test(normalized)
-    );
 }
 
 
@@ -635,19 +788,29 @@ function isBackAction(text) {
         normalizeForComparison(text);
 
     const phrases = [
+
         'voltar',
         'volta',
+
         'voltar ao menu',
         'volta ao menu',
+
         'menu anterior',
+
         'voltar atras',
         'volta atras',
-        'atras'
+
+        'atras',
+
+        'cancelar',
+        'sair'
     ];
+
 
     return phrases.includes(
         normalized
     );
+
 }
 
 
@@ -662,7 +825,13 @@ function cleanItemCandidate(text) {
     let value =
         normalizeForComparison(text);
 
+    if (!value) {
+        return '';
+    }
+
+
     const prefixes = [
+
         'quero',
         'quero um',
         'quero uma',
@@ -685,6 +854,7 @@ function cleanItemCandidate(text) {
 
         'adiciona',
         'adicionar',
+
         'acrescenta',
         'acrescentar',
 
@@ -695,28 +865,39 @@ function cleanItemCandidate(text) {
         'pode colocar',
 
         'quero pedir',
-        'quero pedir um',
-        'quero pedir uma',
+
+        'peÃ§o',
+        'peco',
+
+        'pedir',
 
         'remove',
         'remover',
+
         'retira',
         'retirar',
+
         'tira',
         'tirar',
+
         'elimina',
         'eliminar',
+
         'nao quero',
         'nao quero mais',
 
         'muda',
         'mudar',
+
         'troca',
         'trocar',
+
         'altera',
         'alterar',
+
         'modifica',
         'modificar',
+
         'substitui',
         'substituir',
 
@@ -727,44 +908,93 @@ function cleanItemCandidate(text) {
 
         'tem',
         'tens',
+
         'voces tem',
         'voce tem',
+
         'dispoe de',
-        'dispoe'
+        'dispoe',
+
+        'quero solicitar',
+        'solicita',
+        'solicitar',
+
+        'preciso de',
+        'gostaria de',
+        'gostaria do',
+        'gostaria da',
+
+        'preciso de',
+        'preciso do',
+        'preciso da',
+
+        'quero um servico',
+        'quero uma servico',
+        'quero servico',
+
+        'solicito',
+        'solicita',
+
+        'pedido de',
+        'pedido para',
+
+        'orcamento de',
+        'orcamento para',
+
+        'servico de',
+        'servico para'
     ];
 
 
-    for (
-        const prefix
-        of prefixes
-    ) {
+    /**
+     * Remove o prefixo mais especÃ­fico primeiro.
+     */
+    prefixes.sort(
+        (a, b) =>
+            b.length - a.length
+    );
 
-        if (
-            value === prefix
+
+    let prefixRemoved = true;
+
+    while (prefixRemoved) {
+        prefixRemoved = false;
+
+        for (
+            const prefix
+            of prefixes
         ) {
 
-            return '';
+            if (
+                value === prefix
+            ) {
+                return '';
+            }
 
-        }
 
+            if (
+                value.startsWith(
+                    `${prefix} `
+                )
+            ) {
 
-        if (
-            value.startsWith(
-                `${prefix} `
-            )
-        ) {
+                value =
+                    value
+                        .slice(prefix.length)
+                        .trim();
 
-            value =
-                value
-                    .slice(prefix.length)
-                    .trim();
+                prefixRemoved = true;
+                break;
 
-            break;
+            }
 
         }
     }
 
 
+    /**
+     * Remove quantidade inicial.
+     */
     value =
         value.replace(
             /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
@@ -772,14 +1002,29 @@ function cleanItemCandidate(text) {
         );
 
 
+    /**
+     * Remove artigos.
+     */
+    value =
+        value.replace(
+            /^(o|a|os|as)\s+/,
+            ''
+        );
+
+
+    /**
+     * Remove referÃªncias no final.
+     */
     value =
         value
+            .replace(/\s+esse mesmo$/i, '')
+            .replace(/\s+essa mesma$/i, '')
+            .replace(/\s+aquele mesmo$/i, '')
+            .replace(/\s+aquela mesma$/i, '')
             .replace(/\s+esse$/i, '')
             .replace(/\s+essa$/i, '')
             .replace(/\s+aquele$/i, '')
             .replace(/\s+aquela$/i, '')
-            .replace(/\s+esse mesmo$/i, '')
-            .replace(/\s+essa mesma$/i, '')
             .trim();
 
 
@@ -807,35 +1052,53 @@ function extractItemCandidate(text) {
 
         /^quero\s+/,
         /^vou querer\s+/,
+
         /^manda\s+/,
+
         /^adiciona\s+/,
         /^adicionar\s+/,
+
         /^acrescenta\s+/,
         /^acrescentar\s+/,
+
         /^coloca\s+/,
         /^colocar\s+/,
+
         /^pode adicionar\s+/,
         /^pode colocar\s+/,
+
         /^quero pedir\s+/,
+
+        /^peÃ§o\s+/,
+        /^peco\s+/,
+        /^pedir\s+/,
 
         /^remove\s+/,
         /^remover\s+/,
+
         /^retira\s+/,
         /^retirar\s+/,
+
         /^tira\s+/,
         /^tirar\s+/,
+
         /^elimina\s+/,
         /^eliminar\s+/,
+
         /^nao quero\s+/,
 
         /^muda\s+/,
         /^mudar\s+/,
+
         /^troca\s+/,
         /^trocar\s+/,
+
         /^altera\s+/,
         /^alterar\s+/,
+
         /^modifica\s+/,
         /^modificar\s+/,
+
         /^substitui\s+/,
         /^substituir\s+/,
 
@@ -846,10 +1109,18 @@ function extractItemCandidate(text) {
 
         /^tem\s+/,
         /^tens\s+/,
+
         /^voces tem\s+/,
         /^voce tem\s+/,
+
         /^dispoe de\s+/,
-        /^dispoe\s+/
+        /^dispoe\s+/,
+
+        /^quero solicitar\s+/,
+        /^solicita\s+/,
+        /^solicitar\s+/,
+
+        /^preciso de\s+/
     ];
 
 
@@ -871,6 +1142,9 @@ function extractItemCandidate(text) {
         );
 
 
+    /**
+     * Limpeza adicional de perguntas.
+     */
     candidate =
         candidate
             .replace(
@@ -909,6 +1183,63 @@ function extractItemCandidate(text) {
                 /^dispoe de\s+/i,
                 ''
             )
+            .replace(
+                /^quero solicitar\s+/i,
+                ''
+            )
+            .replace(
+                /^solicita\s+/i,
+                ''
+            )
+            .replace(
+                /^solicitar\s+/i,
+                ''
+            )
+            .replace(
+                /^preciso de\s+/i,
+                ''
+            )
+
+                        .replace(
+                /^gostaria de\s+/i,
+                ''
+            )
+            .replace(
+                /^gostaria do\s+/i,
+                ''
+            )
+            .replace(
+                /^gostaria da\s+/i,
+                ''
+            )
+            .replace(
+                /^preciso do\s+/i,
+                ''
+            )
+            .replace(
+                /^preciso da\s+/i,
+                ''
+            )
+            .replace(
+                /^solicito\s+/i,
+                ''
+            )
+            .replace(
+                /^pedido de\s+/i,
+                ''
+            )
+            .replace(
+                /^pedido para\s+/i,
+                ''
+            )
+            .replace(
+                /^orcamento de\s+/i,
+                ''
+            )
+            .replace(
+                /^orcamento para\s+/i,
+                ''
+            )
             .trim();
 
 
@@ -939,7 +1270,7 @@ function extractItemCandidate(text) {
  *
  * "Coca"
  * "Fanta"
- * "Manutenção"
+ * "ManutenÃ§Ã£o"
  *
  * o estado da conversa pode tornar essa mensagem
  * suficientemente clara para ser um candidato.
@@ -960,12 +1291,17 @@ function extractDirectItemCandidate(
 
 
     const allowedStates = [
+
         'viewing_menu',
         'product_menu',
         'waiting_product',
+        'viewing_product',
+
         'viewing_services',
         'viewing_service',
-        'editing_cart_item'
+
+        'editing_cart_item',
+        'waiting_quantity'
     ];
 
 
@@ -998,8 +1334,24 @@ function extractDirectItemCandidate(
     }
 
 
+    /**
+     * NÃ£o tratar apenas nÃºmeros como produto/serviÃ§o.
+     */
     if (
         /^\d+$/.test(normalized)
+    ) {
+
+        return null;
+
+    }
+
+
+    /**
+     * NÃ£o transformar perguntas genÃ©ricas em candidatos.
+     */
+    if (
+        /^(quanto|qual|onde|como|quando|tem|tens|voces|voce)\b/
+            .test(normalized)
     ) {
 
         return null;
@@ -1033,14 +1385,17 @@ function extractProductCandidate(
 
     return (
         extractItemCandidate(text) ||
-        extractDirectItemCandidate(text, state)
+        extractDirectItemCandidate(
+            text,
+            state
+        )
     );
 }
 
 
 /**
  * =========================================================
- * CANDIDATO DE SERVIÇO
+ * CANDIDATO DE SERVIÃ‡O
  * =========================================================
  */
 
@@ -1058,10 +1413,215 @@ function extractServiceCandidate(
     }
 
 
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    /**
+     * Primeiro tentamos interpretar pedidos explÃ­citos
+     * de serviÃ§o.
+     */
+    const serviceRequestPatterns = [
+
+        /^quero solicitar\s+/,
+
+        /^quero um servico\s+/,
+
+        /^quero servico\s+/,
+
+        /^preciso de\s+/,
+
+        /^preciso do\s+/,
+
+        /^preciso da\s+/,
+
+        /^gostaria de\s+/,
+
+        /^gostaria do\s+/,
+
+        /^gostaria da\s+/,
+
+        /^solicito\s+/,
+
+        /^solicita\s+/,
+
+        /^solicitar\s+/,
+
+        /^pedido de\s+/,
+
+        /^pedido para\s+/,
+
+        /^orcamento de\s+/,
+
+        /^orcamento para\s+/
+    ];
+
+
+    const isServiceRequest =
+        serviceRequestPatterns.some(
+            pattern =>
+                pattern.test(normalized)
+        );
+
+
+    if (isServiceRequest) {
+
+        let candidate =
+            cleanItemCandidate(
+                normalized
+            );
+
+        candidate =
+            candidate
+                .replace(
+                    /^quero solicitar\s+/i,
+                    ''
+                )
+                .replace(
+                    /^quero um servico\s+/i,
+                    ''
+                )
+                .replace(
+                    /^quero servico\s+/i,
+                    ''
+                )
+                .replace(
+                    /^preciso de\s+/i,
+                    ''
+                )
+                .replace(
+                    /^preciso do\s+/i,
+                    ''
+                )
+                .replace(
+                    /^preciso da\s+/i,
+                    ''
+                )
+                .replace(
+                    /^gostaria de\s+/i,
+                    ''
+                )
+                .replace(
+                    /^gostaria do\s+/i,
+                    ''
+                )
+                .replace(
+                    /^gostaria da\s+/i,
+                    ''
+                )
+                .replace(
+                    /^solicito\s+/i,
+                    ''
+                )
+                .replace(
+                    /^solicita\s+/i,
+                    ''
+                )
+                .replace(
+                    /^solicitar\s+/i,
+                    ''
+                )
+                .replace(
+                    /^pedido de\s+/i,
+                    ''
+                )
+                .replace(
+                    /^pedido para\s+/i,
+                    ''
+                )
+                .replace(
+                    /^orcamento de\s+/i,
+                    ''
+                )
+                .replace(
+                    /^orcamento para\s+/i,
+                    ''
+                )
+                .trim();
+
+
+        if (candidate) {
+            return candidate;
+        }
+
+    }
+
+
+    /**
+     * Depois usamos a lÃ³gica genÃ©rica.
+     */
     return (
         extractItemCandidate(text) ||
-        extractDirectItemCandidate(text, state)
+        extractDirectItemCandidate(
+            text,
+            state
+        )
     );
+}
+
+
+/**
+ * =========================================================
+ * EXTRAI ALVO DE QUANTIDADE
+ * =========================================================
+ *
+ * Ajuda a distinguir:
+ *
+ * "quero 3"
+ *
+ * de:
+ *
+ * "muda para 3"
+ *
+ * sem resolver o produto.
+ * =========================================================
+ */
+
+function extractQuantityTarget(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    if (
+        /\b(quantidade|qtd|unidade|unidades)\b/
+            .test(normalized)
+    ) {
+
+        return 'quantity';
+
+    }
+
+
+    if (
+        /\b(aumenta|aumentar|reduz|reduzir|diminui|diminuir)\b/
+            .test(normalized)
+    ) {
+
+        return 'quantity';
+
+    }
+
+
+    if (
+        /\b(fica|passa)\b/.test(normalized) &&
+        /\b(para|a)?\s*\d+\b/.test(normalized)
+    ) {
+
+        return 'quantity';
+
+    }
+
+
+    return null;
 }
 
 
@@ -1084,6 +1644,9 @@ function detectTarget({
         normalizeForComparison(text);
 
 
+    /**
+     * Carrinho / pedido.
+     */
     if (
         /\b(total|tudo|carrinho|pedido|pedidos|pagar|deu|fica tudo)\b/
             .test(normalized)
@@ -1093,11 +1656,33 @@ function detectTarget({
 
     }
 
+        /**
+     * ServiÃ§o.
+     */
+    if (
+        serviceCandidate ||
+        context?.service_id ||
+        context?.serviceId ||
+        context?.service_name ||
+        state === 'viewing_services' ||
+        state === 'viewing_service' ||
+        state === 'service_request'
+    ) {
 
+        return 'service';
+
+    }
+
+
+    /**
+     * Produto.
+     */
     if (
         productCandidate ||
         context?.currentProduct ||
-        context?.lastProduct
+        context?.lastProduct ||
+        context?.product_id ||
+        context?.productId
     ) {
 
         return 'product';
@@ -1105,9 +1690,29 @@ function detectTarget({
     }
 
 
+    /**
+     * Produto.
+     */
+    if (
+        productCandidate ||
+        context?.currentProduct ||
+        context?.lastProduct ||
+        context?.product_id ||
+        context?.productId
+    ) {
+
+        return 'product';
+
+    }
+
+
+    /**
+     * ServiÃ§o.
+     */
     if (
         serviceCandidate ||
         context?.service_id ||
+        context?.serviceId ||
         context?.service_name
     ) {
 
@@ -1116,6 +1721,21 @@ function detectTarget({
     }
 
 
+    /**
+     * Quantidade.
+     */
+    if (
+        extractQuantityTarget(normalized)
+    ) {
+
+        return 'quantity';
+
+    }
+
+
+    /**
+     * Pedido em confirmaÃ§Ã£o.
+     */
     if (
         state === 'confirming_order' ||
         intent === 'CONFIRM' ||
@@ -1157,7 +1777,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * VOLTAR
+     * =====================================================
      */
 
     if (backAction) {
@@ -1166,7 +1788,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * CANCELAMENTO
+     * =====================================================
      */
 
     if (
@@ -1180,7 +1804,9 @@ function detectBehavior({
 
 
     /**
-     * CONFIRMAÇÃO
+     * =====================================================
+     * CONFIRMAÃ‡ÃƒO
+     * =====================================================
      */
 
     if (
@@ -1200,7 +1826,9 @@ function detectBehavior({
 
 
     /**
-     * NEGAÇÃO
+     * =====================================================
+     * NEGAÃ‡ÃƒO
+     * =====================================================
      */
 
     if (
@@ -1220,7 +1848,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * TOTAL DO CARRINHO
+     * =====================================================
      */
 
     if (
@@ -1243,7 +1873,9 @@ function detectBehavior({
 
 
     /**
-     * SUBSTITUIÇÃO
+     * =====================================================
+     * SUBSTITUIÃ‡ÃƒO
+     * =====================================================
      */
 
     if (
@@ -1255,7 +1887,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * REMOVER
+     * =====================================================
      */
 
     if (
@@ -1267,7 +1901,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * ALTERAR QUANTIDADE
+     * =====================================================
      */
 
     if (
@@ -1282,49 +1918,21 @@ function detectBehavior({
     }
 
 
-    /**
-     * ADICIONAR
-     */
-
-    if (
-        addAction &&
-        (
-            productCandidate ||
-            reference ||
-            quantity
-        )
-    ) {
-
-        return 'add_product';
-    }
-
-
-    /**
-     * SELECIONAR PRODUTO
-     */
-
-    if (
-        productCandidate &&
-        (
-            state === 'viewing_menu' ||
-            state === 'waiting_product' ||
-            state === 'viewing_product'
-        )
-    ) {
-
-        return 'select_product';
-    }
-
-
-    /**
-     * SELECIONAR SERVIÇO
+        /**
+     * =====================================================
+     * PEDIDO / SELEÃ‡ÃƒO DE SERVIÃ‡O
+     * =====================================================
+     *
+     * ServiÃ§os tÃªm prioridade quando estamos dentro
+     * do fluxo de serviÃ§os.
      */
 
     if (
         serviceCandidate &&
         (
             state === 'viewing_services' ||
-            state === 'viewing_service'
+            state === 'viewing_service' ||
+            state === 'service_request'
         )
     ) {
 
@@ -1333,7 +1941,9 @@ function detectBehavior({
 
 
     /**
-     * PEDIDO DE SERVIÇO
+     * =====================================================
+     * PEDIDO DE SERVIÃ‡O
+     * =====================================================
      */
 
     if (
@@ -1345,8 +1955,85 @@ function detectBehavior({
 
 
     /**
-     * PREÇO
+     * =====================================================
+     * ADICIONAR PRODUTO
+     * =====================================================
      */
+
+    if (
+        addAction &&
+        (
+            productCandidate ||
+            (
+                reference &&
+                !serviceCandidate
+            ) ||
+            (
+                quantity &&
+                !serviceCandidate
+            )
+        )
+    ) {
+
+        return 'add_product';
+    }
+    /**
+     * =====================================================
+     * SELECIONAR PRODUTO
+     * =====================================================
+     */
+
+    if (
+        productCandidate &&
+        (
+            state === 'viewing_menu' ||
+            state === 'product_menu' ||
+            state === 'waiting_product' ||
+            state === 'viewing_product'
+        )
+    ) {
+
+        return 'select_product';
+    }
+
+
+    /**
+     * =====================================================
+     * SELECIONAR SERVIÃ‡O
+     * =====================================================
+     */
+
+    if (
+        serviceCandidate &&
+        (
+            state === 'viewing_services' ||
+            state === 'viewing_service' ||
+            state === 'service_request'
+        )
+    ) {
+
+        return 'select_service';
+    }
+
+
+    /**
+     * =====================================================
+     * PEDIDO DE SERVIÃ‡O
+     * =====================================================
+     */
+
+    if (
+        intent === 'SERVICE_REQUEST'
+    ) {
+
+        return 'request_service';
+    }
+
+
+    /**
+     * =====================================================
+     * PREÃ‡O
+     * ===================================================== */
 
     if (
         intent === 'PRICE'
@@ -1357,8 +2044,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * MENU
-     */
+     * ===================================================== */
 
     if (
         intent === 'MENU'
@@ -1369,8 +2057,9 @@ function detectBehavior({
 
 
     /**
-     * SERVIÇOS
-     */
+     * =====================================================
+     * SERVIÃ‡OS
+     * ===================================================== */
 
     if (
         intent === 'SERVICES'
@@ -1381,8 +2070,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * PEDIDO
-     */
+     * ===================================================== */
 
     if (
         intent === 'ORDER'
@@ -1393,8 +2083,9 @@ function detectBehavior({
 
 
     /**
-     * LOCALIZAÇÃO
-     */
+     * =====================================================
+     * LOCALIZAÃ‡ÃƒO
+     * ===================================================== */
 
     if (
         intent === 'LOCATION'
@@ -1405,8 +2096,9 @@ function detectBehavior({
 
 
     /**
-     * HORÁRIO
-     */
+     * =====================================================
+     * HORÃRIO
+     * ===================================================== */
 
     if (
         intent === 'HOURS'
@@ -1417,8 +2109,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * ATENDENTE
-     */
+     * ===================================================== */
 
     if (
         intent === 'ATTENDANT'
@@ -1429,8 +2122,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * AJUDA
-     */
+     * ===================================================== */
 
     if (
         intent === 'HELP'
@@ -1441,8 +2135,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * AGRADECIMENTO
-     */
+     * ===================================================== */
 
     if (
         intent === 'THANKS'
@@ -1453,8 +2148,9 @@ function detectBehavior({
 
 
     /**
+     * =====================================================
      * DESPEDIDA
-     */
+     * ===================================================== */
 
     if (
         intent === 'GOODBYE'
@@ -1470,18 +2166,20 @@ function detectBehavior({
 
 /**
  * =========================================================
- * DETECTA AÇÕES COMPOSTAS
+ * DETECTA AÃ‡Ã•ES COMPOSTAS
  * =========================================================
  *
- * Exemplo:
+ * Exemplos:
  *
  * "tira a coca e coloca duas fanta"
  *
- * O conhecimento identifica que existe mais de uma
- * operação na mesma mensagem.
+ * "remove a coca e adiciona duas fanta"
  *
- * A resolução concreta dos produtos continua sendo feita
- * pelo productService / botEngine.
+ * "troca a coca por fanta"
+ *
+ * Nesta camada apenas identificamos a estrutura.
+ *
+ * A resoluÃ§Ã£o dos produtos continua no productService.
  * =========================================================
  */
 
@@ -1490,46 +2188,125 @@ function detectCompoundActions(text) {
     const normalized =
         normalizeForComparison(text);
 
-
     const actions = [];
 
 
-    if (
-        /\b(remove|remover|retira|retirar|tira|tirar|elimina|eliminar)\b/
-            .test(normalized)
-    ) {
-
-        actions.push({
-            type: 'remove_product'
-        });
-
-    }
-
+    /**
+     * -----------------------------------------------------
+     * SUBSTITUIÃ‡ÃƒO
+     * -----------------------------------------------------
+     */
 
     if (
-        /\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|manda|quero)\b/
-            .test(normalized)
+        isReplaceAction(normalized)
     ) {
 
-        actions.push({
-            type: 'add_product'
-        });
-
-    }
-
-
-    if (
-        /\b(troca|trocar|substitui|substituir)\b/
-            .test(normalized) &&
-        /\bpor\b/
-            .test(normalized)
-    ) {
+        const replacement =
+            extractReplacementCandidates(
+                normalized
+            );
 
         return [
             {
-                type: 'replace_product'
+                type: 'replace_product',
+
+                targetProductCandidate:
+                    replacement.targetProductCandidate,
+
+                replacementCandidate:
+                    replacement.replacementCandidate,
+
+                quantity:
+                    extractQuantity(
+                        normalized
+                    )
             }
         ];
+
+    }
+
+
+    /**
+     * -----------------------------------------------------
+     * REMOÃ‡ÃƒO
+     * -----------------------------------------------------
+     */
+
+    const removeMatch =
+        normalized.match(
+            /\b(remove|remover|retira|retirar|tira|tirar|elimina|eliminar)\s+(.+?)(?=\s+e\s+|\s+mas\s+|\s*,\s*|$)/i
+        );
+
+
+    if (removeMatch) {
+
+        const candidate =
+            cleanItemCandidate(
+                removeMatch[2]
+            );
+
+
+        actions.push({
+            type: 'remove_product',
+
+            candidate:
+                candidate || null
+        });
+
+    }
+
+
+    /**
+     * -----------------------------------------------------
+     * ADIÃ‡ÃƒO
+     * -----------------------------------------------------
+     */
+
+    const addMatch =
+        normalized.match(
+            /\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|manda|mandar|quero|vou querer)\s+(.+)$/i
+        );
+
+
+    if (addMatch) {
+
+        let candidateText =
+            addMatch[2];
+
+
+        /**
+         * Se houver uma parte anterior Ã  adiÃ§Ã£o,
+         * tenta retirar conectores.
+         */
+        candidateText =
+            candidateText
+                .replace(
+                    /^(tambem|tambÃ©m)\s+/,
+                    ''
+                )
+                .trim();
+
+
+        const candidate =
+            cleanItemCandidate(
+                candidateText
+            );
+
+
+        if (candidate) {
+
+            actions.push({
+                type: 'add_product',
+
+                candidate,
+
+                quantity:
+                    extractQuantity(
+                        candidateText
+                    )
+            });
+
+        }
 
     }
 
@@ -1540,10 +2317,10 @@ function detectCompoundActions(text) {
 
 /**
  * =========================================================
- * EXTRAI PRODUTO ANTIGO E PRODUTO DE SUBSTITUIÇÃO
+ * EXTRAI PRODUTO ANTIGO E PRODUTO DE SUBSTITUIÃ‡ÃƒO
  * =========================================================
  *
- * Não resolve no banco.
+ * NÃ£o resolve no banco.
  *
  * Apenas separa linguisticamente os candidatos.
  * =========================================================
@@ -1584,6 +2361,7 @@ function extractReplacementCandidates(text) {
 
 
     return {
+
         targetProductCandidate:
             target || null,
 
@@ -1595,7 +2373,7 @@ function extractReplacementCandidates(text) {
 
 /**
  * =========================================================
- * RESOLUÇÃO CONTEXTUAL DA INTENÇÃO
+ * RESOLUÃ‡ÃƒO CONTEXTUAL DA INTENÃ‡ÃƒO
  * =========================================================
  */
 
@@ -1628,12 +2406,9 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
-     * CONFIRMAÇÃO CONTEXTUAL
-     * -----------------------------------------------------
-     *
-     * Confirmação deve poder vencer uma classificação
-     * genérica quando o estado exige uma resposta binária.
+     * =====================================================
+     * CONFIRMAÃ‡ÃƒO CONTEXTUAL
+     * =====================================================
      */
 
     if (
@@ -1651,9 +2426,9 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
-     * NEGAÇÃO CONTEXTUAL
-     * -----------------------------------------------------
+     * =====================================================
+     * NEGAÃ‡ÃƒO CONTEXTUAL
+     * =====================================================
      */
 
     if (
@@ -1671,9 +2446,9 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
-     * REFERÊNCIA COMO CONFIRMAÇÃO
-     * -----------------------------------------------------
+     * =====================================================
+     * REFERÃŠNCIA COMO CONFIRMAÃ‡ÃƒO
+     * =====================================================
      */
 
     if (
@@ -1691,9 +2466,9 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
-     * CONFIRMAÇÃO EXPLÍCITA
-     * -----------------------------------------------------
+     * =====================================================
+     * CONFIRMAÃ‡ÃƒO EXPLÃCITA
+     * =====================================================
      */
 
     if (
@@ -1729,12 +2504,38 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
-     * INTENÇÃO EXPLÍCITA
-     * -----------------------------------------------------
+     * =====================================================
+     * REFERÃŠNCIA COM CONTEXTO
+     * =====================================================
      *
-     * Mantemos a intenção detectada para compatibilidade,
-     * mas agora o comportamento será refinado posteriormente.
+     * Quando o cliente responde apenas "esse",
+     * "essa", etc., o contexto pode ser mais importante
+     * do que uma intenÃ§Ã£o genÃ©rica.
+     */
+
+    if (
+        isReferenceConfirmation(text) &&
+        (
+            context?.currentProduct ||
+            context?.lastProduct ||
+            context?.currentService ||
+            context?.lastService
+        )
+    ) {
+
+        return {
+            intent: 'CONFIRM',
+            confidence: 0.96,
+            source: 'context'
+        };
+
+    }
+
+
+    /**
+     * =====================================================
+     * INTENÃ‡ÃƒO EXPLÃCITA
+     * =====================================================
      */
 
     if (
@@ -1743,8 +2544,10 @@ function resolveContextualIntent({
 
         return {
             intent: detectedIntent,
+
             confidence:
-                detected.confidence ?? 1,
+                detected?.confidence ?? 1,
+
             source: 'explicit'
         };
 
@@ -1752,15 +2555,17 @@ function resolveContextualIntent({
 
 
     /**
-     * -----------------------------------------------------
+     * =====================================================
      * UNKNOWN
-     * -----------------------------------------------------
+     * =====================================================
      */
 
     return {
         intent: 'UNKNOWN',
+
         confidence:
             detected?.confidence ?? 0,
+
         source: 'unknown'
     };
 }
@@ -1784,9 +2589,13 @@ function analyzeMessage({
 
     const resolved =
         resolveContextualIntent({
+
             detected,
+
             message,
+
             state,
+
             context
         });
 
@@ -1794,6 +2603,12 @@ function analyzeMessage({
     const normalizedMessage =
         normalizeForComparison(message);
 
+
+    /**
+     * =====================================================
+     * ENTIDADES
+     * =====================================================
+     */
 
     const quantity =
         extractQuantity(
@@ -1863,15 +2678,29 @@ function analyzeMessage({
         );
 
 
+    /**
+     * =====================================================
+     * AÃ‡Ã•ES COMPOSTAS
+     * =====================================================
+     */
+
     const compoundActions =
         detectCompoundActions(
             normalizedMessage
         );
 
 
+    /**
+     * =====================================================
+     * COMPORTAMENTO INTERPRETADO
+     * =====================================================
+     */
+
     const behavior =
         detectBehavior({
-            text: normalizedMessage,
+
+            text:
+                normalizedMessage,
 
             state,
 
@@ -1898,9 +2727,17 @@ function analyzeMessage({
         });
 
 
+    /**
+     * =====================================================
+     * ALVO
+     * =====================================================
+     */
+
     const target =
         detectTarget({
-            text: normalizedMessage,
+
+            text:
+                normalizedMessage,
 
             state,
 
@@ -1915,21 +2752,27 @@ function analyzeMessage({
         });
 
 
+    /**
+     * =====================================================
+     * SITUAÃ‡ÃƒO
+     * =====================================================
+     */
+
     const situation =
         getSituation(
+
             resolved.intent.toLowerCase(),
+
             state
         );
 
 
     /**
-     * A situação continua vindo da arquitetura existente.
+     * =====================================================
+     * BEHAVIOR CONFIGURADO
+     * =====================================================
      *
-     * O behavior estruturado acima representa a interpretação
-     * mais específica da mensagem.
-     *
-     * Assim preservamos compatibilidade com situations.js
-     * e behaviors.js.
+     * Mantemos a arquitetura antiga intacta.
      */
 
     const configuredBehavior =
@@ -1937,6 +2780,12 @@ function analyzeMessage({
             situation.behavior
         );
 
+
+    /**
+     * =====================================================
+     * RETORNO
+     * =====================================================
+     */
 
     return {
 
@@ -1947,46 +2796,100 @@ function analyzeMessage({
             detected.text ||
             normalizeText(message),
 
+
+        /**
+         * IntenÃ§Ã£o final.
+         */
         intent:
             resolved.intent,
+
 
         confidence:
             resolved.confidence,
 
+
         intentSource:
             resolved.source,
 
+
+        /**
+         * IntenÃ§Ã£o originalmente detectada.
+         */
         detectedIntent:
             detected.intent,
 
+
+        /**
+         * SituaÃ§Ã£o conversacional.
+         */
         situation:
             situation.key,
 
+
         /**
-         * Behavior configurado pela situação existente.
+         * Behavior da arquitetura existente.
+         *
+         * NÃƒO remover.
          */
         behavior:
             situation.behavior,
 
+
         behaviorConfig:
             configuredBehavior,
 
+
         /**
-         * Behavior interpretado diretamente da mensagem.
+         * =================================================
+         * NOVA CAMADA DE INTELIGÃŠNCIA
+         * =================================================
          *
-         * Este campo é a nova camada de inteligência.
+         * Este Ã© o comportamento mais especÃ­fico
+         * interpretado da mensagem.
          */
         interpretedBehavior:
             behavior,
 
+
+        /**
+         * Alvo principal.
+         */
         target,
 
+
+        /**
+         * Estado recebido.
+         */
         state,
 
+
+        /**
+         * Contexto recebido.
+         */
         context,
 
+
+        /**
+         * =================================================
+         * AÃ‡Ã•ES ESTRUTURADAS
+         * =================================================
+         *
+         * Agora actions nÃ£o sÃ£o apenas:
+         *
+         * { type: 'add_product' }
+         *
+         * Quando possÃ­vel, tambÃ©m carregam os candidatos
+         * e a quantidade.
+         */
         actions:
             compoundActions,
+
+
+        /**
+         * =================================================
+         * ENTIDADES
+         * =================================================
+         */
 
         entities: {
 
@@ -2016,7 +2919,12 @@ function analyzeMessage({
 
             replacementCandidate:
                 replacementCandidates
-                    .replacementCandidate
+                    .replacementCandidate,
+
+            quantityTarget:
+                extractQuantityTarget(
+                    normalizedMessage
+                )
         }
 
     };
@@ -2025,7 +2933,7 @@ function analyzeMessage({
 
 /**
  * =========================================================
- * EXPORTAÇÕES
+ * EXPORTAÃ‡Ã•ES
  * =========================================================
  */
 
@@ -2047,6 +2955,8 @@ module.exports = {
 
     isEditAction,
 
+    isQuantityEditAction,
+
     isBackAction,
 
     isReplaceAction,
@@ -2061,11 +2971,15 @@ module.exports = {
 
     extractServiceCandidate,
 
+    extractQuantityTarget,
+
     detectTarget,
 
     detectBehavior,
 
     detectCompoundActions,
 
-    extractReplacementCandidates
+    extractReplacementCandidates,
+
+    cleanItemCandidate
 };

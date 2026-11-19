@@ -59,7 +59,7 @@ async function getCompany(companyId) {
     if (error) {
 
         console.error(
-            '❌ Erro ao buscar empresa:',
+            'âŒ Erro ao buscar empresa:',
             error
         );
 
@@ -95,7 +95,7 @@ async function getProducts(companyId) {
     if (error) {
 
         console.error(
-            '❌ Erro ao buscar produtos:',
+            'âŒ Erro ao buscar produtos:',
             error
         );
 
@@ -108,7 +108,7 @@ async function getProducts(companyId) {
 
 /**
  * =========================================================
- * AÇÕES DO MENU PRINCIPAL
+ * AÃ‡Ã•ES DO MENU PRINCIPAL
  * =========================================================
  */
 
@@ -125,7 +125,7 @@ function getMainMenuActions(
 
     /*
      * =====================================================
-     * EMPRESAS DE SERVIÇOS
+     * EMPRESAS DE SERVIÃ‡OS
      * =====================================================
      */
 
@@ -139,14 +139,14 @@ function getMainMenuActions(
 
             actions.push({
                 intent: 'services',
-                label: 'Ver os nossos serviços'
+                label: 'Ver os nossos serviÃ§os'
             });
         }
 
 
         actions.push({
             intent: 'service_request',
-            label: 'Solicitar um serviço / orçamento'
+            label: 'Solicitar um serviÃ§o / orÃ§amento'
         });
 
     }
@@ -185,13 +185,13 @@ function getMainMenuActions(
 
     /*
      * =====================================================
-     * LOCALIZAÇÃO
+     * LOCALIZAÃ‡ÃƒO
      * =====================================================
      */
 
     actions.push({
         intent: 'location',
-        label: 'Ver localização'
+        label: 'Ver localizaÃ§Ã£o'
     });
 
 
@@ -233,7 +233,7 @@ function getMainMenu(
 
     const welcomeMessage =
         company.welcome_message ||
-        `👋 Olá! Bem-vindo à ${company.name}!`;
+        `ðŸ‘‹ OlÃ¡! Bem-vindo Ã  ${company.name}!`;
 
     const actions =
         getMainMenuActions(
@@ -251,12 +251,12 @@ function getMainMenu(
     ) {
 
         menu +=
-            `${action.number}️⃣ ${action.label}\n`;
+            `${action.number}ï¸âƒ£ ${action.label}\n`;
     }
 
 
     menu +=
-        '\nDigite o número da opção desejada.';
+        '\nDigite o nÃºmero da opÃ§Ã£o desejada.';
 
 
     return menu;
@@ -265,7 +265,7 @@ function getMainMenu(
 
 /**
  * =========================================================
- * MENU DE OPÇÕES
+ * MENU DE OPÃ‡Ã•ES
  * =========================================================
  */
 
@@ -289,7 +289,7 @@ function getMenuOptions(
     ) {
 
         menu +=
-            `${action.number}️⃣ ${action.label}\n`;
+            `${action.number}ï¸âƒ£ ${action.label}\n`;
     }
 
 
@@ -319,14 +319,14 @@ async function showProductsMenu(
     ) {
 
         return (
-            '😕 Neste momento não existem ' +
-            'produtos disponíveis.'
+            'ðŸ˜• Neste momento nÃ£o existem ' +
+            'produtos disponÃ­veis.'
         );
     }
 
 
     let resposta =
-        `🍔 *MENU ${companyName.toUpperCase()}*\n\n`;
+        `ðŸ” *MENU ${companyName.toUpperCase()}*\n\n`;
 
 
     products.forEach(
@@ -336,13 +336,13 @@ async function showProductsMenu(
         ) => {
 
             resposta +=
-                `${index + 1}. ${product.name} — ${product.price} MT\n`;
+                `${index + 1}. ${product.name} â€” ${product.price} MT\n`;
         }
     );
 
 
     resposta +=
-        '\nDigite o número ou nome do produto.';
+        '\nDigite o nÃºmero ou nome do produto.';
 
 
     return resposta;
@@ -351,7 +351,7 @@ async function showProductsMenu(
 
 /**
  * =========================================================
- * MENU DE SERVIÇOS
+ * MENU DE SERVIÃ‡OS
  * =========================================================
  */
 
@@ -371,14 +371,14 @@ async function showServicesMenu(
     ) {
 
         return (
-            '😕 Neste momento não existem ' +
-            'serviços disponíveis.'
+            'ðŸ˜• Neste momento nÃ£o existem ' +
+            'serviÃ§os disponÃ­veis.'
         );
     }
 
 
     let resposta =
-        `🌿 *SERVIÇOS ${companyName.toUpperCase()}*\n\n`;
+        `ðŸŒ¿ *SERVIÃ‡OS ${companyName.toUpperCase()}*\n\n`;
 
 
     services.forEach(
@@ -388,7 +388,7 @@ async function showServicesMenu(
         ) => {
 
             let price =
-                'Sob orçamento';
+                'Sob orÃ§amento';
 
 
             if (
@@ -412,7 +412,7 @@ async function showServicesMenu(
 
 
             resposta +=
-                `${index + 1}. ${service.name} — ${price}\n`;
+                `${index + 1}. ${service.name} â€” ${price}\n`;
 
 
             if (
@@ -427,7 +427,7 @@ async function showServicesMenu(
 
 
     resposta +=
-        '\nDigite o número ou nome do serviço.';
+        '\nDigite o nÃºmero ou nome do serviÃ§o.';
 
 
     return resposta;
@@ -480,12 +480,12 @@ function formatCart(
         cart.length === 0
     ) {
 
-        return '🛒 O seu carrinho está vazio.';
+        return 'ðŸ›’ O seu carrinho estÃ¡ vazio.';
     }
 
 
     let resposta =
-        '🛒 *Resumo do pedido*\n\n';
+        'ðŸ›’ *Resumo do pedido*\n\n';
 
 
     cart.forEach(
@@ -500,7 +500,7 @@ function formatCart(
 
 
             resposta +=
-                `${index + 1}. ${item.quantity}x ${item.product_name} — ${subtotal} MT\n`;
+                `${index + 1}. ${item.quantity}x ${item.product_name} â€” ${subtotal} MT\n`;
         }
     );
 
@@ -512,7 +512,7 @@ function formatCart(
 
 
     resposta +=
-        `\n💵 *Total: ${total} MT*`;
+        `\nðŸ’µ *Total: ${total} MT*`;
 
 
     return resposta;
@@ -658,14 +658,14 @@ function formatCartForEditing(
     ) {
 
         return (
-            '🛒 O carrinho está vazio.\n\n' +
+            'ðŸ›’ O carrinho estÃ¡ vazio.\n\n' +
             'Adicione um produto primeiro.'
         );
     }
 
 
     let resposta =
-        '✏️ *Alterar carrinho*\n\n';
+        'âœï¸ *Alterar carrinho*\n\n';
 
 
     cart.forEach(
@@ -681,8 +681,8 @@ function formatCartForEditing(
 
 
     resposta +=
-        '\nDigite o número do produto que deseja alterar.\n' +
-        '0️⃣ Voltar';
+        '\nDigite o nÃºmero do produto que deseja alterar.\n' +
+        '0ï¸âƒ£ Voltar';
 
 
     return resposta;
@@ -691,7 +691,7 @@ function formatCartForEditing(
 
 /**
  * =========================================================
- * HORÁRIOS
+ * HORÃRIOS
  * =========================================================
  */
 
@@ -705,8 +705,8 @@ function formatBusinessHours(
     ) {
 
         return (
-            '🕒 O horário de funcionamento ' +
-            'ainda não foi configurado para esta empresa.'
+            'ðŸ•’ O horÃ¡rio de funcionamento ' +
+            'ainda nÃ£o foi configurado para esta empresa.'
         );
     }
 
@@ -718,7 +718,7 @@ function formatBusinessHours(
         },
         {
             key: 'tuesday',
-            name: 'Terça-feira'
+            name: 'TerÃ§a-feira'
         },
         {
             key: 'wednesday',
@@ -734,7 +734,7 @@ function formatBusinessHours(
         },
         {
             key: 'saturday',
-            name: 'Sábado'
+            name: 'SÃ¡bado'
         },
         {
             key: 'sunday',
@@ -757,7 +757,7 @@ function formatBusinessHours(
         ) {
 
             resposta +=
-                `📅 ${day.name}: Não configurado\n`;
+                `ðŸ“… ${day.name}: NÃ£o configurado\n`;
 
             return;
         }
@@ -768,7 +768,7 @@ function formatBusinessHours(
         ) {
 
             resposta +=
-                `🚫 ${day.name}: Fechado\n`;
+                `ðŸš« ${day.name}: Fechado\n`;
 
             return;
         }
@@ -782,7 +782,7 @@ function formatBusinessHours(
 
 
         resposta +=
-            `📅 ${day.name}: ${open} - ${close}\n`;
+            `ðŸ“… ${day.name}: ${open} - ${close}\n`;
     });
 
 
@@ -935,11 +935,11 @@ function getNextOpening(
     const dayLabels = {
         sunday: 'Domingo',
         monday: 'Segunda-feira',
-        tuesday: 'Terça-feira',
+        tuesday: 'TerÃ§a-feira',
         wednesday: 'Quarta-feira',
         thursday: 'Quinta-feira',
         friday: 'Sexta-feira',
-        saturday: 'Sábado'
+        saturday: 'SÃ¡bado'
     };
 
 
@@ -996,7 +996,7 @@ function getNextOpening(
 
 /**
  * =========================================================
- * EXPIRAÇÃO
+ * EXPIRAÃ‡ÃƒO
  * =========================================================
  */
 
@@ -1037,7 +1037,7 @@ function hasConversationExpired(
 
 /**
  * =========================================================
- * INTERRUPÇÕES
+ * INTERRUPÃ‡Ã•ES
  * =========================================================
  */
 
@@ -1070,7 +1070,7 @@ function shouldInterruptConversation(
 
 /**
  * =========================================================
- * RESOLUÇÃO INTELIGENTE DE PRODUTO
+ * RESOLUÃ‡ÃƒO INTELIGENTE DE PRODUTO
  * =========================================================
  */
 
@@ -1114,7 +1114,7 @@ async function resolveProductCandidate(
     } catch (error) {
 
         console.error(
-            '❌ Erro ao resolver produto:',
+            'âŒ Erro ao resolver produto:',
             error
         );
 
@@ -1125,12 +1125,12 @@ async function resolveProductCandidate(
 
 /**
  * =========================================================
- * RESOLUÇÃO INTELIGENTE DE SERVIÇO
+ * RESOLUÃ‡ÃƒO INTELIGENTE DE SERVIÃ‡O
  * =========================================================
  *
- * O serviceService é responsável por procurar:
+ * O serviceService Ã© responsÃ¡vel por procurar:
  *
- * 1. nome real do serviço
+ * 1. nome real do serviÃ§o
  * 2. alias da empresa
  *
  * Sempre utilizando companyId.
@@ -1177,7 +1177,7 @@ async function resolveServiceCandidate(
     } catch (error) {
 
         console.error(
-            '❌ Erro ao resolver serviço:',
+            'âŒ Erro ao resolver serviÃ§o:',
             error
         );
 
@@ -1231,7 +1231,7 @@ function getIntelligenceQuantity(
 
 /**
  * =========================================================
- * MEMÓRIA CONTEXTUAL DE PRODUTO
+ * MEMÃ“RIA CONTEXTUAL DE PRODUTO
  * =========================================================
  */
 
@@ -1294,7 +1294,7 @@ function getLastProduct(context) {
 
 /**
  * =========================================================
- * RESOLUÇÃO DE REFERÊNCIAS CONTEXTUAIS
+ * RESOLUÃ‡ÃƒO DE REFERÃŠNCIAS CONTEXTUAIS
  * =========================================================
  */
 
@@ -1332,7 +1332,7 @@ function resolveContextualProduct(
 
 /**
  * =========================================================
- * DETECÇÃO DE CONFIRMAÇÃO
+ * DETECÃ‡ÃƒO DE CONFIRMAÃ‡ÃƒO
  * =========================================================
  */
 
@@ -1349,14 +1349,14 @@ function isNegativeConfirmation(text) {
 
     if (!text) return false;
 
-    return /^(não|nao|n|no|não quero|nao quero|deixa|deixa estar|cancelar|cancela)$/i
+    return /^(nÃ£o|nao|n|no|nÃ£o quero|nao quero|deixa|deixa estar|cancelar|cancela)$/i
         .test(String(text).trim());
 }
 
 
 /**
  * =========================================================
- * QUANTIDADE + REFERÊNCIA CONTEXTUAL
+ * QUANTIDADE + REFERÃŠNCIA CONTEXTUAL
  * =========================================================
  */
 
@@ -1369,7 +1369,7 @@ function extractContextualQuantity(text) {
         .trim();
 
     const match = value.match(
-        /\b(\d+|um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez)\b/
+        /\b(\d+|um|uma|dois|duas|tres|trÃªs|quatro|cinco|seis|sete|oito|nove|dez)\b/
     );
 
     if (!match) return null;
@@ -1380,7 +1380,7 @@ function extractContextualQuantity(text) {
         dois: 2,
         duas: 2,
         tres: 3,
-        três: 3,
+        trÃªs: 3,
         quatro: 4,
         cinco: 5,
         seis: 6,
@@ -1489,7 +1489,7 @@ async function processMessage(
 
     /**
      * =====================================================
-     * EXPIRAÇÃO
+     * EXPIRAÃ‡ÃƒO
      * =====================================================
      */
 
@@ -1551,7 +1551,7 @@ async function processMessage(
     ) {
 
         console.error(
-            '❌ Empresa não encontrada:',
+            'âŒ Empresa nÃ£o encontrada:',
             companyId
         );
 
@@ -1561,7 +1561,7 @@ async function processMessage(
 
     /**
      * =====================================================
-     * CONFIGURAÇÕES DO BOT
+     * CONFIGURAÃ‡Ã•ES DO BOT
      * =====================================================
      */
 
@@ -1576,7 +1576,7 @@ async function processMessage(
     ) {
 
         console.error(
-            '❌ Configurações do bot não encontradas.'
+            'âŒ ConfiguraÃ§Ãµes do bot nÃ£o encontradas.'
         );
 
         return null;
@@ -1604,7 +1604,7 @@ async function processMessage(
 
     /**
      * =====================================================
-     * CENTRO DE INTELIGÊNCIA CONVERSACIONAL
+     * CENTRO DE INTELIGÃŠNCIA CONVERSACIONAL
      * =====================================================
      */
 
@@ -1622,7 +1622,7 @@ async function processMessage(
 
     /**
      * =====================================================
-     * ENTIDADES EXTRAÍDAS PELO CÉREBRO
+     * ENTIDADES EXTRAÃDAS PELO CÃ‰REBRO
      * =====================================================
      */
 
@@ -1658,7 +1658,7 @@ async function processMessage(
 
     /**
      * =====================================================
-     * REFERÊNCIA CONTEXTUAL DE PRODUTO
+     * REFERÃŠNCIA CONTEXTUAL DE PRODUTO
      * =====================================================
      */
 
@@ -1704,11 +1704,11 @@ async function processMessage(
 
 
     /**
-     * Log temporário do cérebro.
+     * Log temporÃ¡rio do cÃ©rebro.
      */
 
     console.log(
-        '🧠 INTELIGÊNCIA CONVERSACIONAL:',
+        'ðŸ§  INTELIGÃŠNCIA CONVERSACIONAL:',
         {
             message: rawMessage,
             state,
@@ -1761,8 +1761,8 @@ async function processMessage(
 
 
         return (
-            'ℹ️ O menu e a consulta de produtos ou serviços ' +
-            'não estão disponíveis neste momento.'
+            'â„¹ï¸ O menu e a consulta de produtos ou serviÃ§os ' +
+            'nÃ£o estÃ£o disponÃ­veis neste momento.'
         );
     }
 
@@ -1779,16 +1779,16 @@ async function processMessage(
 
 
         return (
-            'ℹ️ Os pedidos e solicitações estão ' +
+            'â„¹ï¸ Os pedidos e solicitaÃ§Ãµes estÃ£o ' +
             'temporariamente desativados.\n\n' +
-            'Pode continuar a consultar as informações da empresa.'
+            'Pode continuar a consultar as informaÃ§Ãµes da empresa.'
         );
     }
 
 
     /**
  * =====================================================
- * SAUDAÇÃO
+ * SAUDAÃ‡ÃƒO
  * =====================================================
  */
 
@@ -1808,12 +1808,12 @@ if (
 
     const welcomeMessage =
         company.welcome_message ||
-        `👋 Olá! Bem-vindo à ${company.name}!`;
+        `ðŸ‘‹ OlÃ¡! Bem-vindo Ã  ${company.name}!`;
 
 
     return (
         `${welcomeMessage}\n\n` +
-        'Como posso ajudar? 😊'
+        'Como posso ajudar? ðŸ˜Š'
     );
 }
 
@@ -1835,7 +1835,7 @@ if (
 
 
         return (
-            '❌ A operação atual foi cancelada.\n\n' +
+            'âŒ A operaÃ§Ã£o atual foi cancelada.\n\n' +
             getMainMenu(
                 company,
                 settings
@@ -1869,7 +1869,7 @@ if (
 
     /**
      * =====================================================
-     * INTERRUPÇÃO DE FLUXO
+     * INTERRUPÃ‡ÃƒO DE FLUXO
      * =====================================================
      */
 
@@ -1880,7 +1880,7 @@ if (
     ) {
 
         console.log(
-            `🔄 Interrompendo fluxo "${state}" ` +
+            `ðŸ”„ Interrompendo fluxo "${state}" ` +
             `para tratar "${intent}".`
         );
 
@@ -1898,7 +1898,7 @@ if (
 
     /**
      * =====================================================
-     * CONSULTA DE PREÇO DE PRODUTO
+     * CONSULTA DE PREÃ‡O DE PRODUTO
      * =====================================================
      */
 
@@ -1921,15 +1921,15 @@ if (
         if (!product) {
 
             return (
-                `🤔 Não encontrei *${productCandidate}* no nosso menu.`
+                `ðŸ¤” NÃ£o encontrei *${productCandidate}* no nosso menu.`
             );
 
         }
 
 
         return (
-            `🍔 *${product.name}*\n\n` +
-            `💰 Preço: *${product.price} MT*`
+            `ðŸ” *${product.name}*\n\n` +
+            `ðŸ’° PreÃ§o: *${product.price} MT*`
         );
     }
 
@@ -1959,15 +1959,15 @@ if (
         if (!product) {
 
             return (
-                `❌ Não temos *${productCandidate}* disponível no menu.`
+                `âŒ NÃ£o temos *${productCandidate}* disponÃ­vel no menu.`
             );
 
         }
 
 
         return (
-            `✅ Sim, temos *${product.name}*.\n\n` +
-            `💰 Preço: *${product.price} MT*\n\n` +
+            `âœ… Sim, temos *${product.name}*.\n\n` +
+            `ðŸ’° PreÃ§o: *${product.price} MT*\n\n` +
             'Deseja adicionar ao pedido?'
         );
     }
@@ -1975,7 +1975,7 @@ if (
 
     /**
      * =====================================================
-     * RESOLUÇÃO DE PRODUTO POR CONTEXTO
+     * RESOLUÃ‡ÃƒO DE PRODUTO POR CONTEXTO
      * =====================================================
      */
 
@@ -2052,10 +2052,10 @@ if (
 
 
                 return (
-                    `✅ Adicionei *${product.name}* ` +
+                    `âœ… Adicionei *${product.name}* ` +
                     `(${intelligenceQuantity}x) ao seu pedido.\n\n` +
                     `${formatCart(cart)}\n\n` +
-                    `💵 Total: *${total} MT*`
+                    `ðŸ’µ Total: *${total} MT*`
                 );
             }
 
@@ -2082,8 +2082,8 @@ if (
 
 
             return (
-                `🍔 *${product.name}*\n\n` +
-                `💰 Preço: *${product.price} MT*\n\n` +
+                `ðŸ” *${product.name}*\n\n` +
+                `ðŸ’° PreÃ§o: *${product.price} MT*\n\n` +
                 `Quantas unidades deseja?`
             );
         }
@@ -2092,7 +2092,7 @@ if (
 
     /**
      * =====================================================
-     * CONFIRMAÇÃO CONTEXTUAL
+     * CONFIRMAÃ‡ÃƒO CONTEXTUAL
      * =====================================================
      */
 
@@ -2150,9 +2150,9 @@ if (
 
 
             return (
-                `✅ Adicionei *${confirmedProduct.product_name}* ao seu pedido.\n\n` +
+                `âœ… Adicionei *${confirmedProduct.product_name}* ao seu pedido.\n\n` +
                 `${formatCart(cart)}\n\n` +
-                `💵 Total: *${total} MT*\n\n` +
+                `ðŸ’µ Total: *${total} MT*\n\n` +
                 `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
             );
         }
@@ -2161,7 +2161,7 @@ if (
 
     /**
      * =====================================================
-     * RECUSA DE CONFIRMAÇÃO
+     * RECUSA DE CONFIRMAÃ‡ÃƒO
      * =====================================================
      */
 
@@ -2182,7 +2182,7 @@ if (
 
 
         return (
-            `Tudo bem 👍 Não adicionei esse produto.\n\n` +
+            `Tudo bem ðŸ‘ NÃ£o adicionei esse produto.\n\n` +
             `Posso ajudar com mais alguma coisa?`
         );
     }
@@ -2190,7 +2190,7 @@ if (
 
     /**
      * =====================================================
-     * REFERÊNCIA CONTEXTUAL + QUANTIDADE
+     * REFERÃŠNCIA CONTEXTUAL + QUANTIDADE
      * =====================================================
      */
 
@@ -2272,9 +2272,9 @@ if (
 
 
             return (
-                `✅ Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
+                `âœ… Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
                 `${formatCart(cart)}\n\n` +
-                `💵 Total: *${total} MT*\n\n` +
+                `ðŸ’µ Total: *${total} MT*\n\n` +
                 `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
             );
         }
@@ -2283,7 +2283,7 @@ if (
 
     /**
      * =====================================================
-     * RESOLUÇÃO INTELIGENTE DE PRODUTO
+     * RESOLUÃ‡ÃƒO INTELIGENTE DE PRODUTO
      * =====================================================
      */
 
@@ -2363,17 +2363,17 @@ if (
 
 
                 return (
-                    `✅ *${intelligenceQuantity}x ${product.name}* ` +
+                    `âœ… *${intelligenceQuantity}x ${product.name}* ` +
                     'adicionado ao pedido.\n\n' +
 
                     `${formatCart(cart)}\n\n` +
 
                     'O que deseja fazer?\n\n' +
 
-                    '1️⃣ Adicionar outro produto\n' +
-                    '2️⃣ Finalizar pedido\n' +
-                    '3️⃣ Alterar carrinho\n' +
-                    '4️⃣ Cancelar pedido'
+                    '1ï¸âƒ£ Adicionar outro produto\n' +
+                    '2ï¸âƒ£ Finalizar pedido\n' +
+                    '3ï¸âƒ£ Alterar carrinho\n' +
+                    '4ï¸âƒ£ Cancelar pedido'
                 );
             }
 
@@ -2405,8 +2405,8 @@ if (
 
 
             return (
-                `🍔 *${product.name}*\n\n` +
-                `💰 Preço: ${product.price} MT\n\n` +
+                `ðŸ” *${product.name}*\n\n` +
+                `ðŸ’° PreÃ§o: ${product.price} MT\n\n` +
                 'Quantas unidades deseja?'
             );
         }
@@ -2415,7 +2415,7 @@ if (
 
     /**
      * =====================================================
-     * NÚMERO DO MENU PRINCIPAL
+     * NÃšMERO DO MENU PRINCIPAL
      * =====================================================
      */
 
@@ -2449,7 +2449,7 @@ if (
 
     /**
      * =====================================================
-     * SERVIÇOS — LISTA
+     * SERVIÃ‡OS â€” LISTA
      * =====================================================
      */
 
@@ -2468,8 +2468,8 @@ if (
         ) {
 
             return (
-                '😕 Neste momento não existem ' +
-                'serviços disponíveis.'
+                'ðŸ˜• Neste momento nÃ£o existem ' +
+                'serviÃ§os disponÃ­veis.'
             );
         }
 
@@ -2485,7 +2485,7 @@ if (
 
 
         /**
-         * 1. Seleção por número.
+         * 1. SeleÃ§Ã£o por nÃºmero.
          */
 
         if (
@@ -2502,16 +2502,16 @@ if (
 
 
         /**
-         * 2. Seleção inteligente:
+         * 2. SeleÃ§Ã£o inteligente:
          *
          * Knowledge Engine
-         *       ↓
+         *       â†“
          * serviceCandidate
-         *       ↓
+         *       â†“
          * resolveServiceCandidate()
-         *       ↓
+         *       â†“
          * serviceService
-         *       ↓
+         *       â†“
          * nome ou alias da empresa
          */
 
@@ -2532,7 +2532,7 @@ if (
          * 3. Fallback para o texto original.
          *
          * Isto preserva compatibilidade com mensagens
-         * simples que o Knowledge Engine não tenha
+         * simples que o Knowledge Engine nÃ£o tenha
          * convertido em candidato.
          */
 
@@ -2578,7 +2578,7 @@ if (
 
 
             let price =
-                'Sob orçamento';
+                'Sob orÃ§amento';
 
 
             if (
@@ -2602,7 +2602,7 @@ if (
 
 
             return (
-                `🌿 *${service.name}*\n\n` +
+                `ðŸŒ¿ *${service.name}*\n\n` +
 
                 (
                     service.description
@@ -2610,26 +2610,26 @@ if (
                         : ''
                 ) +
 
-                `💰 Preço: ${price}\n\n` +
+                `ðŸ’° PreÃ§o: ${price}\n\n` +
 
-                'Deseja solicitar este serviço?\n\n' +
+                'Deseja solicitar este serviÃ§o?\n\n' +
 
-                '1️⃣ Sim\n' +
-                '2️⃣ Voltar aos serviços'
+                '1ï¸âƒ£ Sim\n' +
+                '2ï¸âƒ£ Voltar aos serviÃ§os'
             );
         }
 
 
         return (
-            '❌ Não encontrei esse serviço.\n\n' +
-            'Digite o número ou nome do serviço.'
+            'âŒ NÃ£o encontrei esse serviÃ§o.\n\n' +
+            'Digite o nÃºmero ou nome do serviÃ§o.'
         );
     }
 
 
     /**
      * =====================================================
-     * PREÇO DO SERVIÇO
+     * PREÃ‡O DO SERVIÃ‡O
      * =====================================================
      */
 
@@ -2639,7 +2639,7 @@ if (
     ) {
 
         let price =
-            'Sob orçamento';
+            'Sob orÃ§amento';
 
 
         if (
@@ -2665,21 +2665,21 @@ if (
 
 
         return (
-            `💰 *Preço: ${price}*\n\n` +
+            `ðŸ’° *PreÃ§o: ${price}*\n\n` +
 
-            `🌿 Serviço: ${context.service_name}\n\n` +
+            `ðŸŒ¿ ServiÃ§o: ${context.service_name}\n\n` +
 
-            'Deseja solicitar este serviço?\n\n' +
+            'Deseja solicitar este serviÃ§o?\n\n' +
 
-            '1️⃣ Sim\n' +
-            '2️⃣ Voltar aos serviços'
+            '1ï¸âƒ£ Sim\n' +
+            '2ï¸âƒ£ Voltar aos serviÃ§os'
         );
     }
 
 
     /**
      * =====================================================
-     * SERVIÇO SELECIONADO
+     * SERVIÃ‡O SELECIONADO
      * =====================================================
      */
 
@@ -2705,14 +2705,14 @@ if (
 
 
             return (
-                `📋 *Solicitação de ${context.service_name}*\n\n` +
+                `ðŸ“‹ *SolicitaÃ§Ã£o de ${context.service_name}*\n\n` +
 
                 'Explique brevemente o que precisa.\n\n' +
 
                 'Exemplo:\n' +
 
-                '“Preciso cortar a relva do meu jardim ' +
-                'de aproximadamente 200 m².”'
+                'â€œPreciso cortar a relva do meu jardim ' +
+                'de aproximadamente 200 mÂ².â€'
             );
         }
 
@@ -2741,17 +2741,17 @@ if (
 
 
         return (
-            '🤔 Escolha uma opção:\n\n' +
+            'ðŸ¤” Escolha uma opÃ§Ã£o:\n\n' +
 
-            '1️⃣ Sim\n' +
-            '2️⃣ Voltar aos serviços'
+            '1ï¸âƒ£ Sim\n' +
+            '2ï¸âƒ£ Voltar aos serviÃ§os'
         );
     }
 
 
     /**
      * =====================================================
-     * SOLICITAÇÃO DE SERVIÇO
+     * SOLICITAÃ‡ÃƒO DE SERVIÃ‡O
      * =====================================================
      */
 
@@ -2783,12 +2783,12 @@ if (
         ) {
 
             console.error(
-                '❌ Não foi possível identificar o cliente.'
+                'âŒ NÃ£o foi possÃ­vel identificar o cliente.'
             );
 
 
             return (
-                '❌ Não foi possível identificar o seu cadastro.\n\n' +
+                'âŒ NÃ£o foi possÃ­vel identificar o seu cadastro.\n\n' +
                 'Por favor, tente novamente.'
             );
         }
@@ -2813,12 +2813,12 @@ if (
         ) {
 
             console.error(
-                '❌ Falha ao registrar solicitação.'
+                'âŒ Falha ao registrar solicitaÃ§Ã£o.'
             );
 
 
             return (
-                '❌ Não foi possível registrar a sua solicitação.\n\n' +
+                'âŒ NÃ£o foi possÃ­vel registrar a sua solicitaÃ§Ã£o.\n\n' +
                 'Por favor, tente novamente.'
             );
         }
@@ -2833,20 +2833,20 @@ if (
         const serviceName =
             context.service_name ||
             request.services?.name ||
-            'Serviço solicitado';
+            'ServiÃ§o solicitado';
 
 
         return (
-            '✅ *Solicitação registrada com sucesso!*\n\n' +
+            'âœ… *SolicitaÃ§Ã£o registrada com sucesso!*\n\n' +
 
-            `🌿 Serviço: ${serviceName}\n` +
+            `ðŸŒ¿ ServiÃ§o: ${serviceName}\n` +
 
-            `📋 Pedido: ${requestText}\n\n` +
+            `ðŸ“‹ Pedido: ${requestText}\n\n` +
 
-            `A ${company.name} recebeu a sua solicitação e poderá ` +
+            `A ${company.name} recebeu a sua solicitaÃ§Ã£o e poderÃ¡ ` +
             'entrar em contacto consigo para confirmar os detalhes.\n\n' +
 
-            'Obrigado! 🙌'
+            'Obrigado! ðŸ™Œ'
         );
     }
 
@@ -2872,8 +2872,8 @@ if (
         ) {
 
             return (
-                '😕 Neste momento não existem ' +
-                'produtos disponíveis.'
+                'ðŸ˜• Neste momento nÃ£o existem ' +
+                'produtos disponÃ­veis.'
             );
         }
 
@@ -2926,14 +2926,14 @@ if (
 
 
             return (
-                `🍔 *${product.name}*\n\n` +
+                `ðŸ” *${product.name}*\n\n` +
 
-                `💰 Preço: ${product.price} MT\n\n` +
+                `ðŸ’° PreÃ§o: ${product.price} MT\n\n` +
 
                 'Deseja fazer um pedido?\n\n' +
 
-                '1️⃣ Sim, fazer pedido\n' +
-                '2️⃣ Voltar ao menu'
+                '1ï¸âƒ£ Sim, fazer pedido\n' +
+                '2ï¸âƒ£ Voltar ao menu'
             );
         }
 
@@ -2978,21 +2978,21 @@ if (
 
 
             return (
-                `🍔 *${product.name}*\n\n` +
+                `ðŸ” *${product.name}*\n\n` +
 
-                `💰 Preço: ${product.price} MT\n\n` +
+                `ðŸ’° PreÃ§o: ${product.price} MT\n\n` +
 
                 'Deseja fazer um pedido?\n\n' +
 
-                '1️⃣ Sim, fazer pedido\n' +
-                '2️⃣ Voltar ao menu'
+                '1ï¸âƒ£ Sim, fazer pedido\n' +
+                '2ï¸âƒ£ Voltar ao menu'
             );
         }
 
 
         return (
-            '❌ Não encontrei esse produto.\n\n' +
-            'Digite o número do produto ou o nome do produto.'
+            'âŒ NÃ£o encontrei esse produto.\n\n' +
+            'Digite o nÃºmero do produto ou o nome do produto.'
         );
     }
 
@@ -3050,9 +3050,9 @@ if (
 
 
             return (
-                `🍔 *${product.product_name}*\n\n` +
+                `ðŸ” *${product.product_name}*\n\n` +
 
-                `💰 Preço: ${product.unit_price} MT\n\n` +
+                `ðŸ’° PreÃ§o: ${product.unit_price} MT\n\n` +
 
                 'Quantas unidades deseja?'
             );
@@ -3083,10 +3083,10 @@ if (
 
 
         return (
-            '🤔 Escolha uma opção:\n\n' +
+            'ðŸ¤” Escolha uma opÃ§Ã£o:\n\n' +
 
-            '1️⃣ Sim, fazer pedido\n' +
-            '2️⃣ Voltar ao menu'
+            '1ï¸âƒ£ Sim, fazer pedido\n' +
+            '2ï¸âƒ£ Voltar ao menu'
         );
     }
 
@@ -3165,8 +3165,8 @@ if (
         ) {
 
             return (
-                '❌ Não encontrei esse produto.\n\n' +
-                'Digite o nome ou número do produto.'
+                'âŒ NÃ£o encontrei esse produto.\n\n' +
+                'Digite o nome ou nÃºmero do produto.'
             );
         }
 
@@ -3207,9 +3207,9 @@ if (
 
 
         return (
-            `🍔 *${product.name}*\n\n` +
+            `ðŸ” *${product.name}*\n\n` +
 
-            `💰 Preço: ${product.price} MT\n\n` +
+            `ðŸ’° PreÃ§o: ${product.price} MT\n\n` +
 
             'Quantas unidades deseja?'
         );
@@ -3258,11 +3258,11 @@ if (
         ) {
 
             return (
-                '❌ Não consegui identificar a quantidade.\n\n' +
+                'âŒ NÃ£o consegui identificar a quantidade.\n\n' +
 
                 'Por favor, diga quantas unidades deseja.\n\n' +
 
-                'Exemplo: *2*, *dois* ou *quero três*.'
+                'Exemplo: *2*, *dois* ou *quero trÃªs*.'
             );
         }
 
@@ -3291,7 +3291,7 @@ if (
 
 
             return (
-                '🤔 Não consegui identificar o produto.\n\n' +
+                'ðŸ¤” NÃ£o consegui identificar o produto.\n\n' +
                 'Qual produto deseja adicionar?'
             );
         }
@@ -3347,17 +3347,17 @@ if (
 
 
         return (
-            `✅ *${quantity}x ${cartProduct.product_name}* ` +
+            `âœ… *${quantity}x ${cartProduct.product_name}* ` +
             'adicionado ao pedido.\n\n' +
 
             `${formatCart(cart)}\n\n` +
 
             'O que deseja fazer?\n\n' +
 
-            '1️⃣ Adicionar outro produto\n' +
-            '2️⃣ Finalizar pedido\n' +
-            '3️⃣ Alterar carrinho\n' +
-            '4️⃣ Cancelar pedido'
+            '1ï¸âƒ£ Adicionar outro produto\n' +
+            '2ï¸âƒ£ Finalizar pedido\n' +
+            '3ï¸âƒ£ Alterar carrinho\n' +
+            '4ï¸âƒ£ Cancelar pedido'
         );
     }
 
@@ -3384,7 +3384,7 @@ if (
 
         /**
          * =================================================
-         * ADICIONAR MAIS DO ÚLTIMO PRODUTO
+         * ADICIONAR MAIS DO ÃšLTIMO PRODUTO
          * =================================================
          */
 
@@ -3441,16 +3441,16 @@ if (
 
 
             return (
-                `✅ Adicionei mais *${quantity}x ${lastProduct.product_name}*.\n\n` +
+                `âœ… Adicionei mais *${quantity}x ${lastProduct.product_name}*.\n\n` +
 
                 `${formatCart(updatedCart)}\n\n` +
 
                 'O que deseja fazer?\n\n' +
 
-                '1️⃣ Adicionar outro produto\n' +
-                '2️⃣ Finalizar pedido\n' +
-                '3️⃣ Alterar carrinho\n' +
-                '4️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Adicionar outro produto\n' +
+                '2ï¸âƒ£ Finalizar pedido\n' +
+                '3ï¸âƒ£ Alterar carrinho\n' +
+                '4ï¸âƒ£ Cancelar pedido'
             );
         }
 
@@ -3486,7 +3486,7 @@ if (
 
 
             return (
-                `🍔 *${lastProduct.product_name}*\n\n` +
+                `ðŸ” *${lastProduct.product_name}*\n\n` +
 
                 'Quantas unidades deseja adicionar?'
             );
@@ -3543,16 +3543,16 @@ if (
 
 
             return (
-                `✅ Adicionei mais *1x ${lastProduct.product_name}*.\n\n` +
+                `âœ… Adicionei mais *1x ${lastProduct.product_name}*.\n\n` +
 
                 `${formatCart(updatedCart)}\n\n` +
 
                 'O que deseja fazer?\n\n' +
 
-                '1️⃣ Adicionar outro produto\n' +
-                '2️⃣ Finalizar pedido\n' +
-                '3️⃣ Alterar carrinho\n' +
-                '4️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Adicionar outro produto\n' +
+                '2ï¸âƒ£ Finalizar pedido\n' +
+                '3ï¸âƒ£ Alterar carrinho\n' +
+                '4ï¸âƒ£ Cancelar pedido'
             );
         }
 
@@ -3577,7 +3577,7 @@ if (
             return (
                 `${formatCart(cart)}\n\n` +
 
-                `💵 O total atual é *${total} MT*.\n\n` +
+                `ðŸ’µ O total atual Ã© *${total} MT*.\n\n` +
 
                 'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
             );
@@ -3591,6 +3591,8 @@ if (
          */
 
         if (
+            state !== 'editing_cart' &&
+            state !== 'editing_cart_item' &&
             entities.removeAction &&
             (
                 productCandidate ||
@@ -3598,7 +3600,6 @@ if (
                 entities.reference
             )
         ) {
-
             let itemIndex = -1;
 
 
@@ -3693,30 +3694,30 @@ if (
                 ) {
 
                     return (
-                        `🗑️ *${removed.product_name}* ` +
+                        `ðŸ—‘ï¸ *${removed.product_name}* ` +
                         'foi removido do pedido.\n\n' +
-                        'O carrinho está vazio.\n\n' +
+                        'O carrinho estÃ¡ vazio.\n\n' +
                         'Deseja adicionar algum produto?'
                     );
                 }
 
 
                 return (
-                    `🗑️ *${removed.product_name}* ` +
+                    `ðŸ—‘ï¸ *${removed.product_name}* ` +
                     'foi removido do pedido.\n\n' +
                     `${formatCart(cart)}\n\n` +
-                    `💵 Total: *${total} MT*\n\n` +
+                    `ðŸ’µ Total: *${total} MT*\n\n` +
                     'O que deseja fazer?\n\n' +
-                    '1️⃣ Adicionar outro produto\n' +
-                    '2️⃣ Finalizar pedido\n' +
-                    '3️⃣ Alterar carrinho\n' +
-                    '4️⃣ Cancelar pedido'
+                    '1ï¸âƒ£ Adicionar outro produto\n' +
+                    '2ï¸âƒ£ Finalizar pedido\n' +
+                    '3ï¸âƒ£ Alterar carrinho\n' +
+                    '4ï¸âƒ£ Cancelar pedido'
                 );
             }
 
 
             return (
-                '🤔 Não consegui identificar qual produto deseja remover.\n\n' +
+                'ðŸ¤” NÃ£o consegui identificar qual produto deseja remover.\n\n' +
                 `${formatCart(cart)}`
             );
         }
@@ -3728,16 +3729,89 @@ if (
          * =================================================
          */
 
+
+        /*
+         * ALTERAR QUANTIDADE POR POSIÇÃO
+         *
+         * Exemplo:
+         * "quero o segundo com 3"
+         *
+         * Usa diretamente a posição existente no carrinho.
+         * Não depende de resolvedProductCandidate.
+         */
         if (
-            entities.editAction &&
-            productCandidate &&
+            intelligence.behavior === 'change_quantity' &&
+            entities.productPosition !== null &&
+            entities.productPosition !== undefined &&
+            intelligenceQuantity
+        ) {
+            let itemIndex = -1
+
+            if (
+                entities.productPosition === 'last'
+            ) {
+                itemIndex =
+                    cart.length - 1
+            } else {
+                itemIndex =
+                    Number(
+                        entities.productPosition
+                    ) - 1
+            }
+
+            if (
+                itemIndex >= 0 &&
+                itemIndex < cart.length
+            ) {
+                const selectedProduct =
+                    cart[itemIndex]
+
+                updateProductQuantity(
+                    cart,
+                    itemIndex,
+                    intelligenceQuantity
+                )
+
+                const total =
+                    calculateCartTotal(
+                        cart
+                    )
+
+                await updateConversationState(
+                    companyId,
+                    conversationId,
+                    'cart_menu',
+                    {
+                        ...context,
+                        cart,
+                        total
+                    }
+                )
+
+                return (
+                    `Atualizei *${selectedProduct.product_name}* ` +
+                    `para *${intelligenceQuantity} unidades*.\n\n` +
+                    `${formatCart(cart)}\n\n` +
+                    `Total: *${total} MT*\n\n` +
+                    'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+                )
+            }
+        }
+
+
+        if (
+            (
+                entities.editAction ||
+                intelligence.behavior === 'change_quantity'
+            ) &&
+            resolvedProductCandidate &&
             intelligenceQuantity
         ) {
 
             const product =
                 await resolveProductCandidate(
                     companyId,
-                    productCandidate
+                    resolvedProductCandidate
                 );
 
 
@@ -3802,12 +3876,12 @@ if (
 
 
                     return (
-                        `✏️ Atualizei *${product.name}* ` +
+                        `âœï¸ Atualizei *${product.name}* ` +
                         `para *${intelligenceQuantity} unidades*.\n\n` +
 
                         `${formatCart(cart)}\n\n` +
 
-                        `💵 Total: *${total} MT*\n\n` +
+                        `ðŸ’µ Total: *${total} MT*\n\n` +
 
                         'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
                     );
@@ -3818,7 +3892,7 @@ if (
 
         /**
          * =================================================
-         * SELECIONAR ITEM PARA SUBSTITUIÇÃO
+         * SELECIONAR ITEM PARA SUBSTITUIÃ‡ÃƒO
          * =================================================
          */
 
@@ -3876,7 +3950,7 @@ if (
 
 
                 return (
-                    `🔄 O produto selecionado é *${selectedProduct.product_name}*.\n\n` +
+                    `ðŸ”„ O produto selecionado Ã© *${selectedProduct.product_name}*.\n\n` +
 
                     'Qual produto deseja colocar no lugar?'
                 );
@@ -3884,7 +3958,7 @@ if (
 
 
             return (
-                '🤔 Não encontrei esse produto no seu carrinho.\n\n' +
+                'ðŸ¤” NÃ£o encontrei esse produto no seu carrinho.\n\n' +
                 `${formatCart(cart)}`
             );
         }
@@ -3892,7 +3966,7 @@ if (
 
         /**
          * =================================================
-         * OPÇÕES DO CARRINHO
+         * OPÃ‡Ã•ES DO CARRINHO
          * =================================================
          */
 
@@ -3916,7 +3990,7 @@ if (
 
 
             return (
-                '➕ *Adicionar outro produto*\n\n' +
+                'âž• *Adicionar outro produto*\n\n' +
                 'Qual produto deseja adicionar?'
             );
         }
@@ -3932,7 +4006,7 @@ if (
                 cart.length === 0
             ) {
 
-                return '🛒 O seu carrinho está vazio.';
+                return 'ðŸ›’ O seu carrinho estÃ¡ vazio.';
             }
 
 
@@ -3960,8 +4034,8 @@ if (
 
                 'Deseja confirmar o pedido?\n\n' +
 
-                '1️⃣ Confirmar pedido\n' +
-                '2️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Confirmar pedido\n' +
+                '2ï¸âƒ£ Cancelar pedido'
             );
         }
 
@@ -3977,7 +4051,7 @@ if (
                 cart.length === 0
             ) {
 
-                return '🛒 O seu carrinho está vazio.';
+                return 'ðŸ›’ O seu carrinho estÃ¡ vazio.';
             }
 
 
@@ -4011,8 +4085,8 @@ if (
 
 
             return (
-                '❌ *Pedido cancelado.*\n\n' +
-                'Digite *Olá* para ver as opções disponíveis.'
+                'âŒ *Pedido cancelado.*\n\n' +
+                'Digite *OlÃ¡* para ver as opÃ§Ãµes disponÃ­veis.'
             );
         }
 
@@ -4020,12 +4094,12 @@ if (
         return (
             `${formatCart(cart)}\n\n` +
 
-            '🤔 Escolha uma opção:\n\n' +
+            'ðŸ¤” Escolha uma opÃ§Ã£o:\n\n' +
 
-            '1️⃣ Adicionar outro produto\n' +
-            '2️⃣ Finalizar pedido\n' +
-            '3️⃣ Alterar carrinho\n' +
-            '4️⃣ Cancelar pedido'
+            '1ï¸âƒ£ Adicionar outro produto\n' +
+            '2ï¸âƒ£ Finalizar pedido\n' +
+            '3ï¸âƒ£ Alterar carrinho\n' +
+            '4ï¸âƒ£ Cancelar pedido'
         );
     }
 
@@ -4146,28 +4220,28 @@ if (
             ) {
 
                 return (
-                    `🗑️ *${removed.product_name}* ` +
+                    `ðŸ—‘ï¸ *${removed.product_name}* ` +
                     'foi removido do pedido.\n\n' +
-                    'O carrinho está vazio.\n\n' +
+                    'O carrinho estÃ¡ vazio.\n\n' +
                     'Deseja adicionar algum produto?'
                 );
             }
 
 
             return (
-                `🗑️ *${removed.product_name}* ` +
+                `ðŸ—‘ï¸ *${removed.product_name}* ` +
                 'foi removido do pedido.\n\n' +
 
                 `${formatCart(updatedCart)}\n\n` +
 
-                `💵 Total: *${total} MT*\n\n` +
+                `ðŸ’µ Total: *${total} MT*\n\n` +
 
                 'O que deseja fazer?\n\n' +
 
-                '1️⃣ Adicionar outro produto\n' +
-                '2️⃣ Finalizar pedido\n' +
-                '3️⃣ Alterar carrinho\n' +
-                '4️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Adicionar outro produto\n' +
+                '2ï¸âƒ£ Finalizar pedido\n' +
+                '3ï¸âƒ£ Alterar carrinho\n' +
+                '4ï¸âƒ£ Cancelar pedido'
             );
         }
     }
@@ -4221,10 +4295,10 @@ if (
 
                 'O que deseja fazer?\n\n' +
 
-                '1️⃣ Adicionar outro produto\n' +
-                '2️⃣ Finalizar pedido\n' +
-                '3️⃣ Alterar carrinho\n' +
-                '4️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Adicionar outro produto\n' +
+                '2ï¸âƒ£ Finalizar pedido\n' +
+                '3ï¸âƒ£ Alterar carrinho\n' +
+                '4ï¸âƒ£ Cancelar pedido'
             );
         }
 
@@ -4263,11 +4337,11 @@ if (
 
 
         return (
-            `✏️ *${item.product_name}*\n\n` +
+            `âœï¸ *${item.product_name}*\n\n` +
 
             `Quantidade atual: ${item.quantity}\n` +
 
-            `Preço unitário: ${item.unit_price} MT\n\n` +
+            `PreÃ§o unitÃ¡rio: ${item.unit_price} MT\n\n` +
 
             'Digite a nova quantidade.\n\n' +
 
@@ -4280,7 +4354,7 @@ if (
 
     /**
      * =====================================================
-     * SUBSTITUIÇÃO CONTEXTUAL DE PRODUTO
+     * SUBSTITUIÃ‡ÃƒO CONTEXTUAL DE PRODUTO
      * =====================================================
      */
 
@@ -4321,7 +4395,7 @@ if (
 
 
             return (
-                '🤔 Não consegui identificar o item que deseja substituir.'
+                'ðŸ¤” NÃ£o consegui identificar o item que deseja substituir.'
             );
         }
 
@@ -4392,7 +4466,7 @@ if (
         ) {
 
             return (
-                `🤔 Não encontrei *${texto}* no nosso menu.\n\n` +
+                `ðŸ¤” NÃ£o encontrei *${texto}* no nosso menu.\n\n` +
                 `Qual produto deseja colocar no lugar?`
             );
         }
@@ -4476,12 +4550,12 @@ if (
 
 
         return (
-            `✅ *${oldProduct.product_name}* foi substituído por ` +
+            `âœ… *${oldProduct.product_name}* foi substituÃ­do por ` +
             `*${replacementProduct.name}*.\n\n` +
 
             `${formatCart(cart)}\n\n` +
 
-            `💵 Total: *${total} MT*\n\n` +
+            `ðŸ’µ Total: *${total} MT*\n\n` +
 
             `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
         );
@@ -4490,7 +4564,7 @@ if (
 
     /**
      * =====================================================
-     * INTENÇÃO + REFERÊNCIA CONTEXTUAL
+     * INTENÃ‡ÃƒO + REFERÃŠNCIA CONTEXTUAL
      * =====================================================
      */
 
@@ -4504,12 +4578,12 @@ if (
 
 
         /**
-         * PREÇO
+         * PREÃ‡O
          */
 
         if (
             intent === 'price' ||
-            /quanto custa|qual o preco|qual o preço|quanto e|quanto é/i
+            /quanto custa|qual o preco|qual o preÃ§o|quanto e|quanto Ã©/i
                 .test(texto)
         ) {
 
@@ -4548,8 +4622,8 @@ if (
 
 
                 return (
-                    `🍔 *${product.name}*\n\n` +
-                    `💰 Preço: *${product.price} MT*`
+                    `ðŸ” *${product.name}*\n\n` +
+                    `ðŸ’° PreÃ§o: *${product.price} MT*`
                 );
             }
         }
@@ -4599,8 +4673,8 @@ if (
 
 
                 return (
-                    `✅ Sim, temos *${product.name}*.\n\n` +
-                    `💰 Preço: *${product.price} MT*\n\n` +
+                    `âœ… Sim, temos *${product.name}*.\n\n` +
+                    `ðŸ’° PreÃ§o: *${product.price} MT*\n\n` +
                     `Deseja adicionar ao pedido?`
                 );
             }
@@ -4686,9 +4760,9 @@ if (
 
 
                     return (
-                        `✅ Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
+                        `âœ… Adicionei *${contextualQuantity}x ${product.name}* ao seu pedido.\n\n` +
                         `${formatCart(cart)}\n\n` +
-                        `💵 Total: *${total} MT*\n\n` +
+                        `ðŸ’µ Total: *${total} MT*\n\n` +
                         `Deseja adicionar mais alguma coisa ou finalizar o pedido?`
                     );
                 }
@@ -4696,7 +4770,7 @@ if (
 
                 /**
                  * Sem quantidade:
-                 * NÃO assumir 1.
+                 * NÃƒO assumir 1.
                  */
 
                 const newContext =
@@ -4727,8 +4801,8 @@ if (
 
 
                 return (
-                    `🍔 *${product.name}*\n\n` +
-                    `💰 Preço: *${product.price} MT*\n\n` +
+                    `ðŸ” *${product.name}*\n\n` +
+                    `ðŸ’° PreÃ§o: *${product.price} MT*\n\n` +
                     `Quantas unidades deseja?`
                 );
             }
@@ -4751,9 +4825,9 @@ if (
 
 
             /**
-             * CORREÇÃO:
+             * CORREÃ‡ÃƒO:
              *
-             * contextualProduct é um objeto.
+             * contextualProduct Ã© um objeto.
              *
              * getCartProductIndex() espera
              * o product_id.
@@ -4814,16 +4888,16 @@ if (
                 ) {
 
                     return (
-                        `🗑️ Removi *${removedProduct.product_name}* do pedido.\n\n` +
-                        `O seu carrinho está vazio.`
+                        `ðŸ—‘ï¸ Removi *${removedProduct.product_name}* do pedido.\n\n` +
+                        `O seu carrinho estÃ¡ vazio.`
                     );
                 }
 
 
                 return (
-                    `🗑️ Removi *${removedProduct.product_name}* do pedido.\n\n` +
+                    `ðŸ—‘ï¸ Removi *${removedProduct.product_name}* do pedido.\n\n` +
                     `${formatCart(cart)}\n\n` +
-                    `💵 Total: *${total} MT*`
+                    `ðŸ’µ Total: *${total} MT*`
                 );
             }
         }
@@ -4894,8 +4968,8 @@ if (
         ) {
 
             return (
-                '❌ Quantidade inválida.\n\n' +
-                'Digite um número igual ou maior que zero.'
+                'âŒ Quantidade invÃ¡lida.\n\n' +
+                'Digite um nÃºmero igual ou maior que zero.'
             );
         }
 
@@ -4945,9 +5019,9 @@ if (
 
 
             return (
-                `🗑️ *${productName}* foi removido.\n\n` +
-                '🛒 O carrinho está vazio.\n\n' +
-                'Digite *Olá* para começar novamente.'
+                `ðŸ—‘ï¸ *${productName}* foi removido.\n\n` +
+                'ðŸ›’ O carrinho estÃ¡ vazio.\n\n' +
+                'Digite *OlÃ¡* para comeÃ§ar novamente.'
             );
         }
 
@@ -4984,31 +5058,31 @@ if (
         ) {
 
             return (
-                `🗑️ *${productName}* foi removido do pedido.\n\n` +
+                `ðŸ—‘ï¸ *${productName}* foi removido do pedido.\n\n` +
 
                 `${formatCart(cart)}\n\n` +
 
                 'O que deseja fazer?\n\n' +
 
-                '1️⃣ Adicionar outro produto\n' +
-                '2️⃣ Finalizar pedido\n' +
-                '3️⃣ Alterar carrinho\n' +
-                '4️⃣ Cancelar pedido'
+                '1ï¸âƒ£ Adicionar outro produto\n' +
+                '2ï¸âƒ£ Finalizar pedido\n' +
+                '3ï¸âƒ£ Alterar carrinho\n' +
+                '4ï¸âƒ£ Cancelar pedido'
             );
         }
 
 
         return (
-            `✅ Quantidade de *${productName}* atualizada.\n\n` +
+            `âœ… Quantidade de *${productName}* atualizada.\n\n` +
 
             `${formatCart(cart)}\n\n` +
 
             'O que deseja fazer?\n\n' +
 
-            '1️⃣ Adicionar outro produto\n' +
-            '2️⃣ Finalizar pedido\n' +
-            '3️⃣ Alterar carrinho\n' +
-            '4️⃣ Cancelar pedido'
+            '1ï¸âƒ£ Adicionar outro produto\n' +
+            '2ï¸âƒ£ Finalizar pedido\n' +
+            '3ï¸âƒ£ Alterar carrinho\n' +
+            '4ï¸âƒ£ Cancelar pedido'
         );
     }
 
@@ -5038,8 +5112,8 @@ if (
             ) {
 
                 return (
-                    '❌ O carrinho está vazio.\n\n' +
-                    'Não foi possível finalizar o pedido.'
+                    'âŒ O carrinho estÃ¡ vazio.\n\n' +
+                    'NÃ£o foi possÃ­vel finalizar o pedido.'
                 );
             }
 
@@ -5057,7 +5131,7 @@ if (
             ) {
 
                 return (
-                    '❌ Não foi possível criar o pedido.\n\n' +
+                    'âŒ NÃ£o foi possÃ­vel criar o pedido.\n\n' +
                     'Por favor, tente novamente.'
                 );
             }
@@ -5081,13 +5155,13 @@ if (
                 ) {
 
                     console.error(
-                        '❌ Erro ao adicionar item ao pedido:',
+                        'âŒ Erro ao adicionar item ao pedido:',
                         item
                     );
 
 
                     return (
-                        '❌ O pedido foi criado, mas ocorreu ' +
+                        'âŒ O pedido foi criado, mas ocorreu ' +
                         'um erro ao adicionar um dos produtos.\n\n' +
                         'Por favor, contacte um atendente.'
                     );
@@ -5107,7 +5181,7 @@ if (
             ) {
 
                 return (
-                    '❌ Não foi possível calcular ' +
+                    'âŒ NÃ£o foi possÃ­vel calcular ' +
                     'o total do pedido.'
                 );
             }
@@ -5131,19 +5205,19 @@ if (
 
 
                     resumo +=
-                        `🍔 ${item.quantity}x ${item.product_name} — ${subtotal} MT\n`;
+                        `ðŸ” ${item.quantity}x ${item.product_name} â€” ${subtotal} MT\n`;
                 }
             );
 
 
             return (
-                '✅ *Pedido confirmado com sucesso!*\n\n' +
+                'âœ… *Pedido confirmado com sucesso!*\n\n' +
 
                 `${resumo}\n` +
 
-                `💵 *Total: ${updatedOrder.total} MT*\n\n` +
+                `ðŸ’µ *Total: ${updatedOrder.total} MT*\n\n` +
 
-                'Obrigado pelo seu pedido! 🙌\n\n' +
+                'Obrigado pelo seu pedido! ðŸ™Œ\n\n' +
 
                 getMenuOptions(
                     company,
@@ -5166,24 +5240,24 @@ if (
 
 
             return (
-                '❌ *Pedido cancelado.*\n\n' +
-                'Digite *Olá* para ver as opções disponíveis.'
+                'âŒ *Pedido cancelado.*\n\n' +
+                'Digite *OlÃ¡* para ver as opÃ§Ãµes disponÃ­veis.'
             );
         }
 
 
         return (
-            '🤔 Por favor, escolha uma opção:\n\n' +
+            'ðŸ¤” Por favor, escolha uma opÃ§Ã£o:\n\n' +
 
-            '1️⃣ Confirmar pedido\n' +
-            '2️⃣ Cancelar pedido'
+            '1ï¸âƒ£ Confirmar pedido\n' +
+            '2ï¸âƒ£ Cancelar pedido'
         );
     }
 
 
     /**
      * =====================================================
-     * SERVIÇOS
+     * SERVIÃ‡OS
      * =====================================================
      */
 
@@ -5196,7 +5270,7 @@ if (
         ) {
 
             return (
-                'ℹ️ Esta empresa trabalha principalmente com produtos.'
+                'â„¹ï¸ Esta empresa trabalha principalmente com produtos.'
             );
         }
 
@@ -5206,7 +5280,7 @@ if (
         ) {
 
             return (
-                'ℹ️ Os serviços não estão disponíveis neste momento.'
+                'â„¹ï¸ Os serviÃ§os nÃ£o estÃ£o disponÃ­veis neste momento.'
             );
         }
 
@@ -5230,7 +5304,7 @@ if (
 
     /**
      * =====================================================
-     * SOLICITAR SERVIÇO / ORÇAMENTO
+     * SOLICITAR SERVIÃ‡O / ORÃ‡AMENTO
      * =====================================================
      */
 
@@ -5243,7 +5317,7 @@ if (
         ) {
 
             return (
-                'ℹ️ Esta opção não está disponível para este negócio.'
+                'â„¹ï¸ Esta opÃ§Ã£o nÃ£o estÃ¡ disponÃ­vel para este negÃ³cio.'
             );
         }
 
@@ -5281,7 +5355,7 @@ if (
         ) {
 
             return (
-                'ℹ️ O menu não está disponível neste momento.'
+                'â„¹ï¸ O menu nÃ£o estÃ¡ disponÃ­vel neste momento.'
             );
         }
 
@@ -5318,8 +5392,8 @@ if (
         ) {
 
             return (
-                '😕 Neste momento não existem ' +
-                'produtos disponíveis.'
+                'ðŸ˜• Neste momento nÃ£o existem ' +
+                'produtos disponÃ­veis.'
             );
         }
 
@@ -5356,7 +5430,7 @@ if (
         ) {
 
             return (
-                'ℹ️ Os pedidos não estão disponíveis neste momento.'
+                'â„¹ï¸ Os pedidos nÃ£o estÃ£o disponÃ­veis neste momento.'
             );
         }
 
@@ -5366,9 +5440,9 @@ if (
         ) {
 
             return (
-                '🌿 Este negócio trabalha com serviços.\n\n' +
-                'Digite *1* para ver os serviços ou *2* ' +
-                'para solicitar um serviço/orçamento.'
+                'ðŸŒ¿ Este negÃ³cio trabalha com serviÃ§os.\n\n' +
+                'Digite *1* para ver os serviÃ§os ou *2* ' +
+                'para solicitar um serviÃ§o/orÃ§amento.'
             );
         }
 
@@ -5386,7 +5460,7 @@ if (
 
 
         return (
-            '🛒 *Vamos fazer o seu pedido!*\n\n' +
+            'ðŸ›’ *Vamos fazer o seu pedido!*\n\n' +
 
             'Qual produto deseja?'
         );
@@ -5395,7 +5469,7 @@ if (
 
     /**
      * =====================================================
-     * LOCALIZAÇÃO
+     * LOCALIZAÃ‡ÃƒO
      * =====================================================
      */
 
@@ -5404,11 +5478,11 @@ if (
     ) {
 
         return (
-            `📍 *${company.name}*\n\n` +
+            `ðŸ“ *${company.name}*\n\n` +
 
             (
                 company.location ||
-                'Localização não configurada.'
+                'LocalizaÃ§Ã£o nÃ£o configurada.'
             )
         );
     }
@@ -5416,7 +5490,7 @@ if (
 
     /**
      * =====================================================
-     * HORÁRIO
+     * HORÃRIO
      * =====================================================
      */
 
@@ -5439,7 +5513,7 @@ if (
 
 
         return (
-            `🕒 *Horário de funcionamento ${company.name}*\n\n` +
+            `ðŸ•’ *HorÃ¡rio de funcionamento ${company.name}*\n\n` +
 
             formattedHours
         );
@@ -5448,7 +5522,7 @@ if (
 
     /**
      * =====================================================
-     * PREÇOS
+     * PREÃ‡OS
      * =====================================================
      */
 
@@ -5465,7 +5539,7 @@ if (
             ) {
 
                 return (
-                    'ℹ️ Os serviços não estão disponíveis neste momento.'
+                    'â„¹ï¸ Os serviÃ§os nÃ£o estÃ£o disponÃ­veis neste momento.'
                 );
             }
 
@@ -5492,7 +5566,7 @@ if (
         ) {
 
             return (
-                'ℹ️ O menu não está disponível neste momento.'
+                'â„¹ï¸ O menu nÃ£o estÃ¡ disponÃ­vel neste momento.'
             );
         }
 
@@ -5529,14 +5603,14 @@ if (
         ) {
 
             return (
-                'ℹ️ O atendimento humano não está ' +
-                'disponível neste momento.'
+                'â„¹ï¸ O atendimento humano nÃ£o estÃ¡ ' +
+                'disponÃ­vel neste momento.'
             );
         }
 
 
         return (
-            '👤 Um atendente irá falar consigo em breve.\n\n' +
+            'ðŸ‘¤ Um atendente irÃ¡ falar consigo em breve.\n\n' +
 
             `Obrigado por contactar a ${company.name}!`
         );
@@ -5571,7 +5645,7 @@ if (
     ) {
 
         return (
-            '😊 De nada! Estamos sempre à disposição.\n\n' +
+            'ðŸ˜Š De nada! Estamos sempre Ã  disposiÃ§Ã£o.\n\n' +
 
             getMenuOptions(
                 company,
@@ -5598,7 +5672,7 @@ if (
 
 
         return (
-            '👋 Até logo!\n\n' +
+            'ðŸ‘‹ AtÃ© logo!\n\n' +
 
             `Obrigado por entrar em contacto com ${company.name}.`
         );
@@ -5622,7 +5696,7 @@ if (
 
 
         return (
-            '❌ A operação atual foi cancelada.\n\n' +
+            'âŒ A operaÃ§Ã£o atual foi cancelada.\n\n' +
 
             getMainMenu(
                 company,
@@ -5634,23 +5708,23 @@ if (
 
     /**
      * =====================================================
-     * NÃO RECONHECIDO
+     * NÃƒO RECONHECIDO
      * =====================================================
      */
 
     return (
-        '🤔 Desculpe, não entendi.\n\n' +
+        'ðŸ¤” Desculpe, nÃ£o entendi.\n\n' +
 
-        'Pode escrever de várias formas, por exemplo:\n\n' +
+        'Pode escrever de vÃ¡rias formas, por exemplo:\n\n' +
 
-        '• Olá\n' +
-        '• Bom dia\n' +
-        '• Quero ver o menu\n' +
-        '• Quero fazer um pedido\n' +
-        '• Onde ficam?\n' +
-        '• Quero falar com um atendente\n\n' +
+        'â€¢ OlÃ¡\n' +
+        'â€¢ Bom dia\n' +
+        'â€¢ Quero ver o menu\n' +
+        'â€¢ Quero fazer um pedido\n' +
+        'â€¢ Onde ficam?\n' +
+        'â€¢ Quero falar com um atendente\n\n' +
 
-        'Ou envie *Olá* para ver as opções disponíveis.'
+        'Ou envie *OlÃ¡* para ver as opÃ§Ãµes disponÃ­veis.'
     );
 }
 
@@ -5664,3 +5738,5 @@ if (
 module.exports = {
     processMessage
 };
+
+
