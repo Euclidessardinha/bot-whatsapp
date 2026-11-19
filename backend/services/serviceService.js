@@ -288,114 +288,187 @@ async function getServices(companyId) {
  * Mantém compatibilidade com chamadas existentes.
  */
 
-async function getServiceByName(
-    companyId,
-    serviceName
-) {
+async function getServiceByName(companyId, serviceName) {
 
-    if (
-        !companyId ||
-        !serviceName
-    ) {
-
+    if (!companyId || !serviceName) {
         return null;
     }
-
 
     const cleanName =
-        String(serviceName)
-            .trim();
-
+        normalizeText(serviceName);
 
     if (!cleanName) {
-
         return null;
     }
 
+    try {
 
-    const {
-        data,
-        error
-    } = await supabase
+        /**
+         * =====================================================
+         * 1. BUSCA DIRETA PELO NOME DO SERVIÇO
+         * =====================================================
+         */
 
-        .from('services')
+        const { data: services, error } =
+            await supabase
+                .from('services')
+                .select('*')
+                .eq('company_id', companyId)
+                .eq('available', true)
+                .ilike(
+                    'name',
+                    `%${cleanName}%`
+                )
+                .limit(10);
 
-        .select('*')
+        if (error) {
 
-        .eq(
-            'company_id',
-            companyId
-        )
+            console.error(
+                '❌ Erro ao buscar serviço:',
+                error
+            );
 
-        .eq(
-            'available',
-            true
-        )
-
-        .ilike(
-            'name',
-            `%${cleanName}%`
-        )
-
-        .limit(1);
+            return null;
+        }
 
 
-    if (error) {
+        /**
+         * =====================================================
+         * 2. SE ENCONTROU PELO NOME, RETORNA O PRIMEIRO
+         * =====================================================
+         */
+
+        if (
+            services &&
+            services.length > 0
+        ) {
+
+            return services[0];
+
+        }
+
+
+        /**
+         * =====================================================
+         * 3. SE NÃO ENCONTROU PELO NOME,
+         *    PROCURA PELOS ALIASES
+         * =====================================================
+         */
+
+        const { data: allServices, error: servicesError } =
+            await supabase
+                .from('services')
+                .select('*')
+                .eq('company_id', companyId)
+                .eq('available', true);
+
+        if (servicesError) {
+
+            console.error(
+                '❌ Erro ao buscar serviços para aliases:',
+                servicesError
+            );
+
+            return null;
+        }
+
+        if (
+            !allServices ||
+            allServices.length === 0
+        ) {
+
+            return null;
+
+        }
+
+
+        /**
+         * =====================================================
+         * 4. CARREGA ALIASES SOMENTE DESTA EMPRESA
+         * =====================================================
+         */
+
+        const serviceIds =
+            allServices.map(
+                service => service.id
+            );
+
+        const aliases =
+            await getServiceAliases(
+                companyId,
+                serviceIds
+            );
+
+
+        /**
+         * =====================================================
+         * 5. AGRUPA ALIASES POR SERVIÇO
+         * =====================================================
+         */
+
+        const aliasesByService = {};
+
+        for (const alias of aliases) {
+
+            if (
+                !aliasesByService[alias.service_id]
+            ) {
+
+                aliasesByService[alias.service_id] = [];
+
+            }
+
+            aliasesByService[
+                alias.service_id
+            ].push(alias.alias);
+
+        }
+
+
+        /**
+         * =====================================================
+         * 6. PROCURA PELO NOME OU ALIAS
+         * =====================================================
+         */
+
+        for (const service of allServices) {
+
+            const serviceAliases =
+                aliasesByService[service.id] || [];
+
+            if (
+                serviceMatchesText(
+                    service,
+                    cleanName,
+                    serviceAliases
+                )
+            ) {
+
+                return service;
+
+            }
+
+        }
+
+
+        /**
+         * =====================================================
+         * 7. NENHUM SERVIÇO ENCONTRADO
+         * =====================================================
+         */
+
+        return null;
+
+    } catch (error) {
 
         console.error(
-            '❌ Erro ao buscar serviço:',
+            '❌ Erro ao resolver serviço:',
             error
         );
 
         return null;
     }
-
-
-    return data && data.length > 0
-        ? data[0]
-        : null;
 }
-
-
-/**
- * =========================================================
- * BUSCAR SERVIÇO POR TEXTO
- * =========================================================
- *
- * Recebe uma frase do cliente e tenta identificar
- * o serviço correspondente.
- *
- * Ordem:
- *
- * 1. Nome direto
- * 2. Alias específico do serviço
- * 3. Palavras relevantes do nome
- *
- * Tudo sempre limitado à empresa.
- */
-
-async function findServiceByText(
-    companyId,
-    text
-) {
-
-    if (
-        !companyId ||
-        !text
-    ) {
-
-        return null;
-    }
-
-
-    const normalizedText =
-        normalizeText(text);
-
-
-    if (!normalizedText) {
-        return null;
-    }
-
 
     /*
      * =====================================================
