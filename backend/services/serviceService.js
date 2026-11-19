@@ -25,23 +25,29 @@ function normalizeText(text) {
 
 /**
  * =========================================================
- * ALIASES DO BANCO
- * =========================================================
- *
- * Os aliases agora são específicos de cada empresa
- * e de cada serviço.
- *
- * NÃO existem aliases globais hardcoded.
- */
-
-
-/**
- * =========================================================
  * BUSCAR TODOS OS ALIASES DA EMPRESA
  * =========================================================
+ *
+ * IMPORTANTE:
+ *
+ * Os aliases são sempre filtrados por company_id.
+ *
+ * Portanto:
+ *
+ * Empresa A
+ *   └── aliases dos seus serviços
+ *
+ * Empresa B
+ *   └── aliases dos seus serviços
+ *
+ * Nunca misturamos conhecimento entre empresas.
+ * =========================================================
  */
 
-async function getServiceAliases(companyId, serviceIds = []) {
+async function getServiceAliases(
+    companyId,
+    serviceIds = []
+) {
 
     if (!companyId) {
         return [];
@@ -49,13 +55,10 @@ async function getServiceAliases(companyId, serviceIds = []) {
 
 
     let query = supabase
-
         .from('service_aliases')
-
         .select(
             'id, company_id, service_id, alias'
         )
-
         .eq(
             'company_id',
             companyId
@@ -64,10 +67,13 @@ async function getServiceAliases(companyId, serviceIds = []) {
 
     /*
      * Se recebemos IDs específicos,
-     * limita aos serviços correspondentes.
+     * limita a busca a esses serviços.
      */
 
-    if (serviceIds.length) {
+    if (
+        Array.isArray(serviceIds) &&
+        serviceIds.length
+    ) {
 
         query = query.in(
             'service_id',
@@ -128,9 +134,9 @@ function serviceMatchesText(
     }
 
 
-    /*
+    /**
      * =====================================================
-     * 1. NOME DO SERVIÇO
+     * 1. NOME COMPLETO DO SERVIÇO
      * =====================================================
      */
 
@@ -151,17 +157,34 @@ function serviceMatchesText(
     }
 
 
-    /*
+    /**
      * =====================================================
-     * 2. ALIASES DO SERVIÇO
+     * 2. ALIASES
      * =====================================================
      */
 
     for (const alias of aliases) {
 
+        /*
+         * Aceita tanto:
+         *
+         * alias.alias
+         *
+         * como uma string diretamente.
+         *
+         * Isso mantém a função compatível
+         * com diferentes formas de agrupamento.
+         */
+
+        const aliasValue =
+            typeof alias === 'string'
+                ? alias
+                : alias?.alias;
+
+
         const normalizedAlias =
             normalizeText(
-                alias.alias
+                aliasValue
             );
 
 
@@ -177,27 +200,29 @@ function serviceMatchesText(
     }
 
 
-    /*
+    /**
      * =====================================================
      * 3. PALAVRAS RELEVANTES DO NOME
      * =====================================================
      *
-     * Mantemos esta camada para frases naturais.
-     *
      * Exemplo:
      *
+     * Serviço:
+     * "Limpeza de jardim"
+     *
+     * Cliente:
      * "quero limpeza"
      *
-     * pode encontrar:
-     *
-     * "Limpeza de jardim"
+     * A palavra "limpeza" permite encontrar
+     * o serviço.
      */
 
     const serviceWords =
         normalizedServiceName
             .split(' ')
             .filter(
-                word => word.length >= 3
+                word =>
+                    word.length >= 3
             );
 
 
@@ -222,8 +247,9 @@ function serviceMatchesText(
  * BUSCAR TODOS OS SERVIÇOS
  * =========================================================
  *
- * Retorna somente os serviços disponíveis
+ * Retorna somente serviços disponíveis
  * daquela empresa.
+ * =========================================================
  */
 
 async function getServices(companyId) {
@@ -242,21 +268,16 @@ async function getServices(companyId) {
         data,
         error
     } = await supabase
-
         .from('services')
-
         .select('*')
-
         .eq(
             'company_id',
             companyId
         )
-
         .eq(
             'available',
             true
         )
-
         .order(
             'created_at',
             {
@@ -282,44 +303,73 @@ async function getServices(companyId) {
 
 /**
  * =========================================================
- * BUSCAR SERVIÇO PELO NOME
+ * BUSCAR SERVIÇO PELO NOME OU ALIAS
  * =========================================================
  *
- * Mantém compatibilidade com chamadas existentes.
+ * Compatibilidade:
+ *
+ * getServiceByName(
+ *     companyId,
+ *     serviceName
+ * )
+ *
+ * A busca é SEMPRE limitada à empresa.
+ * =========================================================
  */
 
-async function getServiceByName(companyId, serviceName) {
+async function getServiceByName(
+    companyId,
+    serviceName
+) {
 
-    if (!companyId || !serviceName) {
+    if (
+        !companyId ||
+        !serviceName
+    ) {
+
         return null;
     }
 
+
     const cleanName =
-        normalizeText(serviceName);
+        normalizeText(
+            serviceName
+        );
+
 
     if (!cleanName) {
         return null;
     }
 
+
     try {
 
         /**
-         * =====================================================
-         * 1. BUSCA DIRETA PELO NOME DO SERVIÇO
-         * =====================================================
+         * =================================================
+         * 1. BUSCA DIRETA PELO NOME
+         * =================================================
          */
 
-        const { data: services, error } =
-            await supabase
-                .from('services')
-                .select('*')
-                .eq('company_id', companyId)
-                .eq('available', true)
-                .ilike(
-                    'name',
-                    `%${cleanName}%`
-                )
-                .limit(10);
+        const {
+            data: services,
+            error
+        } = await supabase
+            .from('services')
+            .select('*')
+            .eq(
+                'company_id',
+                companyId
+            )
+            .eq(
+                'available',
+                true
+            )
+            .ilike(
+                'name',
+                `%${cleanName}%`
+            )
+            .limit(10);
+
 
         if (error) {
 
@@ -333,9 +383,9 @@ async function getServiceByName(companyId, serviceName) {
 
 
         /**
-         * =====================================================
-         * 2. SE ENCONTROU PELO NOME, RETORNA O PRIMEIRO
-         * =====================================================
+         * =================================================
+         * 2. ENCONTROU PELO NOME
+         * =================================================
          */
 
         if (
@@ -344,23 +394,30 @@ async function getServiceByName(companyId, serviceName) {
         ) {
 
             return services[0];
-
         }
 
 
         /**
-         * =====================================================
-         * 3. SE NÃO ENCONTROU PELO NOME,
-         *    PROCURA PELOS ALIASES
-         * =====================================================
+         * =================================================
+         * 3. CARREGAR SERVIÇOS DA EMPRESA
+         * =================================================
          */
 
-        const { data: allServices, error: servicesError } =
-            await supabase
-                .from('services')
-                .select('*')
-                .eq('company_id', companyId)
-                .eq('available', true);
+        const {
+            data: allServices,
+            error: servicesError
+        } = await supabase
+            .from('services')
+            .select('*')
+            .eq(
+                'company_id',
+                companyId
+            )
+            .eq(
+                'available',
+                true
+            );
+
 
         if (servicesError) {
 
@@ -372,26 +429,33 @@ async function getServiceByName(companyId, serviceName) {
             return null;
         }
 
+
         if (
             !allServices ||
             allServices.length === 0
         ) {
 
             return null;
-
         }
 
 
         /**
-         * =====================================================
-         * 4. CARREGA ALIASES SOMENTE DESTA EMPRESA
-         * =====================================================
+         * =================================================
+         * 4. IDS DOS SERVIÇOS
+         * =================================================
          */
 
         const serviceIds =
             allServices.map(
                 service => service.id
             );
+
+
+        /**
+         * =================================================
+         * 5. CARREGAR ALIASES DA EMPRESA
+         * =================================================
+         */
 
         const aliases =
             await getServiceAliases(
@@ -401,40 +465,52 @@ async function getServiceByName(companyId, serviceName) {
 
 
         /**
-         * =====================================================
-         * 5. AGRUPA ALIASES POR SERVIÇO
-         * =====================================================
+         * =================================================
+         * 6. AGRUPAR ALIASES POR SERVIÇO
+         * =================================================
          */
 
-        const aliasesByService = {};
+        const aliasesByService =
+            new Map();
+
 
         for (const alias of aliases) {
 
             if (
-                !aliasesByService[alias.service_id]
+                !aliasesByService.has(
+                    alias.service_id
+                )
             ) {
 
-                aliasesByService[alias.service_id] = [];
-
+                aliasesByService.set(
+                    alias.service_id,
+                    []
+                );
             }
 
-            aliasesByService[
-                alias.service_id
-            ].push(alias.alias);
 
+            aliasesByService
+                .get(alias.service_id)
+                .push(alias);
         }
 
 
         /**
-         * =====================================================
-         * 6. PROCURA PELO NOME OU ALIAS
-         * =====================================================
+         * =================================================
+         * 7. PROCURAR POR NOME OU ALIAS
+         * =================================================
          */
 
-        for (const service of allServices) {
+        for (
+            const service
+            of allServices
+        ) {
 
             const serviceAliases =
-                aliasesByService[service.id] || [];
+                aliasesByService.get(
+                    service.id
+                ) || [];
+
 
             if (
                 serviceMatchesText(
@@ -445,16 +521,14 @@ async function getServiceByName(companyId, serviceName) {
             ) {
 
                 return service;
-
             }
-
         }
 
 
         /**
-         * =====================================================
-         * 7. NENHUM SERVIÇO ENCONTRADO
-         * =====================================================
+         * =================================================
+         * 8. NENHUM SERVIÇO ENCONTRADO
+         * =================================================
          */
 
         return null;
@@ -470,119 +544,209 @@ async function getServiceByName(companyId, serviceName) {
     }
 }
 
-    /*
-     * =====================================================
-     * 1. BUSCA DIRETA PELO NOME
-     * =====================================================
-     */
 
-    const directMatch =
-        await getServiceByName(
-            companyId,
-            normalizedText
-        );
+/**
+ * =========================================================
+ * ENCONTRAR SERVIÇO PELO TEXTO
+ * =========================================================
+ *
+ * Esta função é diferente de getServiceByName().
+ *
+ * getServiceByName():
+ *     procura um serviço específico por nome/alias.
+ *
+ * findServiceByText():
+ *     recebe uma frase natural do cliente e tenta
+ *     identificar qual serviço está sendo mencionado.
+ *
+ * Exemplo:
+ *
+ * "quero limpeza"
+ *
+ * pode encontrar:
+ *
+ * "Limpeza de jardim"
+ *
+ * ou um alias cadastrado:
+ *
+ * "jardinagem"
+ *
+ * =========================================================
+ */
 
+async function findServiceByText(
+    companyId,
+    text
+) {
 
-    if (directMatch) {
-        return directMatch;
-    }
+    if (
+        !companyId ||
+        !text
+    ) {
 
-
-    /*
-     * =====================================================
-     * 2. CARREGAR SERVIÇOS DA EMPRESA
-     * =====================================================
-     */
-
-    const services =
-        await getServices(
-            companyId
-        );
-
-
-    if (!services.length) {
         return null;
     }
 
 
-    const serviceIds =
-        services.map(
-            service => service.id
-        );
+    const normalizedText =
+        normalizeText(text);
 
 
-    /*
-     * =====================================================
-     * 3. CARREGAR ALIASES DA EMPRESA
-     * =====================================================
-     */
-
-    const aliases =
-        await getServiceAliases(
-            companyId,
-            serviceIds
-        );
+    if (!normalizedText) {
+        return null;
+    }
 
 
-    /*
-     * =====================================================
-     * 4. AGRUPAR ALIASES POR SERVIÇO
-     * =====================================================
-     */
+    try {
 
-    const aliasesByService =
-        new Map();
+        /**
+         * =================================================
+         * 1. BUSCA DIRETA
+         * =================================================
+         *
+         * Primeiro tentamos aproveitar
+         * a resolução existente.
+         */
 
-
-    for (const alias of aliases) {
-
-        if (
-            !aliasesByService.has(
-                alias.service_id
-            )
-        ) {
-
-            aliasesByService.set(
-                alias.service_id,
-                []
+        const directMatch =
+            await getServiceByName(
+                companyId,
+                normalizedText
             );
+
+
+        if (directMatch) {
+            return directMatch;
         }
 
 
-        aliasesByService
-            .get(alias.service_id)
-            .push(alias);
-    }
+        /**
+         * =================================================
+         * 2. CARREGAR SERVIÇOS DA EMPRESA
+         * =================================================
+         */
 
-
-    /*
-     * =====================================================
-     * 5. PROCURAR CORRESPONDÊNCIA
-     * =====================================================
-     */
-
-    for (const service of services) {
-
-        const serviceAliases =
-            aliasesByService.get(
-                service.id
-            ) || [];
+        const services =
+            await getServices(
+                companyId
+            );
 
 
         if (
-            serviceMatchesText(
-                service,
-                normalizedText,
-                serviceAliases
-            )
+            !services ||
+            !services.length
         ) {
 
-            return service;
+            return null;
         }
+
+
+        /**
+         * =================================================
+         * 3. IDS DOS SERVIÇOS
+         * =================================================
+         */
+
+        const serviceIds =
+            services.map(
+                service => service.id
+            );
+
+
+        /**
+         * =================================================
+         * 4. CARREGAR ALIASES
+         * =================================================
+         */
+
+        const aliases =
+            await getServiceAliases(
+                companyId,
+                serviceIds
+            );
+
+
+        /**
+         * =================================================
+         * 5. AGRUPAR ALIASES
+         * =================================================
+         */
+
+        const aliasesByService =
+            new Map();
+
+
+        for (
+            const alias
+            of aliases
+        ) {
+
+            if (
+                !aliasesByService.has(
+                    alias.service_id
+                )
+            ) {
+
+                aliasesByService.set(
+                    alias.service_id,
+                    []
+                );
+            }
+
+
+            aliasesByService
+                .get(alias.service_id)
+                .push(alias);
+        }
+
+
+        /**
+         * =================================================
+         * 6. PROCURAR CORRESPONDÊNCIA
+         * =================================================
+         */
+
+        for (
+            const service
+            of services
+        ) {
+
+            const serviceAliases =
+                aliasesByService.get(
+                    service.id
+                ) || [];
+
+
+            if (
+                serviceMatchesText(
+                    service,
+                    normalizedText,
+                    serviceAliases
+                )
+            ) {
+
+                return service;
+            }
+        }
+
+
+        /**
+         * =================================================
+         * 7. NENHUM SERVIÇO ENCONTRADO
+         * =================================================
+         */
+
+        return null;
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro ao encontrar serviço pelo texto:',
+            error
+        );
+
+        return null;
     }
-
-
-    return null;
 }
 
 
@@ -639,9 +803,7 @@ async function createService(
         data,
         error
     } = await supabase
-
         .from('services')
-
         .insert([
             {
                 company_id:
@@ -667,9 +829,7 @@ async function createService(
                     true
             }
         ])
-
         .select()
-
         .single();
 
 
@@ -717,9 +877,7 @@ async function updateService(
         data,
         error
     } = await supabase
-
         .from('services')
-
         .update({
 
             ...updates,
@@ -728,14 +886,11 @@ async function updateService(
                 new Date().toISOString()
 
         })
-
         .eq(
             'id',
             serviceId
         )
-
         .select()
-
         .single();
 
 
@@ -767,6 +922,8 @@ module.exports = {
     getServices,
 
     getServiceAliases,
+
+    serviceMatchesText,
 
     getServiceByName,
 
