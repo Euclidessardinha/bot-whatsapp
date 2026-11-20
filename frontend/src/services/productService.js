@@ -28,19 +28,29 @@ export async function createProduct(
     companyId,
     product
 ) {
+    const insertData = {
+        company_id: companyId,
+        name: product.name,
+        price: Number(product.price),
+        available: product.available
+    };
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            product,
+            'image_url'
+        )
+    ) {
+        insertData.image_url =
+            product.image_url || null;
+    }
+
     const {
         data,
         error
     } = await supabase
         .from('products')
-        .insert([
-            {
-                company_id: companyId,
-                name: product.name,
-                price: Number(product.price),
-                available: product.available
-            }
-        ])
+        .insert([insertData])
         .select()
         .single();
 
@@ -60,16 +70,28 @@ export async function updateProduct(
     productId,
     product
 ) {
+    const updateData = {
+        name: product.name,
+        price: Number(product.price),
+        available: product.available
+    };
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            product,
+            'image_url'
+        )
+    ) {
+        updateData.image_url =
+            product.image_url || null;
+    }
+
     const {
         data,
         error
     } = await supabase
         .from('products')
-        .update({
-            name: product.name,
-            price: Number(product.price),
-            available: product.available
-        })
+        .update(updateData)
         .eq('id', productId)
         .select()
         .single();

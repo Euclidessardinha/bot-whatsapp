@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getCurrentProfile } from '../services/authService';
 
+import {
+    uploadWelcomeImage,
+    deleteCompanyImage,
+    getWelcomeImagePath
+} from '../services/storageService';
+
 import './Empresa.css';
 
 const defaultBusinessHours = {
@@ -91,6 +97,11 @@ function Empresa() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [welcomeImageFile, setWelcomeImageFile] =
+    useState(null);
+
+    const [removeWelcomeImage, setRemoveWelcomeImage] =
+    useState(false);
 
     useEffect(() => {
         loadCompany();
@@ -197,6 +208,50 @@ function Empresa() {
         setError('');
     }
 
+
+    function handleWelcomeImageChange(event) {
+    const file =
+        event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+        alert(
+            'Selecione um ficheiro de imagem válido.'
+        );
+
+        event.target.value = '';
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        alert(
+            'A imagem não pode ter mais de 5 MB.'
+        );
+
+        event.target.value = '';
+        return;
+    }
+
+    setWelcomeImageFile(file);
+    setRemoveWelcomeImage(false);
+
+    setMessage('');
+    setError('');
+}
+
+function handleRemoveWelcomeImage() {
+    setWelcomeImageFile(null);
+    setRemoveWelcomeImage(true);
+
+    setMessage('');
+    setError('');
+}
+
+
+
     async function handleSubmit(event) {
         event.preventDefault();
 
@@ -216,38 +271,94 @@ function Empresa() {
             setError('');
             setMessage('');
 
-            const {
-                error: updateError
-            } = await supabase
-                .from('companies')
-                .update({
-                    name: form.name.trim(),
-                    phone: form.phone.trim(),
-                    location: form.location.trim(),
-                    welcome_message:
-                        form.welcome_message.trim(),
-                    business_type:
-                        form.business_type,
-                    business_hours:
-                        form.business_hours
-                })
-                .eq(
-                    'id',
-                    profile.company_id
-                );
+            let welcomeImageUrl =
+    profile.companies?.welcome_image_url ||
+    null;
 
-            if (updateError) {
-                console.error(
-                    '❌ ERRO AO ATUALIZAR EMPRESA:',
-                    updateError
-                );
+const oldWelcomeImagePath =
+    getWelcomeImagePath(
+        profile.company_id
+    );
 
-                throw updateError;
-            }
+if (welcomeImageFile) {
+    const uploaded =
+        await uploadWelcomeImage(
+            profile.company_id,
+            welcomeImageFile
+        );
 
-            setMessage(
-                'Dados da empresa atualizados com sucesso! ✅'
-            );
+    welcomeImageUrl =
+        uploaded.url;
+} else if (removeWelcomeImage) {
+    welcomeImageUrl = null;
+}
+
+const {
+    error: updateError
+} = await supabase
+    .from('companies')
+    .update({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        location: form.location.trim(),
+        welcome_message:
+            form.welcome_message.trim(),
+        welcome_image_url:
+            welcomeImageUrl,
+        business_type:
+            form.business_type,
+        business_hours:
+            form.business_hours
+    })
+    .eq(
+        'id',
+        profile.company_id
+    );
+
+if (updateError) {
+    throw updateError;
+}
+
+if (
+    welcomeImageFile ||
+    removeWelcomeImage
+) {
+    try {
+        await deleteCompanyImage(
+            oldWelcomeImagePath
+        );
+    } catch (storageError) {
+        console.warn(
+            'Não foi possível remover a imagem anterior:',
+            storageError
+        );
+    }
+}
+
+setProfile((current) => ({
+    ...current,
+    companies: {
+        ...current.companies,
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        location: form.location.trim(),
+        welcome_message:
+            form.welcome_message.trim(),
+        welcome_image_url:
+            welcomeImageUrl,
+        business_type:
+            form.business_type,
+        business_hours:
+            form.business_hours
+    }
+}));
+
+setWelcomeImageFile(null);
+setRemoveWelcomeImage(false);
+
+setMessage(
+    'Dados da empresa atualizados com sucesso! ✅'
+);
 
         } catch (err) {
             console.error(
@@ -421,6 +532,50 @@ function Empresa() {
                                 placeholder="Ex: 👋 Olá! Bem-vindo à nossa empresa!"
                                 rows="5"
                             />
+
+                            <label>
+    Imagem de boas-vindas
+</label>
+
+<input
+    type="file"
+    accept="image/*"
+    onChange={handleWelcomeImageChange}
+/>
+
+{welcomeImageFile && (
+    <p>
+        Nova imagem selecionada: {welcomeImageFile.name}
+    </p>
+)}
+
+{profile?.companies?.welcome_image_url &&
+    !removeWelcomeImage &&
+    !welcomeImageFile && (
+        <div>
+            <img
+                src={
+                    profile.companies
+                        .welcome_image_url
+                }
+                alt="Imagem de boas-vindas"
+                style={{
+                    maxWidth: '220px',
+                    maxHeight: '220px',
+                    objectFit: 'cover'
+                }}
+            />
+
+            <button
+                type="button"
+                onClick={
+                    handleRemoveWelcomeImage
+                }
+            >
+                Remover imagem
+            </button>
+        </div>
+    )}
 
                             <span className="field-help">
                                 Essa mensagem será apresentada ao cliente quando ele iniciar uma conversa.

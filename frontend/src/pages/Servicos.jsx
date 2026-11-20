@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 
 import { getCurrentProfile } from '../services/authService';
@@ -8,6 +9,12 @@ import {
     updateService,
     deleteService
 } from '../services/serviceService';
+
+import {
+    uploadServiceImage,
+    deleteCompanyImage,
+    getServiceImagePath
+} from '../services/storageService';
 
 import './Servicos.css';
 
@@ -28,6 +35,11 @@ function Servicos() {
     const [editingService, setEditingService] =
         useState(null);
 
+    const [imageFile, setImageFile] =
+        useState(null);
+
+    const [removeImage, setRemoveImage] =
+        useState(false);
 
     const [form, setForm] = useState({
         name: '',
@@ -53,7 +65,6 @@ function Servicos() {
             const currentProfile =
                 await getCurrentProfile();
 
-
             if (!currentProfile) {
 
                 setError(
@@ -63,17 +74,18 @@ function Servicos() {
                 return;
             }
 
-
             setProfile(currentProfile);
-
 
             const data =
                 await getServices(
                     currentProfile.company_id
                 );
 
-
-            setServices(data);
+            setServices(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
 
         } catch (err) {
 
@@ -82,6 +94,8 @@ function Servicos() {
             setError(
                 'Não foi possível carregar os serviços.'
             );
+
+            setServices([]);
 
         } finally {
 
@@ -93,6 +107,9 @@ function Servicos() {
     function openCreateForm() {
 
         setEditingService(null);
+
+        setImageFile(null);
+        setRemoveImage(false);
 
         setForm({
             name: '',
@@ -110,11 +127,15 @@ function Servicos() {
 
         setEditingService(service);
 
+        setImageFile(null);
+        setRemoveImage(false);
+
         setForm({
             name: service.name || '',
             description: service.description || '',
             price:
-                service.price !== null
+                service.price !== null &&
+                service.price !== undefined
                     ? service.price
                     : '',
             price_type:
@@ -131,6 +152,9 @@ function Servicos() {
 
         setShowForm(false);
         setEditingService(null);
+
+        setImageFile(null);
+        setRemoveImage(false);
 
         setForm({
             name: '',
@@ -151,7 +175,6 @@ function Servicos() {
             checked
         } = event.target;
 
-
         setForm((current) => ({
             ...current,
 
@@ -163,10 +186,52 @@ function Servicos() {
     }
 
 
+    function handleImageChange(event) {
+
+        const file =
+            event.target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+
+            alert(
+                'Selecione um ficheiro de imagem válido.'
+            );
+
+            event.target.value = '';
+
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+
+            alert(
+                'A imagem não pode ter mais de 5 MB.'
+            );
+
+            event.target.value = '';
+
+            return;
+        }
+
+        setImageFile(file);
+        setRemoveImage(false);
+    }
+
+
+    function handleRemoveImage() {
+
+        setImageFile(null);
+        setRemoveImage(true);
+    }
+
+
     async function handleSubmit(event) {
 
         event.preventDefault();
-
 
         if (!form.name.trim()) {
 
@@ -176,7 +241,6 @@ function Servicos() {
 
             return;
         }
-
 
         if (
             form.price !== '' &&
@@ -190,7 +254,6 @@ function Servicos() {
             return;
         }
 
-
         if (
             form.price_type !== 'quote' &&
             form.price === ''
@@ -203,23 +266,92 @@ function Servicos() {
             return;
         }
 
+        if (!profile?.company_id) {
 
-        if (!profile) {
+            alert(
+                'Não foi possível identificar a empresa.'
+            );
+
             return;
         }
-
 
         try {
 
             setSaving(true);
 
 
+            /*
+             * ==========================================
+             * EDITAR SERVIÇO
+             * ==========================================
+             */
+
             if (editingService) {
+
+                let imageUrl =
+                    editingService.image_url ||
+                    null;
+
+
+                /*
+                 * Se o utilizador escolheu uma nova imagem,
+                 * fazemos upload no mesmo caminho.
+                 *
+                 * O upsert substitui a imagem anterior.
+                 */
+                if (imageFile) {
+
+                    const uploaded =
+                        await uploadServiceImage(
+                            profile.company_id,
+                            editingService.id,
+                            imageFile
+                        );
+
+                    imageUrl =
+                        uploaded.url;
+                }
+
+
+                /*
+                 * Se o utilizador pediu para remover
+                 * a imagem, removemos o ficheiro do Storage.
+                 */
+                if (removeImage) {
+
+                    const imagePath =
+                        getServiceImagePath(
+                            profile.company_id,
+                            editingService.id
+                        );
+
+                    try {
+
+                        await deleteCompanyImage(
+                            imagePath
+                        );
+
+                    } catch (storageError) {
+
+                        console.warn(
+                            'Não foi possível remover a imagem do serviço:',
+                            storageError
+                        );
+                    }
+
+                    imageUrl = null;
+                }
+
 
                 const updated =
                     await updateService(
+                        profile.company_id,
                         editingService.id,
-                        form
+                        {
+                            ...form,
+                            image_url:
+                                imageUrl
+                        }
                     );
 
 
@@ -231,17 +363,59 @@ function Servicos() {
                     )
                 );
 
+
             } else {
 
+
+                /*
+                 * ==========================================
+                 * CRIAR SERVIÇO
+                 * ==========================================
+                 */
+
+                /*
+                 * Primeiro criamos o serviço para obter
+                 * o ID necessário para o caminho da imagem.
+                 */
                 const created =
                     await createService(
                         profile.company_id,
                         form
                     );
 
+                let finalService =
+                    created;
+
+
+                /*
+                 * Só fazemos upload se o utilizador
+                 * realmente selecionou uma imagem.
+                 */
+                if (imageFile) {
+
+                    const uploaded =
+                        await uploadServiceImage(
+                            profile.company_id,
+                            created.id,
+                            imageFile
+                        );
+
+
+                    finalService =
+                        await updateService(
+                            profile.company_id,
+                            created.id,
+                            {
+                                ...form,
+                                image_url:
+                                    uploaded.url
+                            }
+                        );
+                }
+
 
                 setServices((current) =>
-                    [...current, created].sort(
+                    [...current, finalService].sort(
                         (a, b) =>
                             a.name.localeCompare(
                                 b.name
@@ -258,6 +432,7 @@ function Servicos() {
             console.error(err);
 
             alert(
+                err?.message ||
                 'Não foi possível guardar o serviço.'
             );
 
@@ -275,15 +450,58 @@ function Servicos() {
                 `Tem certeza que deseja eliminar "${service.name}"?`
             );
 
-
         if (!confirmed) {
+            return;
+        }
+
+
+        if (!profile?.company_id) {
+
+            alert(
+                'Não foi possível identificar a empresa.'
+            );
+
             return;
         }
 
 
         try {
 
+            /*
+             * Primeiro tentamos remover a imagem.
+             *
+             * Se não existir imagem, não fazemos nada.
+             */
+            if (service.image_url) {
+
+                const imagePath =
+                    getServiceImagePath(
+                        profile.company_id,
+                        service.id
+                    );
+
+                try {
+
+                    await deleteCompanyImage(
+                        imagePath
+                    );
+
+                } catch (storageError) {
+
+                    console.warn(
+                        'Não foi possível remover a imagem do serviço:',
+                        storageError
+                    );
+                }
+            }
+
+
+            /*
+             * A eliminação do registro também é protegida
+             * pelo company_id.
+             */
             await deleteService(
+                profile.company_id,
                 service.id
             );
 
@@ -300,6 +518,7 @@ function Servicos() {
             console.error(err);
 
             alert(
+                err?.message ||
                 'Não foi possível eliminar o serviço.'
             );
         }
@@ -308,21 +527,41 @@ function Servicos() {
 
     async function toggleAvailability(service) {
 
+        if (!profile?.company_id) {
+
+            alert(
+                'Não foi possível identificar a empresa.'
+            );
+
+            return;
+        }
+
+
         try {
 
             const updated =
                 await updateService(
+                    profile.company_id,
                     service.id,
                     {
-                        name: service.name,
+                        name:
+                            service.name,
+
                         description:
                             service.description,
+
                         price:
                             service.price,
+
                         price_type:
                             service.price_type,
+
                         available:
-                            !service.available
+                            !service.available,
+
+                        image_url:
+                            service.image_url ||
+                            null
                     }
                 );
 
@@ -340,6 +579,7 @@ function Servicos() {
             console.error(err);
 
             alert(
+                err?.message ||
                 'Não foi possível alterar a disponibilidade.'
             );
         }
@@ -711,6 +951,7 @@ function Servicos() {
                             <button
                                 className="modal-close"
                                 onClick={closeForm}
+                                type="button"
                             >
                                 ×
                             </button>
@@ -809,6 +1050,73 @@ function Servicos() {
                                 </>
 
                             )}
+
+
+                            <label>
+                                Imagem do serviço
+                            </label>
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={
+                                    handleImageChange
+                                }
+                            />
+
+
+                            {imageFile && (
+
+                                <p>
+                                    Nova imagem selecionada:{' '}
+                                    {imageFile.name}
+                                </p>
+
+                            )}
+
+
+                            {editingService?.image_url &&
+                                !removeImage &&
+                                !imageFile && (
+
+                                    <div>
+
+                                        <img
+                                            src={
+                                                editingService.image_url
+                                            }
+                                            alt={
+                                                editingService.name
+                                            }
+                                            style={{
+                                                maxWidth: '180px',
+                                                maxHeight: '180px',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleRemoveImage
+                                            }
+                                        >
+                                            Remover imagem
+                                        </button>
+
+                                    </div>
+
+                                )}
+
+
+                            {removeImage &&
+                                !imageFile && (
+
+                                    <p>
+                                        A imagem será removida ao guardar.
+                                    </p>
+
+                                )}
 
 
                             <label className="checkbox-label">

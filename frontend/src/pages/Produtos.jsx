@@ -9,6 +9,12 @@ import {
     deleteProduct
 } from '../services/productService';
 
+import {
+    uploadProductImage,
+    deleteCompanyImage,
+    getProductImagePath
+} from '../services/storageService';
+
 import './Produtos.css';
 
 function Produtos() {
@@ -21,10 +27,16 @@ function Produtos() {
     const [editingProduct, setEditingProduct] = useState(null);
 
     const [form, setForm] = useState({
-        name: '',
-        price: '',
-        available: true
-    });
+    name: '',
+    price: '',
+    available: true
+});
+
+const [imageFile, setImageFile] =
+    useState(null);
+
+const [removeImage, setRemoveImage] =
+    useState(false);
 
     useEffect(() => {
         loadProducts();
@@ -71,39 +83,48 @@ function Produtos() {
     }
 
     function openCreateForm() {
-        setEditingProduct(null);
+    setEditingProduct(null);
 
-        setForm({
-            name: '',
-            price: '',
-            available: true
-        });
+    setForm({
+        name: '',
+        price: '',
+        available: true
+    });
 
-        setShowForm(true);
-    }
+    setImageFile(null);
+    setRemoveImage(false);
+
+    setShowForm(true);
+}
 
     function openEditForm(product) {
-        setEditingProduct(product);
+    setEditingProduct(product);
 
-        setForm({
-            name: product.name,
-            price: product.price,
-            available: product.available
-        });
+    setForm({
+        name: product.name,
+        price: product.price,
+        available: product.available
+    });
 
-        setShowForm(true);
-    }
+    setImageFile(null);
+    setRemoveImage(false);
+
+    setShowForm(true);
+}
 
     function closeForm() {
-        setShowForm(false);
-        setEditingProduct(null);
+    setShowForm(false);
+    setEditingProduct(null);
 
-        setForm({
-            name: '',
-            price: '',
-            available: true
-        });
-    }
+    setForm({
+        name: '',
+        price: '',
+        available: true
+    });
+
+    setImageFile(null);
+    setRemoveImage(false);
+}
 
     function handleChange(event) {
         const {
@@ -122,71 +143,173 @@ function Produtos() {
         }));
     }
 
+
+    function handleImageChange(event) {
+    const file =
+        event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+        alert(
+            'Selecione um ficheiro de imagem válido.'
+        );
+
+        event.target.value = '';
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        alert(
+            'A imagem não pode ter mais de 5 MB.'
+        );
+
+        event.target.value = '';
+        return;
+    }
+
+    setImageFile(file);
+    setRemoveImage(false);
+}
+
+function handleRemoveImage() {
+    setImageFile(null);
+    setRemoveImage(true);
+}
+
+
     async function handleSubmit(event) {
-        event.preventDefault();
+    event.preventDefault();
 
-        if (!form.name.trim()) {
-            alert('Digite o nome do produto.');
-            return;
-        }
+    if (!form.name.trim()) {
+        alert('Digite o nome do produto.');
+        return;
+    }
 
-        if (
-            form.price === '' ||
-            Number(form.price) < 0
-        ) {
-            alert('Digite um preço válido.');
-            return;
-        }
+    if (
+        form.price === '' ||
+        Number(form.price) < 0
+    ) {
+        alert('Digite um preço válido.');
+        return;
+    }
 
-        if (!profile) {
-            return;
-        }
+    if (!profile) {
+        return;
+    }
 
-        try {
-            setSaving(true);
+    try {
+        setSaving(true);
 
-            if (editingProduct) {
-                const updated =
-                    await updateProduct(
-                        editingProduct.id,
-                        form
-                    );
+        if (editingProduct) {
+            let imageUrl =
+                editingProduct.image_url || null;
 
-                setProducts((current) =>
-                    current.map((product) =>
-                        product.id === updated.id
-                            ? updated
-                            : product
-                    )
+            const oldImagePath =
+                getProductImagePath(
+                    profile.company_id,
+                    editingProduct.id
                 );
-            } else {
-                const created =
-                    await createProduct(
+
+            if (imageFile) {
+                const uploaded =
+                    await uploadProductImage(
                         profile.company_id,
-                        form
+                        editingProduct.id,
+                        imageFile
                     );
 
-                setProducts((current) =>
-                    [...current, created].sort(
-                        (a, b) =>
-                            a.name.localeCompare(
-                                b.name
-                            )
-                    )
-                );
+                imageUrl =
+                    uploaded.url;
+            } else if (removeImage) {
+                imageUrl = null;
             }
 
-            closeForm();
-        } catch (err) {
-            console.error(err);
+            const updated =
+                await updateProduct(
+                    editingProduct.id,
+                    {
+                        ...form,
+                        image_url: imageUrl
+                    }
+                );
 
-            alert(
-                'Não foi possível guardar o produto.'
+            if (
+                removeImage ||
+                imageFile
+            ) {
+                try {
+                    await deleteCompanyImage(
+                        oldImagePath
+                    );
+                } catch (storageError) {
+                    console.warn(
+                        'Não foi possível remover a imagem anterior:',
+                        storageError
+                    );
+                }
+            }
+
+            setProducts((current) =>
+                current.map((product) =>
+                    product.id === updated.id
+                        ? updated
+                        : product
+                )
             );
-        } finally {
-            setSaving(false);
+        } else {
+            const created =
+                await createProduct(
+                    profile.company_id,
+                    form
+                );
+
+            let finalProduct =
+                created;
+
+            if (imageFile) {
+                const uploaded =
+                    await uploadProductImage(
+                        profile.company_id,
+                        created.id,
+                        imageFile
+                    );
+
+                finalProduct =
+                    await updateProduct(
+                        created.id,
+                        {
+                            ...form,
+                            image_url:
+                                uploaded.url
+                        }
+                    );
+            }
+
+            setProducts((current) =>
+                [...current, finalProduct].sort(
+                    (a, b) =>
+                        a.name.localeCompare(
+                            b.name
+                        )
+                )
+            );
         }
+
+        closeForm();
+    } catch (err) {
+        console.error(err);
+
+        alert(
+            err?.message ||
+            'Não foi possível guardar o produto.'
+        );
+    } finally {
+        setSaving(false);
     }
+}
 
     async function handleDelete(product) {
         const confirmed =
@@ -627,6 +750,45 @@ function Produtos() {
                                 </span>
 
                             </div>
+
+                            <label>
+    Imagem do produto
+</label>
+
+<input
+    type="file"
+    accept="image/*"
+    onChange={handleImageChange}
+/>
+
+{imageFile && (
+    <p>
+        Nova imagem selecionada: {imageFile.name}
+    </p>
+)}
+
+{editingProduct?.image_url &&
+    !removeImage &&
+    !imageFile && (
+        <div>
+            <img
+                src={editingProduct.image_url}
+                alt={editingProduct.name}
+                style={{
+                    maxWidth: '180px',
+                    maxHeight: '180px',
+                    objectFit: 'cover'
+                }}
+            />
+
+            <button
+                type="button"
+                onClick={handleRemoveImage}
+            >
+                Remover imagem
+            </button>
+        </div>
+    )}
 
 
                             <label className="checkbox-label">
