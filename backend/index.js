@@ -1,7 +1,9 @@
-
 const express = require('express');
 const cors = require('cors');
 const { randomUUID } = require('crypto');
+
+const { MessageMedia } = require('whatsapp-web.js');
+const supabase = require('./lib/supabase');
 
 // Serviços do bot
 const { processMessage } = require('./bot/botEngine');
@@ -14,6 +16,10 @@ const {
     getOrCreateConversation,
     saveMessage
 } = require('./services/conversationService');
+
+const {
+    getConversationState
+} = require('./services/conversationStateService');
 
 // Serviços de sessões WhatsApp
 const {
@@ -129,10 +135,407 @@ function logContainerMemory() {
 setInterval(logContainerMemory, 5000);
 
 
+// =====================================================
+// MIDDLEWARES GERAIS
+// =====================================================
 
-// Middlewares gerais
 app.use(cors());
 app.use(express.json());
+
+
+// =====================================================
+// IMAGENS DO BOT
+// =====================================================
+
+/**
+ * Obtém a imagem associada ao conteúdo que o bot
+ * está prestes a apresentar.
+ *
+ * IMPORTANTE:
+ * Todas as consultas são filtradas por company_id.
+ * Isto garante isolamento entre empresas.
+ */
+async function getCompanyMediaImage(
+    companyId,
+    imageType,
+    recordId = null
+) {
+    try {
+
+        if (!companyId) {
+            return null;
+        }
+
+
+        // -------------------------------------------------
+        // IMAGEM DE BOAS-VINDAS
+        // -------------------------------------------------
+
+        if (imageType === 'welcome') {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from('companies')
+                .select(
+                    'welcome_image_url, welcome_message, name'
+                )
+                .eq('id', companyId)
+                .single();
+
+            if (error) {
+                console.error(
+                    '⚠️ Erro ao obter imagem de boas-vindas:',
+                    error.message
+                );
+
+                return null;
+            }
+
+            return {
+                imageUrl:
+                    data?.welcome_image_url ||
+                    null,
+
+                welcomeMessage:
+                    data?.welcome_message ||
+                    null,
+
+                companyName:
+                    data?.name ||
+                    null
+            };
+        }
+
+
+        // -------------------------------------------------
+        // IMAGEM DE PRODUTO
+        // -------------------------------------------------
+
+        if (
+            imageType === 'product' &&
+            recordId
+        ) {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from('products')
+                .select('image_url')
+                .eq('id', recordId)
+                .eq('company_id', companyId)
+                .maybeSingle();
+
+            if (error) {
+                console.error(
+                    '⚠️ Erro ao obter imagem do produto:',
+                    error.message
+                );
+
+                return null;
+            }
+
+            return {
+                imageUrl:
+                    data?.image_url ||
+                    null
+            };
+        }
+
+
+        // -------------------------------------------------
+        // IMAGEM DE SERVIÇO
+        // -------------------------------------------------
+
+        if (
+            imageType === 'service' &&
+            recordId
+        ) {
+
+            const {
+                data,
+                error
+            } = await supabase
+                .from('services')
+                .select('image_url')
+                .eq('id', recordId)
+                .eq('company_id', companyId)
+                .maybeSingle();
+
+            if (error) {
+                console.error(
+                    '⚠️ Erro ao obter imagem do serviço:',
+                    error.message
+                );
+
+                return null;
+            }
+
+            return {
+                imageUrl:
+                    data?.image_url ||
+                    null
+            };
+        }
+
+
+        return null;
+
+    } catch (error) {
+
+        console.error(
+            '⚠️ Erro inesperado ao obter imagem:',
+            error.message
+        );
+
+        return null;
+    }
+}
+
+
+/**
+ * Descobre qual imagem deve acompanhar a resposta
+ * atual do bot.
+ *
+ * A função usa o estado da conversa para descobrir
+ * qual produto ou serviço está sendo apresentado.
+ */
+async function getImageForBotResponse(
+    companyId,
+    conversationId,
+    isNewConversation,
+    response
+) {
+
+    try {
+
+        if (!companyId || !conversationId) {
+            return null;
+        }
+
+
+        // =================================================
+        // BOAS-VINDAS
+        // =================================================
+
+        if (
+            isNewConversation &&
+            response
+        ) {
+
+            const welcomeData =
+                await getCompanyMediaImage(
+                    companyId,
+                    'welcome'
+                );
+
+
+            if (
+                welcomeData?.imageUrl
+            ) {
+
+                const customWelcome =
+                    welcomeData.welcomeMessage;
+
+
+                const defaultWelcome =
+                    welcomeData.companyName
+                        ? `👋 Olá! Bem-vindo à ${welcomeData.companyName}!`
+                        : null;
+
+
+                const expectedWelcomePrefix =
+                    customWelcome ||
+                    defaultWelcome;
+
+
+                if (
+                    expectedWelcomePrefix &&
+                    response.startsWith(
+                        expectedWelcomePrefix
+                    )
+                ) {
+
+                    return welcomeData.imageUrl;
+                }
+            }
+        }
+
+
+        // =================================================
+        // ESTADO ATUAL DA CONVERSA
+        // =================================================
+
+        const conversationState =
+            await getConversationState(
+                companyId,
+                conversationId
+            );
+
+
+        if (!conversationState) {
+            return null;
+        }
+
+
+        const state =
+            conversationState.state;
+
+
+        const context =
+            conversationState.context || {};
+
+
+        // =================================================
+        // PRODUTO
+        // =================================================
+
+        if (
+            state === 'waiting_quantity' ||
+            state === 'viewing_product'
+        ) {
+
+            const productId =
+                context.currentProduct?.product_id ||
+                context.lastProduct?.product_id ||
+                context.product_id ||
+                null;
+
+
+            if (productId) {
+
+                const productData =
+                    await getCompanyMediaImage(
+                        companyId,
+                        'product',
+                        productId
+                    );
+
+
+                return (
+                    productData?.imageUrl ||
+                    null
+                );
+            }
+        }
+
+
+        // =================================================
+        // SERVIÇO
+        // =================================================
+
+        if (
+            state === 'viewing_service'
+        ) {
+
+            const serviceId =
+                context.service_id ||
+                context.currentService?.service_id ||
+                context.lastService?.service_id ||
+                null;
+
+
+            if (serviceId) {
+
+                const serviceData =
+                    await getCompanyMediaImage(
+                        companyId,
+                        'service',
+                        serviceId
+                    );
+
+
+                return (
+                    serviceData?.imageUrl ||
+                    null
+                );
+            }
+        }
+
+
+        return null;
+
+    } catch (error) {
+
+        console.error(
+            '⚠️ Erro ao determinar imagem da resposta:',
+            error.message
+        );
+
+        return null;
+    }
+}
+
+
+/**
+ * Envia a imagem primeiro e depois o texto.
+ *
+ * Se a imagem falhar, o texto continua sendo enviado.
+ */
+async function sendBotResponse(
+    message,
+    response,
+    imageUrl
+) {
+
+    if (!response) {
+        return;
+    }
+
+
+    // =================================================
+    // ENVIAR IMAGEM
+    // =================================================
+
+    if (imageUrl) {
+
+        try {
+
+            console.log(
+                '🖼️ A enviar imagem do bot:',
+                imageUrl
+            );
+
+
+            const media =
+                await MessageMedia.fromUrl(
+                    imageUrl
+                );
+
+
+            await message.reply(
+                media
+            );
+
+
+            console.log(
+                '✅ Imagem enviada com sucesso.'
+            );
+
+        } catch (error) {
+
+            console.error(
+                '⚠️ Não foi possível enviar a imagem:',
+                error.message
+            );
+
+            console.log(
+                '➡️ O texto será enviado normalmente.'
+            );
+        }
+    }
+
+
+    // =================================================
+    // ENVIAR TEXTO
+    // =================================================
+
+    await message.reply(
+        response
+    );
+}
 
 
 // =====================================================
@@ -140,9 +543,14 @@ app.use(express.json());
 // =====================================================
 
 async function handleIncomingMessage(message, session) {
+
     try {
+
         // Ignorar mensagens enviadas pelo próprio bot
-        if (message.fromMe) return;
+        if (message.fromMe) {
+            return;
+        }
+
 
         // Ignorar grupos e estados do WhatsApp
         if (
@@ -152,21 +560,47 @@ async function handleIncomingMessage(message, session) {
             return;
         }
 
-        // Ignorar mensagens sem texto
-        if (!message.body || !message.body.trim()) return;
 
-        // Confirmar se a sessão tem uma empresa associada
-        if (!session.company || !session.company.company_id) {
-            console.log('⚠️ Sessão sem empresa associada:', session.sessionName);
+        // Ignorar mensagens sem texto
+        if (
+            !message.body ||
+            !message.body.trim()
+        ) {
             return;
         }
 
-        const companyId = session.company.company_id;
 
-        // Obter informações do contacto
-        const contact = await message.getContact();
+        // Confirmar se a sessão tem uma empresa associada
+        if (
+            !session.company ||
+            !session.company.company_id
+        ) {
 
-        const phone = contact.number || message.from.split('@')[0];
+            console.log(
+                '⚠️ Sessão sem empresa associada:',
+                session.sessionName
+            );
+
+            return;
+        }
+
+
+        const companyId =
+            session.company.company_id;
+
+
+        // =================================================
+        // OBTER INFORMAÇÕES DO CONTACTO
+        // =================================================
+
+        const contact =
+            await message.getContact();
+
+
+        const phone =
+            contact.number ||
+            message.from.split('@')[0];
+
 
         const customerName =
             contact.pushname ||
@@ -174,25 +608,69 @@ async function handleIncomingMessage(message, session) {
             message._data?.notifyName ||
             'Cliente';
 
-        console.log('\n📩 Nova mensagem recebida');
-        console.log('Empresa:', session.company.companies?.name);
-        console.log('Cliente:', customerName);
-        console.log('Mensagem:', message.body);
 
-        // Criar ou localizar cliente
-        const customer = await getOrCreateCustomer(
-            companyId,
-            phone,
+        console.log(
+            '\n📩 Nova mensagem recebida'
+        );
+
+        console.log(
+            'Empresa:',
+            session.company.companies?.name
+        );
+
+        console.log(
+            'Cliente:',
             customerName
         );
 
-        // Criar ou localizar conversa
-        const conversation = await getOrCreateConversation(
-            companyId,
-            customer.id
+        console.log(
+            'Mensagem:',
+            message.body
         );
 
-        // Guardar mensagem do cliente
+
+        // =================================================
+        // CRIAR OU LOCALIZAR CLIENTE
+        // =================================================
+
+        const customer =
+            await getOrCreateCustomer(
+                companyId,
+                phone,
+                customerName
+            );
+
+
+        // =================================================
+        // CRIAR OU LOCALIZAR CONVERSA
+        // =================================================
+
+        const conversation =
+            await getOrCreateConversation(
+                companyId,
+                customer.id
+            );
+
+
+        // =================================================
+        // VERIFICAR ESTADO ANTERIOR
+        // =================================================
+
+        const previousConversationState =
+            await getConversationState(
+                companyId,
+                conversation.id
+            );
+
+
+        const isNewConversation =
+            !previousConversationState;
+
+
+        // =================================================
+        // GUARDAR MENSAGEM DO CLIENTE
+        // =================================================
+
         await saveMessage(
             companyId,
             conversation.id,
@@ -200,19 +678,54 @@ async function handleIncomingMessage(message, session) {
             message.body
         );
 
-        // Processar mensagem no motor do bot
-        const response = await processMessage(
-    message.body,
-    companyId,
-    conversation.id
-);
 
-// Se o bot não tiver resposta, não enviar mensagem
-if (!response) return;    
-        // Enviar resposta ao cliente
-        await message.reply(response);
+        // =================================================
+        // PROCESSAR MENSAGEM NO MOTOR DO BOT
+        // =================================================
 
-        // Guardar resposta do bot
+        const response =
+            await processMessage(
+                message.body,
+                companyId,
+                conversation.id
+            );
+
+
+        // Se o bot não tiver resposta,
+        // não enviar mensagem.
+        if (!response) {
+            return;
+        }
+
+
+        // =================================================
+        // DESCOBRIR IMAGEM DA RESPOSTA
+        // =================================================
+
+        const imageUrl =
+            await getImageForBotResponse(
+                companyId,
+                conversation.id,
+                isNewConversation,
+                response
+            );
+
+
+        // =================================================
+        // ENVIAR RESPOSTA
+        // =================================================
+
+        await sendBotResponse(
+            message,
+            response,
+            imageUrl
+        );
+
+
+        // =================================================
+        // GUARDAR RESPOSTA TEXTUAL DO BOT
+        // =================================================
+
         await saveMessage(
             companyId,
             conversation.id,
@@ -220,10 +733,26 @@ if (!response) return;
             response
         );
 
-        console.log('🤖 Resposta enviada:', response);
+
+        if (imageUrl) {
+
+            console.log(
+                '🖼️ Imagem enviada juntamente com a resposta.'
+            );
+        }
+
+
+        console.log(
+            '🤖 Resposta enviada:',
+            response
+        );
 
     } catch (error) {
-        console.error('❌ Erro ao processar mensagem:', error);
+
+        console.error(
+            '❌ Erro ao processar mensagem:',
+            error
+        );
     }
 }
 
@@ -233,10 +762,16 @@ if (!response) return;
 // =====================================================
 
 app.get('/api/health', (req, res) => {
+
     res.json({
+
         success: true,
-        message: 'Backend do WhatsApp Bot SaaS está funcionando.',
-        activeSessions: getAllSessions().length
+
+        message:
+            'Backend do WhatsApp Bot SaaS está funcionando.',
+
+        activeSessions:
+            getAllSessions().length
     });
 });
 
@@ -246,9 +781,15 @@ app.get('/api/health', (req, res) => {
 // =====================================================
 
 // Todas as rotas abaixo exigem utilizador autenticado
-app.use('/api/whatsapp', authMiddleware);
+app.use(
+    '/api/whatsapp',
+    authMiddleware
+);
 
-app.use('/api/dashboard', authMiddleware);
+app.use(
+    '/api/dashboard',
+    authMiddleware
+);
 
 
 // =====================================================
@@ -257,212 +798,343 @@ app.use('/api/dashboard', authMiddleware);
 
 // Todas as rotas administrativas exigem autenticação
 // e utilizador com role = admin.
-app.use('/api/admin', authMiddleware, adminMiddleware);
+app.use(
+    '/api/admin',
+    authMiddleware,
+    adminMiddleware
+);
 
 
-// Resumo geral da plataforma
-app.get('/api/admin/summary', async (req, res) => {
-    try {
-        const summary = await getAdminSummary();
+// =====================================================
+// RESUMO GERAL DA PLATAFORMA
+// =====================================================
 
-        return res.json({
-            success: true,
-            summary
-        });
+app.get(
+    '/api/admin/summary',
+    async (req, res) => {
 
-    } catch (error) {
-        console.error(
-            'Erro ao carregar resumo administrativo:',
-            error
-        );
+        try {
 
-        return res.status(500).json({
-            success: false,
-            message:
-                'Não foi possível carregar o resumo administrativo.'
-        });
-    }
-});
+            const summary =
+                await getAdminSummary();
 
 
-// Todas as empresas
-app.get('/api/admin/companies', async (req, res) => {
-    try {
-        const companies = await getAllCompanies();
+            return res.json({
 
-        return res.json({
-            success: true,
-            companies
-        });
+                success: true,
 
-    } catch (error) {
-        console.error(
-            'Erro ao carregar empresas administrativas:',
-            error
-        );
+                summary
+            });
 
-        return res.status(500).json({
-            success: false,
-            message:
-                'Não foi possível carregar as empresas.'
-        });
-    }
-});
+        } catch (error) {
+
+            console.error(
+                'Erro ao carregar resumo administrativo:',
+                error
+            );
 
 
-// Detalhes de uma empresa
-app.get('/api/admin/companies/:companyId', async (req, res) => {
-    try {
-        const { companyId } = req.params;
+            return res.status(500).json({
 
-        const company = await getCompanyDetails(companyId);
-
-        if (!company) {
-            return res.status(404).json({
                 success: false,
-                message: 'Empresa não encontrada.'
+
+                message:
+                    'Não foi possível carregar o resumo administrativo.'
             });
         }
-
-        return res.json({
-            success: true,
-            company
-        });
-
-    } catch (error) {
-        console.error(
-            'Erro ao carregar detalhes da empresa:',
-            error
-        );
-
-        return res.status(500).json({
-            success: false,
-            message:
-                'Não foi possível carregar os detalhes da empresa.'
-        });
     }
-});
+);
 
 
-// Todos os utilizadores
-app.get('/api/admin/users', async (req, res) => {
-    try {
-        const users = await getAllUsers();
+// =====================================================
+// TODAS AS EMPRESAS
+// =====================================================
 
-        return res.json({
-            success: true,
-            users
-        });
+app.get(
+    '/api/admin/companies',
+    async (req, res) => {
 
-    } catch (error) {
-        console.error(
-            'Erro ao carregar utilizadores administrativos:',
-            error
-        );
+        try {
 
-        return res.status(500).json({
-            success: false,
-            message:
-                'Não foi possível carregar os utilizadores.'
-        });
+            const companies =
+                await getAllCompanies();
+
+
+            return res.json({
+
+                success: true,
+
+                companies
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao carregar empresas administrativas:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Não foi possível carregar as empresas.'
+            });
+        }
     }
-});
+);
+
+
+// =====================================================
+// DETALHES DE UMA EMPRESA
+// =====================================================
+
+app.get(
+    '/api/admin/companies/:companyId',
+    async (req, res) => {
+
+        try {
+
+            const {
+                companyId
+            } = req.params;
+
+
+            const company =
+                await getCompanyDetails(
+                    companyId
+                );
+
+
+            if (!company) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Empresa não encontrada.'
+                });
+            }
+
+
+            return res.json({
+
+                success: true,
+
+                company
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao carregar detalhes da empresa:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Não foi possível carregar os detalhes da empresa.'
+            });
+        }
+    }
+);
+
+
+// =====================================================
+// TODOS OS UTILIZADORES
+// =====================================================
+
+app.get(
+    '/api/admin/users',
+    async (req, res) => {
+
+        try {
+
+            const users =
+                await getAllUsers();
+
+
+            return res.json({
+
+                success: true,
+
+                users
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao carregar utilizadores administrativos:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Não foi possível carregar os utilizadores.'
+            });
+        }
+    }
+);
+
 
 // =====================================================
 // BLOQUEAR BOT DE UMA EMPRESA
 // =====================================================
 
-app.patch('/api/admin/companies/:companyId/bot/block', async (req, res) => {
-    try {
-        const { companyId } = req.params;
+app.patch(
+    '/api/admin/companies/:companyId/bot/block',
+    async (req, res) => {
 
-        const result = await blockCompanyBot(companyId);
+        try {
 
-        return res.json({
-            success: true,
-            message: 'Bot da empresa bloqueado administrativamente.',
-            bot: result
-        });
+            const {
+                companyId
+            } = req.params;
 
-    } catch (error) {
-        console.error(
-            'Erro ao bloquear bot da empresa:',
-            error
-        );
 
-        return res.status(500).json({
-            success: false,
-            message:
-                error.message ||
-                'Não foi possível bloquear o bot da empresa.'
-        });
+            const result =
+                await blockCompanyBot(
+                    companyId
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    'Bot da empresa bloqueado administrativamente.',
+
+                bot:
+                    result
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao bloquear bot da empresa:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    'Não foi possível bloquear o bot da empresa.'
+            });
+        }
     }
-});
+);
 
 
 // =====================================================
 // DESBLOQUEAR BOT DE UMA EMPRESA
 // =====================================================
 
-app.patch('/api/admin/companies/:companyId/bot/unblock', async (req, res) => {
-    try {
-        const { companyId } = req.params;
+app.patch(
+    '/api/admin/companies/:companyId/bot/unblock',
+    async (req, res) => {
 
-        const result = await unblockCompanyBot(companyId);
+        try {
 
-        return res.json({
-            success: true,
-            message: 'Bot da empresa desbloqueado administrativamente.',
-            bot: result
-        });
+            const {
+                companyId
+            } = req.params;
 
-    } catch (error) {
-        console.error(
-            'Erro ao desbloquear bot da empresa:',
-            error
-        );
 
-        return res.status(500).json({
-            success: false,
-            message:
-                error.message ||
-                'Não foi possível desbloquear o bot da empresa.'
-        });
+            const result =
+                await unblockCompanyBot(
+                    companyId
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    'Bot da empresa desbloqueado administrativamente.',
+
+                bot:
+                    result
+            });
+
+        } catch (error) {
+
+            console.error(
+                'Erro ao desbloquear bot da empresa:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    'Não foi possível desbloquear o bot da empresa.'
+            });
+        }
     }
-});
+);
 
 
 // =====================================================
 // DASHBOARD
 // =====================================================
 
-app.get('/api/dashboard/summary', async (req, res) => {
-    try {
+app.get(
+    '/api/dashboard/summary',
+    async (req, res) => {
 
-        const summary =
-            await getDashboardSummary(
-                req.companyId
+        try {
+
+            const summary =
+                await getDashboardSummary(
+                    req.companyId
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                summary
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao carregar resumo do Dashboard:',
+                error
             );
 
-        return res.json({
-            success: true,
-            summary
-        });
 
-    } catch (error) {
+            return res.status(500).json({
 
-        console.error(
-            '❌ Erro ao carregar resumo do Dashboard:',
-            error
-        );
+                success: false,
 
-        return res.status(500).json({
-            success: false,
-            message:
-                'Não foi possível carregar o resumo do Dashboard.'
-        });
+                message:
+                    'Não foi possível carregar o resumo do Dashboard.'
+            });
+        }
     }
-});
+);
 
 
 // =====================================================
@@ -474,16 +1146,24 @@ async function getOwnedSession(
     sessionName
 ) {
 
-    if (!companyId || !sessionName) {
+    if (
+        !companyId ||
+        !sessionName
+    ) {
         return null;
     }
 
+
     const companySessions =
-        await getSessionsByCompany(companyId);
+        await getSessionsByCompany(
+            companyId
+        );
+
 
     return companySessions.find(
         session =>
-            session.session_name === sessionName
+            session.session_name ===
+            sessionName
     ) || null;
 }
 
@@ -492,213 +1172,376 @@ async function getOwnedSession(
 // 5. LISTAR SESSÕES DA EMPRESA
 // =====================================================
 
-app.get('/api/whatsapp/sessions', async (req, res) => {
-    try {
-        const companySessions = await getSessionsByCompany(
-            req.companyId
-        );
+app.get(
+    '/api/whatsapp/sessions',
+    async (req, res) => {
 
-        const sessions = companySessions.map(dbSession => {
-            const runtimeSession = getSession(
-                dbSession.session_name
+        try {
+
+            const companySessions =
+                await getSessionsByCompany(
+                    req.companyId
+                );
+
+
+            const sessions =
+                companySessions.map(
+                    dbSession => {
+
+                        const runtimeSession =
+                            getSession(
+                                dbSession.session_name
+                            );
+
+
+                        return {
+
+                            id:
+                                dbSession.id,
+
+
+                            // Número utilizado na associação
+                            phone:
+                                runtimeSession?.phoneNumber ||
+                                dbSession.phone ||
+                                null,
+
+
+                            session_name:
+                                dbSession.session_name,
+
+
+                            // Nome amigável da conexão
+                            display_name:
+                                dbSession.display_name ||
+                                null,
+
+
+                            // Estado atual da conexão
+                            status:
+                                runtimeSession?.status ||
+                                dbSession.status,
+
+
+                            // QR Code
+                            has_qr:
+                                Boolean(
+                                    runtimeSession?.qrImage
+                                ),
+
+
+                            // Código de associação por número
+                            pairing_code:
+
+                                runtimeSession?.pairingCode &&
+                                runtimeSession?.pairingCodeGeneratedAt &&
+                                Date.now() -
+                                runtimeSession.pairingCodeGeneratedAt <
+                                3 * 60 * 1000
+
+                                    ? runtimeSession.pairingCode
+
+                                    : null,
+
+
+                            created_at:
+                                dbSession.created_at
+                        };
+                    }
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                sessions
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao listar sessões:',
+                error
             );
 
-return {
-    id: dbSession.id,
 
-    // Número utilizado na associação
-    phone: runtimeSession?.phoneNumber || dbSession.phone || null,
+            return res.status(500).json({
 
-    session_name: dbSession.session_name,
+                success: false,
 
-    // Nome amigável da conexão
-    display_name: dbSession.display_name || null,
-
-    // Estado atual da conexão
-    status: runtimeSession?.status || dbSession.status,
-
-    // QR Code, caso esteja a ser utilizado
-    has_qr: Boolean(runtimeSession?.qrImage),
-
-    // Código de associação por número
-    pairing_code:
-        runtimeSession?.pairingCode &&
-        runtimeSession?.pairingCodeGeneratedAt &&
-        Date.now() - runtimeSession.pairingCodeGeneratedAt < 3 * 60 * 1000
-            ? runtimeSession.pairingCode
-            : null,
-        created_at: dbSession.created_at
-    };        });
-
-        return res.json({
-            success: true,
-            sessions
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao listar sessões:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível listar as sessões.'
-        });
+                message:
+                    'Não foi possível listar as sessões.'
+            });
+        }
     }
-});
+);
 
 
 // =====================================================
 // 6. CRIAR NOVA SESSÃO WHATSAPP
 // =====================================================
 
-app.post('/api/whatsapp/sessions', async (req, res) => {
-    try {
-        const { phone, displayName } = req.body;
+app.post(
+    '/api/whatsapp/sessions',
+    async (req, res) => {
 
-        if (
-            phone !== undefined &&
-            phone !== null &&
-            typeof phone !== 'string'
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: 'O número de telefone deve ser um texto.'
-            });
-        }
-
-
-        if (
-    displayName !== undefined &&
-    displayName !== null &&
-    typeof displayName !== 'string'
-) {
-    return res.status(400).json({
-        success: false,
-        message: 'O nome da conexão deve ser um texto.'
-    });
-}
-
-const cleanDisplayName = displayName?.trim() || null;
-
-        // Gerar um nome único para a sessão
-        const sessionName =
-            `c_${req.companyId.replace(/-/g, '')}_` +
-            randomUUID().replace(/-/g, '');
-
-        // Registar a sessão na base de dados
-        const newSession = await createWhatsappSession(
-            req.companyId,
-            sessionName,
-            phone || null,
-            cleanDisplayName
-        );
-
-        // Iniciar a ligação WhatsApp
         try {
-            await startSession(
-                sessionName,
-                handleIncomingMessage
-            );
 
-        } catch (startError) {
-            console.error(
-                '❌ Sessão registada, mas não foi possível iniciar:',
-                startError
-            );
+            const {
+                phone,
+                displayName
+            } = req.body;
+
+
+            if (
+                phone !== undefined &&
+                phone !== null &&
+                typeof phone !== 'string'
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        'O número de telefone deve ser um texto.'
+                });
+            }
+
+
+            if (
+                displayName !== undefined &&
+                displayName !== null &&
+                typeof displayName !== 'string'
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        'O nome da conexão deve ser um texto.'
+                });
+            }
+
+
+            const cleanDisplayName =
+                displayName?.trim() ||
+                null;
+
+
+            // Gerar um nome único para a sessão
+            const sessionName =
+                `c_${req.companyId.replace(/-/g, '')}_` +
+                randomUUID().replace(/-/g, '');
+
+
+            // Registar a sessão na base de dados
+            const newSession =
+                await createWhatsappSession(
+                    req.companyId,
+                    sessionName,
+                    phone || null,
+                    cleanDisplayName
+                );
+
+
+            // Iniciar a ligação WhatsApp
+            try {
+
+                await startSession(
+                    sessionName,
+                    handleIncomingMessage
+                );
+
+            } catch (startError) {
+
+                console.error(
+                    '❌ Sessão registada, mas não foi possível iniciar:',
+                    startError
+                );
+
+
+                return res.status(201).json({
+
+                    success: true,
+
+                    message:
+                        'Sessão registada, mas a ligação não iniciou. Tente iniciar novamente.',
+
+                    session: {
+
+                        id:
+                            newSession.id,
+
+                        session_name:
+                            sessionName,
+
+                        display_name:
+                            newSession.display_name,
+
+                        status:
+                            'disconnected',
+
+                        has_qr:
+                            false
+                    }
+                });
+            }
+
+
+            const runtimeSession =
+                getSession(
+                    sessionName
+                );
+
 
             return res.status(201).json({
+
                 success: true,
-                message: 'Sessão registada, mas a ligação não iniciou. Tente iniciar novamente.',
+
+                message:
+                    'Sessão criada e inicializada.',
+
                 session: {
-                    id: newSession.id,
-                    session_name: sessionName,
-                    display_name: newSession.display_name,
-                    status: 'disconnected',
-                    has_qr: false
+
+                    id:
+                        newSession.id,
+
+                    session_name:
+                        sessionName,
+
+                    display_name:
+                        newSession.display_name,
+
+                    status:
+                        runtimeSession?.status ||
+                        'loading',
+
+                    has_qr:
+                        Boolean(
+                            runtimeSession?.qrImage
+                        )
                 }
             });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao criar sessão:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Não foi possível criar a sessão.'
+            });
         }
-
-        const runtimeSession = getSession(sessionName);
-
-        return res.status(201).json({
-            success: true,
-            message: 'Sessão criada e inicializada.',
-            session: {
-                id: newSession.id,
-                session_name: sessionName,
-                display_name: newSession.display_name,
-                status: runtimeSession?.status || 'loading',
-                has_qr: Boolean(runtimeSession?.qrImage)
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao criar sessão:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível criar a sessão.'
-        });
     }
-});
+);
 
 
-/**
- * =====================================================
- * GERAR CÓDIGO DE ASSOCIAÇÃO POR NÚMERO DE TELEFONE
- * =====================================================
- */
+// =====================================================
+// GERAR CÓDIGO DE ASSOCIAÇÃO POR NÚMERO DE TELEFONE
+// =====================================================
+
 app.post(
     '/api/whatsapp/sessions/:sessionName/pairing-code',
     async (req, res) => {
 
         try {
-            const { sessionName } = req.params;
-            const { phoneNumber } = req.body;
 
-            // Verificar se a sessão pertence à empresa autenticada
-            const companySessions = await getSessionsByCompany(
-                req.companyId
-            );
+            const {
+                sessionName
+            } = req.params;
 
-            const ownsSession = companySessions.some(
-                session => session.session_name === sessionName
-            );
+
+            const {
+                phoneNumber
+            } = req.body;
+
+
+            // Verificar se a sessão pertence
+            // à empresa autenticada
+            const companySessions =
+                await getSessionsByCompany(
+                    req.companyId
+                );
+
+
+            const ownsSession =
+                companySessions.some(
+                    session =>
+                        session.session_name ===
+                        sessionName
+                );
+
 
             if (!ownsSession) {
+
                 return res.status(404).json({
+
                     success: false,
-                    message: 'Sessão não encontrada.'
+
+                    message:
+                        'Sessão não encontrada.'
                 });
             }
 
-            // Verificar se a sessão está carregada no gestor
-            const session = getSession(sessionName);
 
-            if (!session || !session.client) {
+            // Verificar se a sessão está carregada
+            const session =
+                getSession(
+                    sessionName
+                );
+
+
+            if (
+                !session ||
+                !session.client
+            ) {
+
                 return res.status(400).json({
+
                     success: false,
-                    message: 'A sessão ainda não está iniciada. Tente novamente.'
+
+                    message:
+                        'A sessão ainda não está iniciada. Tente novamente.'
                 });
             }
+
 
             // Solicitar o código ao WhatsApp
-            const result = await requestSessionPairingCode(
-                sessionName,
-                phoneNumber
-            );
+            const result =
+                await requestSessionPairingCode(
+                    sessionName,
+                    phoneNumber
+                );
 
-            // Guardar o número associado à sessão no Supabase
+
+            // Guardar o número associado à sessão
+            // no Supabase
             await updateWhatsappSessionPhone(
                 req.companyId,
                 sessionName,
                 session.phoneNumber
             );
 
+
             return res.json({
+
                 success: true,
-                message: 'Código de associação gerado com sucesso.',
-                code: result.code
+
+                message:
+                    'Código de associação gerado com sucesso.',
+
+                code:
+                    result.code
             });
 
         } catch (error) {
@@ -708,9 +1551,13 @@ app.post(
                 error
             );
 
+
             return res.status(400).json({
+
                 success: false,
-                message: error.message ||
+
+                message:
+                    error.message ||
                     'Não foi possível gerar o código.'
             });
         }
@@ -722,221 +1569,427 @@ app.post(
 // 7. INICIAR OU REINICIAR UMA SESSÃO
 // =====================================================
 
-app.post('/api/whatsapp/sessions/:sessionName/start', async (req, res) => {
-    try {
-        const { sessionName } = req.params;
+app.post(
+    '/api/whatsapp/sessions/:sessionName/start',
+    async (req, res) => {
 
-        // Confirmar que a sessão pertence à empresa autenticada
-        const ownedSession = await getOwnedSession(
-            req.companyId,
-            sessionName
-        );
+        try {
+
+            const {
+                sessionName
+            } = req.params;
 
 
-        if (!ownedSession) {
-            return res.status(404).json({
+            // Confirmar que a sessão pertence
+            // à empresa autenticada
+            const ownedSession =
+                await getOwnedSession(
+                    req.companyId,
+                    sessionName
+                );
+
+
+            if (!ownedSession) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Sessão não encontrada.'
+                });
+            }
+
+
+            await updateWhatsappSessionAutoConnect(
+                req.companyId,
+                sessionName,
+                true
+            );
+
+
+            const session =
+                await startSession(
+                    sessionName,
+                    handleIncomingMessage
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    'Inicialização da sessão solicitada.',
+
+                session: {
+
+                    session_name:
+                        sessionName,
+
+                    status:
+                        session.status,
+
+                    has_qr:
+                        Boolean(
+                            session.qrImage
+                        )
+                }
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao iniciar sessão:',
+                error
+            );
+
+
+            return res.status(500).json({
+
                 success: false,
-                message: 'Sessão não encontrada.'
+
+                message:
+                    'Não foi possível iniciar a sessão.'
             });
         }
-
-        await updateWhatsappSessionAutoConnect(req.companyId, sessionName, true);
-
-
-        const session = await startSession(
-            sessionName,
-            handleIncomingMessage
-        );
-
-        return res.json({
-            success: true,
-            message: 'Inicialização da sessão solicitada.',
-            session: {
-                session_name: sessionName,
-                status: session.status,
-                has_qr: Boolean(session.qrImage)
-            }
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao iniciar sessão:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível iniciar a sessão.'
-        });
     }
-});
+);
 
 
 // =====================================================
 // 8. CONSULTAR QR CODE DE UMA SESSÃO
 // =====================================================
 
-app.get('/api/whatsapp/sessions/:sessionName/qr', async (req, res) => {
-    try {
-        const { sessionName } = req.params;
+app.get(
+    '/api/whatsapp/sessions/:sessionName/qr',
+    async (req, res) => {
 
-        const ownedSession = await getOwnedSession(
-            req.companyId,
-            sessionName
-        );
+        try {
 
-        if (!ownedSession) {
-            return res.status(404).json({
+            const {
+                sessionName
+            } = req.params;
+
+
+            const ownedSession =
+                await getOwnedSession(
+                    req.companyId,
+                    sessionName
+                );
+
+
+            if (!ownedSession) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Sessão não encontrada.'
+                });
+            }
+
+
+            const session =
+                getSession(
+                    sessionName
+                );
+
+
+            if (!session) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'A sessão ainda não foi inicializada.'
+                });
+            }
+
+
+            return res.json({
+
+                success: true,
+
+                session_name:
+                    sessionName,
+
+                status:
+                    session.status,
+
+                qr:
+                    session.qrImage ||
+                    null
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao consultar QR Code:',
+                error
+            );
+
+
+            return res.status(500).json({
+
                 success: false,
-                message: 'Sessão não encontrada.'
+
+                message:
+                    'Não foi possível consultar o QR Code.'
             });
         }
-
-        const session = getSession(sessionName);
-
-        if (!session) {
-            return res.status(404).json({
-                success: false,
-                message: 'A sessão ainda não foi inicializada.'
-            });
-        }
-
-        return res.json({
-            success: true,
-            session_name: sessionName,
-            status: session.status,
-            qr: session.qrImage || null
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao consultar QR Code:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível consultar o QR Code.'
-        });
     }
-});
+);
 
 
 // =====================================================
 // 9. DESLIGAR UMA SESSÃO
 // =====================================================
 
-app.post('/api/whatsapp/sessions/:sessionName/stop', async (req, res) => {
-    try {
-        const { sessionName } = req.params;
+app.post(
+    '/api/whatsapp/sessions/:sessionName/stop',
+    async (req, res) => {
 
-        const ownedSession = await getOwnedSession(
-            req.companyId,
-            sessionName
-        );
+        try {
 
-
-        if (!ownedSession) {
-            return res.status(404).json({
-                success: false,
-                message: 'Sessão não encontrada.'
-            });
-        }
-
-        await updateWhatsappSessionAutoConnect(req.companyId, sessionName, false);
+            const {
+                sessionName
+            } = req.params;
 
 
-        const stopped = await stopSession(sessionName);
+            const ownedSession =
+                await getOwnedSession(
+                    req.companyId,
+                    sessionName
+                );
 
-        // Atualizar a base de dados mesmo se não existir na memória
-        if (!stopped) {
-            await updateWhatsappSessionStatus(
+
+            if (!ownedSession) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Sessão não encontrada.'
+                });
+            }
+
+
+            await updateWhatsappSessionAutoConnect(
                 req.companyId,
                 sessionName,
-                'disconnected'
+                false
             );
+
+
+            const stopped =
+                await stopSession(
+                    sessionName
+                );
+
+
+            // Atualizar a base de dados mesmo
+            // se não existir na memória
+            if (!stopped) {
+
+                await updateWhatsappSessionStatus(
+                    req.companyId,
+                    sessionName,
+                    'disconnected'
+                );
+            }
+
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    'Sessão desligada.',
+
+                session_name:
+                    sessionName,
+
+                status:
+                    'disconnected'
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao desligar sessão:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Não foi possível desligar a sessão.'
+            });
         }
-
-        return res.json({
-            success: true,
-            message: 'Sessão desligada.',
-            session_name: sessionName,
-            status: 'disconnected'
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao desligar sessão:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível desligar a sessão.'
-        });
     }
-});
+);
 
 
 // =====================================================
 // 10. CONSULTAR ESTADO DE UMA SESSÃO
 // =====================================================
 
-app.get('/api/whatsapp/sessions/:sessionName/status', async (req, res) => {
-    try {
-        const { sessionName } = req.params;
+app.get(
+    '/api/whatsapp/sessions/:sessionName/status',
+    async (req, res) => {
 
-        const ownedSession = await getOwnedSession(
-            req.companyId,
-            sessionName
-        );
+        try {
 
-        if (!ownedSession) {
-            return res.status(404).json({
+            const {
+                sessionName
+            } = req.params;
+
+
+            const ownedSession =
+                await getOwnedSession(
+                    req.companyId,
+                    sessionName
+                );
+
+
+            if (!ownedSession) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Sessão não encontrada.'
+                });
+            }
+
+
+            const runtimeSession =
+                getSession(
+                    sessionName
+                );
+
+
+            return res.json({
+
+                success: true,
+
+                session_name:
+                    sessionName,
+
+                status:
+                    runtimeSession?.status ||
+                    ownedSession.status,
+
+                has_qr:
+                    Boolean(
+                        runtimeSession?.qrImage
+                    ),
+
+                last_disconnect_reason:
+                    runtimeSession?.lastDisconnectReason ||
+                    null,
+
+                auth_failure:
+                    runtimeSession?.authFailure ||
+                    null
+            });
+
+        } catch (error) {
+
+            console.error(
+                '❌ Erro ao consultar estado:',
+                error
+            );
+
+
+            return res.status(500).json({
+
                 success: false,
-                message: 'Sessão não encontrada.'
+
+                message:
+                    'Não foi possível consultar o estado da sessão.'
             });
         }
-
-        const runtimeSession = getSession(sessionName);
-
-        return res.json({
-            success: true,
-            session_name: sessionName,
-            status: runtimeSession?.status || ownedSession.status,
-            has_qr: Boolean(runtimeSession?.qrImage),
-            last_disconnect_reason:
-                runtimeSession?.lastDisconnectReason || null,
-            auth_failure:
-                runtimeSession?.authFailure || null
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao consultar estado:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Não foi possível consultar o estado da sessão.'
-        });
     }
-});
+);
 
+
+// =====================================================
+// INICIALIZAR SESSÕES WHATSAPP
+// =====================================================
 
 async function initializeWhatsappSessions() {
+
     try {
-        console.log('\n🔄 A carregar sessões WhatsApp registadas...');
 
-        const dbSessions = await getAllWhatsappSessions();
+        console.log(
+            '\n🔄 A carregar sessões WhatsApp registadas...'
+        );
 
-        if (!dbSessions || dbSessions.length === 0) {
-            console.log('ℹ️ Nenhuma sessão WhatsApp registada.');
+
+        const dbSessions =
+            await getAllWhatsappSessions();
+
+
+        if (
+            !dbSessions ||
+            dbSessions.length === 0
+        ) {
+
+            console.log(
+                'ℹ️ Nenhuma sessão WhatsApp registada.'
+            );
+
             return;
         }
 
-        const sessionsToConnect = dbSessions.filter(
-            session => session.auto_connect === true
+
+        const sessionsToConnect =
+            dbSessions.filter(
+                session =>
+                    session.auto_connect === true
+            );
+
+
+        const sessionsToKeepDisconnected =
+            dbSessions.length -
+            sessionsToConnect.length;
+
+
+        console.log(
+            `📱 Total de sessões: ${dbSessions.length}`
         );
 
-        const sessionsToKeepDisconnected = dbSessions.length - sessionsToConnect.length;
 
-        console.log(`📱 Total de sessões: ${dbSessions.length}`);
-        console.log(`🟢 Sessões autorizadas para reconectar: ${sessionsToConnect.length}`);
-        console.log(`🔴 Sessões que permanecerão desligadas: ${sessionsToKeepDisconnected}`);
+        console.log(
+            `🟢 Sessões autorizadas para reconectar: ${sessionsToConnect.length}`
+        );
 
-        for (const dbSession of sessionsToConnect) {
+
+        console.log(
+            `🔴 Sessões que permanecerão desligadas: ${sessionsToKeepDisconnected}`
+        );
+
+
+        for (
+            const dbSession
+            of sessionsToConnect
+        ) {
+
             try {
-                console.log(`🔄 A iniciar sessão: ${dbSession.session_name}`);
+
+                console.log(
+                    `🔄 A iniciar sessão: ${dbSession.session_name}`
+                );
+
 
                 await startSession(
                     dbSession.session_name,
@@ -944,6 +1997,7 @@ async function initializeWhatsappSessions() {
                 );
 
             } catch (error) {
+
                 console.error(
                     `❌ Não foi possível iniciar ${dbSession.session_name}:`,
                     error.message
@@ -951,10 +2005,17 @@ async function initializeWhatsappSessions() {
             }
         }
 
-        console.log('✅ Processo de inicialização das sessões concluído.');
+
+        console.log(
+            '✅ Processo de inicialização das sessões concluído.'
+        );
 
     } catch (error) {
-        console.error('❌ Erro ao carregar sessões WhatsApp:', error);
+
+        console.error(
+            '❌ Erro ao carregar sessões WhatsApp:',
+            error
+        );
     }
 }
 
@@ -963,24 +2024,55 @@ async function initializeWhatsappSessions() {
 // 12. INICIAR SERVIDOR
 // =====================================================
 
-app.listen(PORT, async () => {
-    console.log('\n======================================');
-    console.log('🚀 WHATSAPP BOT SAAS');
-    console.log(`🌐 Backend disponível na porta ${PORT}`);
-    console.log('======================================\n');
+app.listen(
+    PORT,
+    async () => {
 
-    await initializeWhatsappSessions();
-});
+        console.log(
+            '\n======================================'
+        );
+
+        console.log(
+            '🚀 WHATSAPP BOT SAAS'
+        );
+
+        console.log(
+            `🌐 Backend disponível na porta ${PORT}`
+        );
+
+        console.log(
+            '======================================\n'
+        );
+
+
+        await initializeWhatsappSessions();
+    }
+);
 
 
 // =====================================================
 // 13. TRATAMENTO DE ERROS GLOBAIS
 // =====================================================
 
-process.on('unhandledRejection', (reason) => {
-    console.error('❌ Erro não tratado (Promise):', reason);
-});
+process.on(
+    'unhandledRejection',
+    (reason) => {
 
-process.on('uncaughtException', (error) => {
-    console.error('❌ Erro não tratado:', error);
-});
+        console.error(
+            '❌ Erro não tratado (Promise):',
+            reason
+        );
+    }
+);
+
+
+process.on(
+    'uncaughtException',
+    (error) => {
+
+        console.error(
+            '❌ Erro não tratado:',
+            error
+        );
+    }
+);

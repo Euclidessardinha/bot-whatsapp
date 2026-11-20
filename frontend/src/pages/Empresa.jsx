@@ -281,6 +281,37 @@ const oldWelcomeImagePath =
     );
 
 if (welcomeImageFile) {
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabase.auth.getSession();
+
+    console.log(
+        '🔐 STORAGE DEBUG SESSION:',
+        sessionData.session
+    );
+
+    console.log(
+        '🔐 STORAGE DEBUG USER:',
+        sessionData.session?.user
+    );
+
+    console.log(
+        '🔐 STORAGE DEBUG SESSION ERROR:',
+        sessionError
+    );
+
+    console.log(
+        '🏢 STORAGE DEBUG COMPANY:',
+        profile.company_id
+    );
+
+    console.log(
+        '📁 STORAGE DEBUG PATH:',
+        getWelcomeImagePath(profile.company_id)
+    );
+
     const uploaded =
         await uploadWelcomeImage(
             profile.company_id,

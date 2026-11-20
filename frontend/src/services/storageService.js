@@ -38,7 +38,7 @@ export async function uploadProductImage(
         .storage
         .from(BUCKET_NAME)
         .upload(path, file, {
-            upsert: true,
+            upsert: false,
             contentType: file.type,
             cacheControl: '3600'
         });
@@ -99,7 +99,7 @@ export async function uploadServiceImage(
         .storage
         .from(BUCKET_NAME)
         .upload(path, file, {
-            upsert: true,
+            upsert: false,
             contentType: file.type,
             cacheControl: '3600'
         });
@@ -159,7 +159,7 @@ export async function uploadWelcomeImage(
         .storage
         .from(BUCKET_NAME)
         .upload(path, file, {
-            upsert: true,
+            upsert: false,
             contentType: file.type,
             cacheControl: '3600'
         });
