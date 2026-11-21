@@ -1,4 +1,4 @@
-const supabase = require('../lib/supabase');
+﻿const supabase = require('../lib/supabase');
 
 const {
     getBotSettings
@@ -1300,19 +1300,50 @@ function getLastProduct(context) {
 
 function isContextualProductReference(text) {
 
-    if (!text) return false;
+    if (!text) {
+        return false;
+    }
 
-    const value = String(text)
-        .toLowerCase()
-        .trim();
+    const value =
+        String(text)
+            .toLowerCase()
+            .trim();
 
     return (
+
+        // Referências diretas
         /^(esse|essa|aquele|aquela)$/i.test(value) ||
+
+        // Referências com produto/item
         /^(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value) ||
+
+        // Referências com "mesmo"
         /^(esse|essa|aquele|aquela)\s+(mesmo|mesma)$/i.test(value) ||
+
         /^(o|a)\s+mesm[oa]$/i.test(value) ||
-        /^(quero|manda|adiciona|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)$/i.test(value) ||
-        /^(quero|manda|adiciona|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value)
+
+        // Ações + referência
+        /^(quero|manda|adiciona|adicionar|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)$/i.test(value) ||
+
+        /^(quero|manda|adiciona|adicionar|coloca|pega|vou querer)\s+(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value) ||
+
+        // "mais desse", "mais daquele", etc.
+        /^(mais|adiciona mais|quero mais|manda mais)\s+(desse|dessa|daquele|daquela)$/i.test(value) ||
+
+        /^(mais|adiciona mais|quero mais|manda mais)\s+(desse|dessa|daquele|daquela)\s+(produto|item)$/i.test(value) ||
+
+        // Referência ao último produto
+        /^(o|a)?\s*últim[oa]$/i.test(value) ||
+
+        /^(o|a)?\s*últim[oa]\s+(produto|item)$/i.test(value) ||
+
+        // "aquele de antes", etc.
+        /^(esse|essa|aquele|aquela)\s+(de\s+antes|anterior)$/i.test(value) ||
+
+        /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\s+(esse|essa|aquele|aquela)$/i.test(value) ||
+
+        /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\s+(esse|essa|aquele|aquela)\s+(produto|item)$/i.test(value)
+
     );
 }
 
@@ -1322,11 +1353,80 @@ function resolveContextualProduct(
     text
 ) {
 
-    if (!isContextualProductReference(text)) {
+    if (
+        !isContextualProductReference(text)
+    ) {
         return null;
     }
 
-    return getLastProduct(context);
+    const lastProduct =
+        getLastProduct(context);
+
+    if (!lastProduct) {
+        return null;
+    }
+
+    return lastProduct;
+}
+
+
+/**
+ * =========================================================
+ * DETECÇÃO DE AÇÃO COMPOSTA NO CARRINHO
+ * =========================================================
+ */
+
+function isCompositeCartAction(text) {
+
+    if (!text) {
+        return false;
+    }
+
+    const value =
+        String(text)
+            .toLowerCase()
+            .trim();
+
+    return (
+        /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i.test(value) &&
+        /\b(e|depois)\b/i.test(value)
+    );
+}
+
+
+/**
+ * =========================================================
+ * EXTRAIR AÇÕES COMPOSTAS DO CARRINHO
+ * =========================================================
+ */
+
+function parseCompositeCartAction(text) {
+
+    if (!text) {
+        return null;
+    }
+
+    const value =
+        String(text)
+            .toLowerCase()
+            .trim();
+
+    const match =
+        value.match(
+            /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\s+(.+?)\s+(e|depois)\s+(adiciona|adicionar|coloca|colocar|manda|mandar)\s+(.+)$/i
+        );
+
+    if (!match) {
+        return null;
+    }
+
+    return {
+        removeTarget:
+            match[2].trim(),
+
+        addTarget:
+            match[5].trim()
+    };
 }
 
 
@@ -1645,6 +1745,17 @@ async function processMessage(
             intelligence
         );
 
+    const compositeCartAction =
+    parseCompositeCartAction(
+        rawMessage
+    );    
+
+
+    console.log(
+    "DEBUG COMPOSITE CART ACTION:",
+    JSON.stringify(compositeCartAction, null, 2)
+);
+
 
     let texto =
         intelligence.normalizedText;
@@ -1876,7 +1987,11 @@ if (
     if (
         state !== 'idle' &&
         shouldInterruptConversation(intent) &&
-        state !== 'service_request'
+        state !== 'service_request' &&
+        !(
+            state === 'cart_menu' &&
+            compositeCartAction
+        )
     ) {
 
         console.log(
@@ -2288,10 +2403,11 @@ if (
      */
 
     if (
-        productCandidate &&
-        businessType !== 'services' &&
-        settings.orders_enabled
-    ) {
+    productCandidate &&
+    !compositeCartAction &&
+    businessType !== 'services' &&
+    settings.orders_enabled
+) {
 
         const product =
             await resolveProductCandidate(
@@ -3368,6 +3484,16 @@ if (
      * =====================================================
      */
 
+    console.log(
+        'ðŸ§ª DEBUG CARRINHO:',
+        {
+            rawMessage,
+            state,
+            compositeCartAction,
+            cart: context?.cart
+        }
+    );
+
     if (
         state === 'cart_menu'
     ) {
@@ -3380,6 +3506,511 @@ if (
 
         const lastProduct =
             getLastProduct(context);
+
+                /**
+         * =================================================
+         * AÇÃO COMPOSTA DO CARRINHO
+         *
+         * Exemplos:
+         * "remove o segundo e adiciona Chicken Burger"
+         * "tira o último e coloca Double Cheese"
+         * "remove esse e adiciona aquele produto"
+         * =================================================
+         */
+
+        if (
+            compositeCartAction
+        ) {
+
+            console.log(
+    "DEBUG COMPOSITE CART - ENTROU NO FLUXO COMPOSTO"
+);
+
+            if (
+                !cart.length
+            ) {
+
+                return (
+                    '🛒 O carrinho está vazio.\n\n' +
+                    'Adicione um produto primeiro.'
+                );
+            }
+
+
+            const removeTarget =
+                compositeCartAction.removeTarget;
+
+            const addTarget =
+                compositeCartAction.addTarget;
+
+
+            let removeIndex = -1;
+
+
+            /**
+             * -------------------------------------------------
+             * 1. RESOLVER O PRODUTO A REMOVER
+             * -------------------------------------------------
+             */
+
+            const removePositionMatch =
+                String(removeTarget)
+                    .toLowerCase()
+                    .trim()
+                    .match(
+                        /^(?:o\s+|a\s+)?(primeiro|segundo|terceiro|quarto|quinto|sexto|sétimo|setimo|oitavo|nono|décimo|decimo|último|ultimo)$/i
+                    );
+
+
+            if (
+                removePositionMatch
+            ) {
+
+                const position =
+                    removePositionMatch[1]
+                        .toLowerCase()
+                        .trim();
+
+
+                const positions = {
+                    primeiro: 1,
+                    segundo: 2,
+                    terceiro: 3,
+                    quarto: 4,
+                    quinto: 5,
+                    sexto: 6,
+                    'sétimo': 7,
+                    setimo: 7,
+                    oitavo: 8,
+                    nono: 9,
+                    'décimo': 10,
+                    decimo: 10
+                };
+
+
+                if (
+                    position === 'último' ||
+                    position === 'ultimo'
+                ) {
+
+                    removeIndex =
+                        cart.length - 1;
+
+                } else {
+
+                    const positionNumber =
+                        positions[position];
+
+                    if (
+                        positionNumber
+                    ) {
+
+                        removeIndex =
+                            positionNumber - 1;
+                    }
+                }
+            }
+
+
+            /**
+             * -------------------------------------------------
+             * 2. REFERÊNCIA CONTEXTUAL
+             *
+             * "esse"
+             * "essa"
+             * "aquele"
+             * "aquele produto"
+             * -------------------------------------------------
+             */
+
+            if (
+                removeIndex < 0
+            ) {
+
+                const removeContextualProduct =
+                    resolveContextualProduct(
+                        context,
+                        removeTarget
+                    );
+
+
+                if (
+                    removeContextualProduct
+                ) {
+
+                    removeIndex =
+                        getCartProductIndex(
+                            cart,
+                            removeContextualProduct.product_id
+                        );
+                }
+            }
+
+
+            /**
+             * -------------------------------------------------
+             * 3. TENTAR LOCALIZAR PELO NOME / ALIAS
+             * -------------------------------------------------
+             */
+
+            if (
+                removeIndex < 0
+            ) {
+
+                const removeProduct =
+                    await resolveProductCandidate(
+                        companyId,
+                        removeTarget
+                    );
+
+
+                if (
+                    removeProduct
+                ) {
+
+                    removeIndex =
+                        getCartProductIndex(
+                            cart,
+                            removeProduct.id
+                        );
+                }
+            }
+
+
+            /**
+             * -------------------------------------------------
+             * 4. VALIDAR PRODUTO A REMOVER
+             * -------------------------------------------------
+             */
+
+            if (
+                removeIndex < 0 ||
+                removeIndex >= cart.length
+            ) {
+
+                return (
+                    `❌ Não encontrei *${removeTarget}* ` +
+                    'no seu carrinho.\n\n' +
+                    `${formatCart(cart)}`
+                );
+            }
+
+
+            const removedProduct =
+                cart[removeIndex];
+
+
+            /**
+             * -------------------------------------------------
+             * 5. RESOLVER PRODUTO A ADICIONAR
+             * -------------------------------------------------
+             */
+
+            let addProduct =
+                await resolveProductCandidate(
+                    companyId,
+                    addTarget
+                );
+
+
+            /**
+             * Se "adiciona esse/aquele produto"
+             * estiver usando referência contextual,
+             * tentamos resolver pelo contexto.
+             */
+
+            if (
+                !addProduct
+            ) {
+
+                const addContextualProduct =
+                    resolveContextualProduct(
+                        context,
+                        addTarget
+                    );
+
+
+                if (
+                    addContextualProduct
+                ) {
+
+                    addProduct =
+                        await resolveProductCandidate(
+                            companyId,
+                            addContextualProduct.product_name
+                        );
+                }
+            }
+
+
+            /**
+             * -------------------------------------------------
+             * 6. VALIDAR PRODUTO A ADICIONAR
+             *
+             * Ainda não alteramos o carrinho.
+             * Assim evitamos uma operação parcial.
+             * -------------------------------------------------
+             */
+
+            if (
+                !addProduct
+            ) {
+
+                return (
+                    `❌ Não encontrei o produto ` +
+                    `*${addTarget}*` +
+                    ' para adicionar.\n\n' +
+                    `${formatCart(cart)}`
+                );
+            }
+
+
+            /**
+             * -------------------------------------------------
+             * 7. REMOVER PRIMEIRO PRODUTO
+             * -------------------------------------------------
+             */
+
+            const updatedCart =
+                cart.filter(
+                    (_, index) =>
+                        index !== removeIndex
+                );
+
+
+            /**
+             * -------------------------------------------------
+             * 8. ADICIONAR NOVO PRODUTO
+             *
+             * Se o cliente informou quantidade,
+             * usamos essa quantidade.
+             *
+             * Caso contrário:
+             * 1 unidade.
+             * -------------------------------------------------
+             */
+
+            const addProductContext =
+                createProductContext(
+                    addProduct
+                );
+
+
+            const addQuantity =
+                intelligenceQuantity &&
+                Number(intelligenceQuantity) > 0
+                    ? Number(intelligenceQuantity)
+                    : 1;
+
+
+            console.log(
+    "DEBUG COMPOSITE CART - updatedCart:",
+    JSON.stringify(updatedCart, null, 2)
+);
+
+console.log(
+    "DEBUG COMPOSITE CART - addProductContext:",
+    JSON.stringify(addProductContext, null, 2)
+);
+
+console.log(
+    "DEBUG COMPOSITE CART - addQuantity:",
+    addQuantity
+);        
+
+
+            const finalCart =
+                addProductToCart(
+                    updatedCart,
+                    addProductContext,
+                    addQuantity
+                );
+
+                console.log(
+    "DEBUG COMPOSITE CART - finalCart:",
+    JSON.stringify(finalCart, null, 2)
+);
+
+            /**
+             * -------------------------------------------------
+             * 9. RECALCULAR TOTAL
+             * -------------------------------------------------
+             */
+
+            const total =
+                calculateCartTotal(
+                    finalCart
+                );
+
+
+            /**
+             * -------------------------------------------------
+             * 10. ATUALIZAR CONTEXTO
+             * -------------------------------------------------
+             */
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+
+                        cart:
+                            finalCart,
+
+                        awaitingConfirmation:
+                            false,
+
+                        editingCartIndex:
+                            null,
+
+                        editingCartProduct:
+                            null,
+
+                        editingCartMode:
+                            null
+                    },
+                    addProductContext
+                );
+
+
+            /**
+             * -------------------------------------------------
+             * 11. SALVAR ESTADO
+             *
+             * companyId permanece obrigatório.
+             * -------------------------------------------------
+             */
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...newContext,
+
+                    total
+                }
+            );
+
+
+            /**
+             * -------------------------------------------------
+             * 12. RESPOSTA
+             * -------------------------------------------------
+             */
+
+            return (
+                `✅ *${removedProduct.product_name}* ` +
+                'foi removido e ' +
+                `*${addQuantity}x ${addProduct.name}* ` +
+                'foi adicionado ao pedido.\n\n' +
+
+                `${formatCart(finalCart)}\n\n` +
+
+                `💵 Total: *${total} MT*\n\n` +
+
+                'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+            );
+        }    
+
+
+        /**
+ * =================================================
+ * ADICIONAR MAIS DE UM PRODUTO POR POSIÇÃO
+ * =================================================
+ */
+
+if (
+    intelligenceQuantity &&
+    entities.addAction &&
+    (
+        entities.productPosition !== null &&
+        entities.productPosition !== undefined
+    )
+) {
+
+    let itemIndex = -1;
+
+    if (
+        entities.productPosition === 'last'
+    ) {
+
+        itemIndex =
+            cart.length - 1;
+
+    } else {
+
+        itemIndex =
+            Number(
+                entities.productPosition
+            ) - 1;
+    }
+
+    if (
+        itemIndex >= 0 &&
+        itemIndex < cart.length
+    ) {
+
+        const selectedItem =
+            cart[itemIndex];
+
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                selectedItem.product_name
+            );
+
+        if (
+            product
+        ) {
+
+            const productContext =
+                createProductContext(
+                    product
+                );
+
+            const updatedCart =
+                addProductToCart(
+                    cart,
+                    productContext,
+                    intelligenceQuantity
+                );
+
+            const newContext =
+                rememberProduct(
+                    {
+                        ...context,
+                        cart: updatedCart
+                    },
+                    productContext
+                );
+
+            const total =
+                calculateCartTotal(
+                    updatedCart
+                );
+
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...newContext,
+                    total
+                }
+            );
+
+            return (
+                `✅ Adicionei mais *${intelligenceQuantity}x ${product.name}*.\\n\\n` +
+                `${formatCart(updatedCart)}\\n\\n` +
+                `💵 Total: *${total} MT*\\n\\n` +
+                'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+            );
+        }
+    }
+}
+
+
 
 
         /**
@@ -3717,7 +4348,7 @@ if (
 
 
             return (
-                'ðŸ¤” NÃ£o consegui identificar qual produto deseja remover.\n\n' +
+                'ðŸ¤” NÃo consegui identificar qual produto deseja remover.\n\n' +
                 `${formatCart(cart)}`
             );
         }
@@ -3740,24 +4371,71 @@ if (
          * Não depende de resolvedProductCandidate.
          */
         if (
-            intelligence.behavior === 'change_quantity' &&
+    intelligence.behavior === 'change_quantity' &&
+    intelligenceQuantity &&
+    (
+        (
             entities.productPosition !== null &&
-            entities.productPosition !== undefined &&
-            intelligenceQuantity
-        ) {
-            let itemIndex = -1
+            entities.productPosition !== undefined
+        ) ||
+        contextualProduct
+    )
+) {
+            let itemIndex = -1;
 
-            if (
-                entities.productPosition === 'last'
-            ) {
-                itemIndex =
-                    cart.length - 1
-            } else {
-                itemIndex =
-                    Number(
-                        entities.productPosition
-                    ) - 1
-            }
+
+/*
+ * POSIÇÃO NO CARRINHO
+ */
+if (
+    entities.productPosition !== null &&
+    entities.productPosition !== undefined
+) {
+
+    if (
+        entities.productPosition === 'last'
+    ) {
+
+        itemIndex =
+            cart.length - 1;
+
+    } else {
+
+        itemIndex =
+            Number(
+                entities.productPosition
+            ) - 1;
+    }
+}
+
+
+/*
+ * REFERÊNCIA CONTEXTUAL
+ */
+if (
+    itemIndex < 0 &&
+    contextualProduct
+) {
+
+    itemIndex =
+        getCartProductIndex(
+            cart,
+            contextualProduct.product_id
+        );
+}
+
+
+/*
+ * ÚLTIMO PRODUTO
+ */
+if (
+    itemIndex < 0 &&
+    entities.reference === 'last'
+) {
+
+    itemIndex =
+        cart.length - 1;
+}
 
             if (
                 itemIndex >= 0 &&
@@ -3897,29 +4575,81 @@ if (
          */
 
         if (
-            entities.editAction &&
-            !productCandidate &&
-            entities.productPosition !== null &&
-            entities.productPosition !== undefined
+            state === 'editing_cart_item' &&
+            context.editingCartMode === 'replace' &&
+            context.editingCartIndex !== null &&
+            context.editingCartIndex !== undefined
         ) {
 
-            let itemIndex;
+            let itemIndex = -1;
 
 
-            if (
-                entities.productPosition === 'last'
-            ) {
+/*
+ * 1. POSIÇÃO EXPLÍCITA
+ *
+ * Exemplos:
+ * "segundo"
+ * "terceiro"
+ * "último"
+ */
+if (
+    entities.productPosition !== null &&
+    entities.productPosition !== undefined
+) {
 
-                itemIndex =
-                    cart.length - 1;
+    if (
+        entities.productPosition === 'last'
+    ) {
 
-            } else {
+        itemIndex =
+            cart.length - 1;
 
-                itemIndex =
-                    Number(
-                        entities.productPosition
-                    ) - 1;
-            }
+    } else {
+
+        itemIndex =
+            Number(
+                entities.productPosition
+            ) - 1;
+    }
+}
+
+
+/*
+ * 2. REFERÊNCIA CONTEXTUAL
+ *
+ * Exemplos:
+ * "esse"
+ * "esse produto"
+ * "aquele"
+ * "aquele produto"
+ */
+if (
+    itemIndex < 0 &&
+    contextualProduct
+) {
+
+    itemIndex =
+        getCartProductIndex(
+            cart,
+            contextualProduct.product_id
+        );
+}
+
+
+/*
+ * 3. REFERÊNCIA "LAST"
+ *
+ * Segurança adicional para:
+ * "o último"
+ */
+if (
+    itemIndex < 0 &&
+    entities.reference === 'last'
+) {
+
+    itemIndex =
+        cart.length - 1;
+}
 
 
             if (
@@ -3932,21 +4662,27 @@ if (
 
 
                 await updateConversationState(
-                    companyId,
-                    conversationId,
-                    'editing_cart_item',
-                    {
-                        ...context,
+    companyId,
+    conversationId,
+    'editing_cart_item',
+    {
+        ...context,
 
-                        cart,
+        cart,
 
-                        editingCartIndex:
-                            itemIndex,
+        item_index:
+            itemIndex,
 
-                        editingCartProduct:
-                            selectedProduct
-                    }
-                );
+        editingCartIndex:
+            itemIndex,
+
+        editingCartProduct:
+            selectedProduct,
+
+        editingCartMode:
+            'replace'
+    }
+);
 
 
                 return (
@@ -4063,6 +4799,7 @@ if (
 
                 {
                     cart
+                    
                 }
             );
 
@@ -4111,13 +4848,15 @@ if (
      */
 
     if (
-        entities.removeAction &&
-        (
-            productCandidate ||
-            entities.productPosition ||
-            entities.reference
-        )
-    ) {
+    state !== 'cart_menu' &&
+    entities.removeAction &&
+    (
+        productCandidate ||
+        contextualProduct ||
+        entities.productPosition ||
+        entities.reference
+    )
+) {
 
         const cart =
             Array.isArray(context.cart)
@@ -4160,6 +4899,18 @@ if (
                     );
             }
         }
+
+        if (
+    itemIndex < 0 &&
+    contextualProduct
+) {
+
+    itemIndex =
+        getCartProductIndex(
+            cart,
+            contextualProduct.product_id
+        );
+}
 
 
         if (
@@ -4248,6 +4999,260 @@ if (
 
 
     /**
+ * =====================================================
+ * SUBSTITUIÇÃO DIRETA NO CARRINHO
+ * =====================================================
+ *
+ * Exemplos:
+ *
+ * "troca o segundo por Chicken Burger"
+ * "substitui o terceiro por Double Cheese"
+ * "troca esse por Chicken Burger"
+ * "troca aquele por Double Cheese"
+ * "troca o último por Classic Burger"
+ */
+
+if (
+    entities.editAction &&
+    (
+        entities.productPosition !== null &&
+        entities.productPosition !== undefined
+        ||
+        contextualProduct
+        ||
+        entities.reference === 'last'
+    ) &&
+    productCandidate
+) {
+
+    const cart =
+        Array.isArray(context.cart)
+            ? context.cart
+            : [];
+
+
+    let itemIndex = -1;
+
+
+    /*
+     * 1. POSIÇÃO EXPLÍCITA
+     *
+     * Exemplos:
+     * "segundo"
+     * "terceiro"
+     * "último"
+     */
+    if (
+        entities.productPosition !== null &&
+        entities.productPosition !== undefined
+    ) {
+
+        if (
+            entities.productPosition === 'last'
+        ) {
+
+            itemIndex =
+                cart.length - 1;
+
+        } else {
+
+            itemIndex =
+                Number(
+                    entities.productPosition
+                ) - 1;
+        }
+    }
+
+
+    /*
+     * 2. REFERÊNCIA CONTEXTUAL
+     *
+     * Exemplos:
+     * "esse"
+     * "essa"
+     * "aquele"
+     * "aquele produto"
+     */
+    if (
+        itemIndex < 0 &&
+        contextualProduct
+    ) {
+
+        itemIndex =
+            getCartProductIndex(
+                cart,
+                contextualProduct.product_id
+            );
+    }
+
+
+    /*
+     * 3. REFERÊNCIA "LAST"
+     */
+    if (
+        itemIndex < 0 &&
+        entities.reference === 'last'
+    ) {
+
+        itemIndex =
+            cart.length - 1;
+    }
+
+
+    /*
+     * 4. VALIDAR ITEM DO CARRINHO
+     */
+    if (
+        itemIndex >= 0 &&
+        itemIndex < cart.length
+    ) {
+
+        const oldProduct =
+            cart[itemIndex];
+
+
+        /*
+         * 5. LOCALIZAR NOVO PRODUTO
+         *
+         * Sempre usando companyId
+         * para manter isolamento multiempresa.
+         */
+        const replacementProduct =
+            await resolveProductCandidate(
+                companyId,
+                productCandidate
+            );
+
+
+        if (
+            replacementProduct
+        ) {
+
+            /*
+             * 6. PRESERVAR A QUANTIDADE
+             * DO PRODUTO ANTIGO
+             */
+             /*
+ * Se o cliente informou uma nova quantidade,
+ * usamos essa quantidade.
+ *
+ * Caso contrário, preservamos a quantidade
+ * que já estava no carrinho.
+ */
+const quantity =
+    intelligenceQuantity &&
+    Number(intelligenceQuantity) > 0
+        ? Number(intelligenceQuantity)
+        : Number(
+            oldProduct.quantity || 1
+        );
+
+
+            /*
+             * 7. CRIAR NOVO ITEM
+             */
+            const replacement = {
+
+                product_id:
+                    replacementProduct.id,
+
+                product_name:
+                    replacementProduct.name,
+
+                unit_price:
+                    Number(
+                        replacementProduct.price || 0
+                    ),
+
+                quantity,
+
+                subtotal:
+                    Number(
+                        replacementProduct.price || 0
+                    ) * quantity
+            };
+
+
+            /*
+             * 8. SUBSTITUIR NO MESMO ÍNDICE
+             */
+            cart[itemIndex] =
+                replacement;
+
+
+            /*
+             * 9. RECALCULAR TOTAL
+             */
+            const total =
+                calculateCartTotal(
+                    cart
+                );
+
+
+            /*
+             * 10. ATUALIZAR CONTEXTO DO PRODUTO
+             */
+            const productContext =
+                createProductContext(
+                    replacementProduct
+                );
+
+
+            /*
+             * 11. GUARDAR NOVO ESTADO
+             */
+            await updateConversationState(
+                companyId,
+                conversationId,
+                'cart_menu',
+                {
+                    ...context,
+
+                    cart,
+
+                    total,
+
+                    editingCartIndex:
+                        null,
+
+                    editingCartProduct:
+                        null,
+
+                    editingCartMode:
+                        null,
+
+                    lastProduct:
+                        productContext,
+
+                    currentProduct:
+                        productContext,
+
+                    awaitingConfirmation:
+                        false
+                }
+            );
+
+
+            /*
+             * 12. RESPOSTA
+             */
+            return (
+                `✅ *${oldProduct.product_name}* foi substituído por ` +
+                `*${replacementProduct.name}* (${quantity} un.).\n\n`
+
+                `${formatCart(cart)}\n\n` +
+
+                `💵 Total: *${total} MT*\n\n` +
+
+                'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+            );
+        }
+    }
+}
+
+
+
+    /**
      * =====================================================
      * EDITANDO CARRINHO
      * =====================================================
@@ -4322,18 +5327,27 @@ if (
 
 
         await updateConversationState(
-            companyId,
-            conversationId,
+    companyId,
+    conversationId,
 
-            'editing_cart_item',
+    'editing_cart_item',
 
-            {
-                cart,
+    {
+        cart,
 
-                item_index:
-                    selectedNumber - 1
-            }
-        );
+        item_index:
+            selectedNumber - 1,
+
+        editingCartIndex:
+            selectedNumber - 1,
+
+        editingCartProduct:
+            item,
+
+        editingCartMode:
+            'quantity'
+    }
+);
 
 
         return (
@@ -4360,6 +5374,7 @@ if (
 
     if (
         state === 'editing_cart_item' &&
+        context.editingCartMode === 'replace' &&
         context.editingCartIndex !== null &&
         context.editingCartIndex !== undefined
     ) {
@@ -4389,13 +5404,16 @@ if (
                     ...context,
                     cart,
                     editingCartIndex: null,
-                    editingCartProduct: null
+                    editingCartProduct: null,
+                    editingCartMode: null,
+
+
                 }
             );
 
 
             return (
-                'ðŸ¤” NÃ£o consegui identificar o item que deseja substituir.'
+                '🤔 Não consegui identificar o item que deseja substituir.'
             );
         }
 
@@ -4814,8 +5832,9 @@ if (
          */
 
         if (
-            /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
-                .test(texto)
+    !entities.removeAction &&
+    /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
+        .test(texto)
         ) {
 
             const cart =
@@ -4911,7 +5930,9 @@ if (
      */
 
     if (
-        state === 'editing_cart_item'
+        state === 'editing_cart_item' &&
+        context.editingCartMode !== 'replace'
+
     ) {
 
         const cart =
@@ -4919,9 +5940,10 @@ if (
 
 
         const itemIndex =
-            Number(
-                context.item_index
-            );
+    context.editingCartIndex !== null &&
+    context.editingCartIndex !== undefined
+        ? Number(context.editingCartIndex)
+        : Number(context.item_index);
 
 
         if (
@@ -4935,7 +5957,10 @@ if (
                 'editing_cart',
 
                 {
-                    cart
+                    cart,
+                    editingCartIndex: null,
+                    editingCartProduct: null,
+                    editingCartMode: null
                 }
             );
 
@@ -5033,16 +6058,19 @@ if (
 
 
         await updateConversationState(
-            companyId,
-            conversationId,
+    companyId,
+    conversationId,
 
-            'cart_menu',
+    'cart_menu',
 
-            {
-                cart,
-                total
-            }
-        );
+    {
+        cart,
+        total,
+        editingCartIndex: null,
+        editingCartProduct: null,
+        editingCartMode: null
+    }
+);
 
 
         const itemStillExists =

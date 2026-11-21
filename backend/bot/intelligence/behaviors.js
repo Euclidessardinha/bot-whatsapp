@@ -1,10 +1,8 @@
-/**
- * =========================================================
- * COMPORTAMENTOS
- * =========================================================
- */
-
 const behaviors = {
+
+    // =========================================================
+    // COMPORTAMENTOS CONVERSACIONAIS
+    // =========================================================
 
     WELCOME_CUSTOMER: {
         clearState: true,
@@ -106,16 +104,126 @@ const behaviors = {
         clearState: false,
         showMenu: true,
         varyResponse: true
+    },
+
+
+    // =========================================================
+    // OPERAÇÕES DE PRODUTO / CARRINHO
+    // =========================================================
+
+    ADD_PRODUCT: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    REMOVE_PRODUCT: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    REPLACE_PRODUCT: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    CHANGE_QUANTITY: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    SELECT_PRODUCT: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    ASK_TOTAL: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    CONFIRM_ORDER: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    CANCEL_ORDER: {
+        clearState: true,
+        showMenu: true,
+        varyResponse: true
+    },
+
+    GO_BACK: {
+        clearState: false,
+        showMenu: true,
+        varyResponse: true
+    },
+
+    COMPOSITE_CART_ACTION: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+
+    // =========================================================
+    // OPERAÇÕES DE SERVIÇO
+    // =========================================================
+
+    SELECT_SERVICE: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    REQUEST_SERVICE: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    ASK_PRICE: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
+    },
+
+    HUMAN_SUPPORT: {
+        clearState: false,
+        showMenu: false,
+        varyResponse: true
     }
 };
 
 
-function getBehavior(
-    behaviorName
-) {
+// =========================================================
+// NORMALIZAÇÃO
+// =========================================================
+
+function normalizeBehaviorName(behaviorName) {
+    return String(behaviorName || '')
+        .trim()
+        .toUpperCase();
+}
+
+
+// =========================================================
+// RESOLUÇÃO
+// =========================================================
+
+function getBehavior(behaviorName) {
+
+    const key =
+        normalizeBehaviorName(behaviorName);
 
     return (
-        behaviors[behaviorName] ||
+        behaviors[key] ||
         behaviors.HANDLE_UNKNOWN
     );
 }
@@ -123,5 +231,6 @@ function getBehavior(
 
 module.exports = {
     behaviors,
-    getBehavior
+    getBehavior,
+    normalizeBehaviorName
 };

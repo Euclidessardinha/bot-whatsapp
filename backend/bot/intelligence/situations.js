@@ -1,10 +1,8 @@
-/**
- * =========================================================
- * SITUAÇÕES CONVERSACIONAIS
- * =========================================================
- */
-
 const situations = {
+
+    // =========================================================
+    // CONVERSAÇÃO
+    // =========================================================
 
     GREETING: {
         intent: 'greeting',
@@ -93,87 +91,139 @@ const situations = {
 };
 
 
-function getSituation(
-    intent,
-    state = 'idle'
-) {
+// =========================================================
+// MAPA DE INTENÇÕES
+// =========================================================
 
-    /**
-     * SIM durante um fluxo
-     */
+const intentMap = {
+    greeting: 'GREETING',
+    price: 'PRICE',
+    menu: 'MENU',
+    order: 'ORDER',
+    services: 'SERVICE',
+    service_request: 'SERVICE_REQUEST',
+    location: 'LOCATION',
+    hours: 'HOURS',
+    attendant: 'HUMAN',
+    help: 'HELP',
+    thanks: 'THANKS',
+    goodbye: 'GOODBYE',
+    cancel: 'CANCEL',
+    confirm: 'CONFIRM',
+    deny: 'DENY',
+    unknown: 'UNKNOWN'
+};
+
+
+// =========================================================
+// ESTADOS COM CONTEXTO ATIVO
+// =========================================================
+
+const ACTIVE_STATES = new Set([
+    'viewing_menu',
+    'product_menu',
+    'waiting_product',
+    'viewing_product',
+    'waiting_quantity',
+    'cart_menu',
+    'editing_cart',
+    'editing_cart_item',
+    'viewing_services',
+    'viewing_service',
+    'service_request',
+    'confirming_order'
+]);
+
+
+// =========================================================
+// RESOLUÇÃO DA SITUAÇÃO
+// =========================================================
+
+function getSituation(intent, state = 'idle') {
+
+    const normalizedIntent =
+        String(intent || 'unknown')
+            .trim()
+            .toLowerCase();
+
+    const normalizedState =
+        String(state || 'idle')
+            .trim()
+            .toLowerCase();
+
+
+    // ---------------------------------------------------------
+    // CONFIRMAÇÃO / NEGAÇÃO COM CONTEXTO
+    // ---------------------------------------------------------
+
     if (
-        intent === 'confirm' &&
-        state !== 'idle'
+        normalizedIntent === 'confirm' &&
+        normalizedState !== 'idle'
     ) {
-
         return {
             key: 'CONFIRM',
-            ...situations.CONFIRM
+            ...situations.CONFIRM,
+            state: normalizedState,
+            activeFlow: true
         };
     }
 
 
-    /**
-     * NÃO durante um fluxo
-     */
     if (
-        intent === 'deny' &&
-        state !== 'idle'
+        normalizedIntent === 'deny' &&
+        normalizedState !== 'idle'
     ) {
-
         return {
             key: 'DENY',
-            ...situations.DENY
+            ...situations.DENY,
+            state: normalizedState,
+            activeFlow: true
         };
     }
 
 
-    const map = {
-
-        greeting: 'GREETING',
-        price: 'PRICE',
-        menu: 'MENU',
-        order: 'ORDER',
-        services: 'SERVICE',
-        service_request: 'SERVICE_REQUEST',
-        location: 'LOCATION',
-        hours: 'HOURS',
-        attendant: 'HUMAN',
-        help: 'HELP',
-        thanks: 'THANKS',
-        goodbye: 'GOODBYE',
-        cancel: 'CANCEL',
-        unknown: 'UNKNOWN'
-    };
-
+    // ---------------------------------------------------------
+    // SITUAÇÃO NORMAL
+    // ---------------------------------------------------------
 
     const key =
-        map[intent] || 'UNKNOWN';
+        intentMap[normalizedIntent] ||
+        'UNKNOWN';
 
 
-    /**
-     * Saudação durante conversa existente
-     */
+    // ---------------------------------------------------------
+    // SAUDAÇÃO DURANTE UM FLUXO
+    // ---------------------------------------------------------
+
     if (
         key === 'GREETING' &&
-        state !== 'idle'
+        ACTIVE_STATES.has(normalizedState)
     ) {
-
         return {
             key: 'GREETING_WITH_CONTEXT',
-            ...situations.GREETING_WITH_CONTEXT
+            ...situations.GREETING_WITH_CONTEXT,
+            state: normalizedState,
+            activeFlow: true
         };
     }
 
+
+    // ---------------------------------------------------------
+    // RESULTADO
+    // ---------------------------------------------------------
 
     return {
         key,
-        ...situations[key]
+        ...(situations[key] || situations.UNKNOWN),
+        state: normalizedState,
+        activeFlow: ACTIVE_STATES.has(normalizedState)
     };
 }
 
 
 module.exports = {
     situations,
-    getSituation
+    getSituation,
+    intentMap,
+    ACTIVE_STATES
 };

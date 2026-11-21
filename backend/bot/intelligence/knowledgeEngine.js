@@ -473,13 +473,40 @@ function extractReference(text) {
     const normalized =
         normalizeForComparison(text);
 
+    if (!normalized) {
+        return null;
+    }
+
+    // =====================================================
+    // POSIÇÃO EXPLÍCITA
+    // =====================================================
+
+    const position =
+        extractProductPosition(normalized);
+
+    if (position !== null) {
+
+        return {
+            type: 'position',
+            value: position
+        };
+
+    }
+
+
+    // =====================================================
+    // REFERÊNCIA RELATIVA
+    // =====================================================
 
     if (
-        /\b(o mesmo|a mesma|esse mesmo|essa mesma|aquele mesmo|aquela mesma)\b/
+        /\b(esse mesmo|essa mesma|aquele mesmo|aquela mesma)\b/
             .test(normalized)
     ) {
 
-        return 'last';
+        return {
+            type: 'relative',
+            value: 'last'
+        };
 
     }
 
@@ -489,17 +516,23 @@ function extractReference(text) {
             .test(normalized)
     ) {
 
-        return 'last';
+        return {
+            type: 'relative',
+            value: 'last'
+        };
 
     }
 
 
     if (
-        /\bultimo\b/.test(normalized) ||
-        /\bultima\b/.test(normalized)
+        /\b(ultimo|ultima)\b/
+            .test(normalized)
     ) {
 
-        return 'last';
+        return {
+            type: 'relative',
+            value: 'last'
+        };
 
     }
 
@@ -518,6 +551,24 @@ function isAddAction(text) {
 
     const normalized =
         normalizeForComparison(text);
+
+
+    /**
+ * "quero remover..."
+ * "quero tirar..."
+ * "quero eliminar..."
+ *
+ * nunca é uma ação de adicionar.
+ */
+if (
+    /\b(quero|vou querer)\s+(remover|tirar|eliminar)\b/
+        .test(normalized)
+) {
+
+    return false;
+
+}    
+
 
     const phrases = [
 
@@ -814,6 +865,7 @@ function isBackAction(text) {
 }
 
 
+
 /**
  * =========================================================
  * LIMPA CANDIDATO
@@ -1000,6 +1052,16 @@ function cleanItemCandidate(text) {
             /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
             ''
         );
+
+    /**
+ * Remove artigos novamente após a limpeza
+ * dos prefixos de ação.
+ */
+value =
+    value.replace(
+        /^(o|a|os|as|um|uma|uns|umas)\s+/,
+        ''
+    );    
 
 
     /**
@@ -1769,7 +1831,8 @@ function detectBehavior({
     productCandidate,
     serviceCandidate,
     reference,
-    context
+    context,
+    hasCompoundCartAction
 }) {
 
     const normalized =
@@ -1785,6 +1848,21 @@ function detectBehavior({
     if (backAction) {
         return 'go_back';
     }
+
+
+    /**
+ * =====================================================
+ * AÇÃO COMPOSTA DE CARRINHO
+ * =====================================================
+ */
+
+if (
+    hasCompoundCartAction
+) {
+
+    return 'composite_cart_action';
+
+}
 
 
     /**
@@ -2184,137 +2262,184 @@ function detectBehavior({
  */
 
 function detectCompoundActions(text) {
+    const normalized = normalizeForComparison(text);
 
-    const normalized =
-        normalizeForComparison(text);
+    if (!normalized) {
+        return [];
+    }
 
     const actions = [];
 
+    // =========================================================
+    // TROCA DE PRODUTO
+    // Ex.: "troca a coca por fanta"
+    // =========================================================
 
-    /**
-     * -----------------------------------------------------
-     * SUBSTITUIÃ‡ÃƒO
-     * -----------------------------------------------------
-     */
+    if (isReplaceAction(normalized)) {
+        const replacement = extractReplacementCandidates(normalized);
 
-    if (
-        isReplaceAction(normalized)
-    ) {
-
-        const replacement =
-            extractReplacementCandidates(
-                normalized
-            );
-
-        return [
-            {
+        if (
+            replacement.targetProductCandidate ||
+            replacement.replacementCandidate
+        ) {
+            actions.push({
                 type: 'replace_product',
 
-                targetProductCandidate:
-                    replacement.targetProductCandidate,
+                target: {
+                    type:
+                        extractProductPosition(
+                            replacement.targetProductCandidate
+                        ) !== null
+                            ? 'position'
+                            : 'candidate',
+
+                    value: replacement.targetProductCandidate
+                },
 
                 replacementCandidate:
                     replacement.replacementCandidate,
 
-                quantity:
-                    extractQuantity(
-                        normalized
-                    )
-            }
-        ];
-
-    }
-
-
-    /**
-     * -----------------------------------------------------
-     * REMOÃ‡ÃƒO
-     * -----------------------------------------------------
-     */
-
-    const removeMatch =
-        normalized.match(
-            /\b(remove|remover|retira|retirar|tira|tirar|elimina|eliminar)\s+(.+?)(?=\s+e\s+|\s+mas\s+|\s*,\s*|$)/i
-        );
-
-
-    if (removeMatch) {
-
-        const candidate =
-            cleanItemCandidate(
-                removeMatch[2]
-            );
-
-
-        actions.push({
-            type: 'remove_product',
-
-            candidate:
-                candidate || null
-        });
-
-    }
-
-
-    /**
-     * -----------------------------------------------------
-     * ADIÃ‡ÃƒO
-     * -----------------------------------------------------
-     */
-
-    const addMatch =
-        normalized.match(
-            /\b(adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|manda|mandar|quero|vou querer)\s+(.+)$/i
-        );
-
-
-    if (addMatch) {
-
-        let candidateText =
-            addMatch[2];
-
-
-        /**
-         * Se houver uma parte anterior Ã  adiÃ§Ã£o,
-         * tenta retirar conectores.
-         */
-        candidateText =
-            candidateText
-                .replace(
-                    /^(tambem|tambÃ©m)\s+/,
-                    ''
-                )
-                .trim();
-
-
-        const candidate =
-            cleanItemCandidate(
-                candidateText
-            );
-
-
-        if (candidate) {
-
-            actions.push({
-                type: 'add_product',
-
-                candidate,
-
-                quantity:
-                    extractQuantity(
-                        candidateText
-                    )
+                quantity: extractQuantity(normalized)
             });
-
         }
 
+        return actions;
     }
 
+    // =========================================================
+    // SEPARAÇÃO DE AÇÕES COMPOSTAS
+    // Ex.:
+    // "remove a coca e adiciona uma fanta"
+    // =========================================================
+
+    const parts = normalized
+        .split(/\s+(?:e|tambem|também|mas)\s+/i)
+        .map(part => part.trim())
+        .filter(Boolean);
+
+    const segments =
+        parts.length > 1
+            ? parts
+            : [normalized];
+
+    // =========================================================
+    // ANALISA CADA PARTE
+    // =========================================================
+
+    for (const segment of segments) {
+        if (!segment) {
+            continue;
+        }
+
+        // =====================================================
+        // REMOVER PRODUTO
+        // =====================================================
+
+        if (isRemoveAction(segment)) {
+            const position =
+                extractProductPosition(segment);
+
+            const reference =
+                extractReference(segment);
+
+            let candidate = null;
+
+            if (
+                position === null &&
+                !reference
+            ) {
+                candidate =
+                    cleanItemCandidate(segment);
+            }
+
+            actions.push({
+                type: 'remove_product',
+
+                target:
+                    position !== null
+                        ? {
+                              type: 'position',
+                              value: position
+                          }
+                        : reference
+                            ? reference
+                            : {
+                                  type: 'candidate',
+                                  value: candidate
+                              },
+
+                candidate
+            });
+
+            continue;
+        }
+
+        // =====================================================
+        // ALTERAR QUANTIDADE
+        // =====================================================
+
+        const quantity =
+            extractQuantity(segment);
+
+        if (
+            isQuantityEditAction(
+                segment,
+                'editing_cart',
+                quantity
+            )
+        ) {
+            const reference =
+                extractReference(segment);
+
+            const position =
+                extractProductPosition(segment);
+
+            actions.push({
+                type: 'change_quantity',
+
+                quantity,
+
+                target:
+                    position !== null
+                        ? {
+                              type: 'position',
+                              value: position
+                          }
+                        : reference
+                            ? reference
+                            : {
+                                  type: 'current'
+                              }
+            });
+
+            continue;
+        }
+
+        // =====================================================
+        // ADICIONAR PRODUTO
+        // =====================================================
+
+        if (isAddAction(segment)) {
+            const candidate =
+                cleanItemCandidate(segment);
+
+            if (candidate) {
+                actions.push({
+                    type: 'add_product',
+
+                    candidate,
+
+                    quantity:
+                        extractQuantity(segment)
+                });
+            }
+
+            continue;
+        }
+    }
 
     return actions;
 }
-
-
 /**
  * =========================================================
  * EXTRAI PRODUTO ANTIGO E PRODUTO DE SUBSTITUIÃ‡ÃƒO
@@ -2689,7 +2814,25 @@ function analyzeMessage({
             normalizedMessage
         );
 
+    const hasCompoundCartAction =
+    compoundActions.length > 1;
 
+
+    console.log(
+    '🔎 COMPOUND DEBUG:',
+    JSON.stringify(
+        compoundActions,
+        null,
+        2
+    )
+);
+
+console.log(
+    '🔎 hasCompoundCartAction:',
+    hasCompoundCartAction
+);
+
+        
     /**
      * =====================================================
      * COMPORTAMENTO INTERPRETADO
@@ -2697,34 +2840,36 @@ function analyzeMessage({
      */
 
     const behavior =
-        detectBehavior({
+    detectBehavior({
 
-            text:
-                normalizedMessage,
+        text:
+            normalizedMessage,
 
-            state,
+        state,
 
-            intent:
-                resolved.intent,
+        intent:
+            resolved.intent,
 
-            quantity,
+        quantity,
 
-            addAction,
+        addAction,
 
-            removeAction,
+        removeAction,
 
-            editAction,
+        editAction,
 
-            backAction,
+        backAction,
 
-            productCandidate,
+        productCandidate,
 
-            serviceCandidate,
+        serviceCandidate,
 
-            reference,
+        reference,
 
-            context
-        });
+        context,
+
+        hasCompoundCartAction
+    });
 
 
     /**
