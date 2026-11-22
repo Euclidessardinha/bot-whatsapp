@@ -12,7 +12,8 @@ const {
 } = require('../services/conversationStateService');
 
 const {
-    getProductByName
+    getProductByName,
+    getProductCandidates
 } = require('../services/productService');
 
 const {
@@ -1919,12 +1920,12 @@ if (
 
     const welcomeMessage =
         company.welcome_message ||
-        `ðŸ‘‹ OlÃ¡! Bem-vindo Ã  ${company.name}!`;
+        `👋 Olá! Bem-vindo à ${company.name}!`;
 
 
     return (
         `${welcomeMessage}\n\n` +
-        'Como posso ajudar? ðŸ˜Š'
+        'Como posso ajudar?'
     );
 }
 
@@ -1946,7 +1947,7 @@ if (
 
 
         return (
-            'âŒ A operaÃ§Ã£o atual foi cancelada.\n\n' +
+            'âŒ A operação atual foi cancelada.\n\n' +
             getMainMenu(
                 company,
                 settings
@@ -2050,43 +2051,111 @@ if (
 
 
     /**
-     * =====================================================
-     * CONSULTA DE DISPONIBILIDADE
-     * =====================================================
-     */
+     /**
+ * =====================================================
+ * CONSULTA DE DISPONIBILIDADE
+ * =====================================================
+ */
 
-    if (
-        productCandidate &&
-        (
-            /^(tem|tens)\s+/i.test(texto) ||
-            /voces tem/i.test(texto) ||
-            /voce tem/i.test(texto)
-        )
-    ) {
+if (
+    productCandidate &&
+    (
+        /^(tem|tens)\s+/i.test(texto) ||
+        /voces tem/i.test(texto) ||
+        /voce tem/i.test(texto)
+    )
+) {
 
         const product =
-            await resolveProductCandidate(
-                companyId,
-                productCandidate
-            );
+        await resolveProductCandidate(
+            companyId,
+            productCandidate
+        );
 
 
-        if (!product) {
+    if (product) {
+
+        return (
+            `✅ Sim, temos *${product.name}*.\n\n` +
+            `💰 Preço: *${product.price} MT*\n\n` +
+            'Deseja adicionar ao pedido?'
+        );
+
+    }
+
+
+    const candidates =
+        await getProductCandidates(
+            companyId,
+            productCandidate,
+            {
+                minScore: 60,
+                limit: 5
+            }
+        );
+
+
+    if (
+        !candidates ||
+        candidates.length === 0
+    ) {
+
+        return (
+            `❌ Não temos *${productCandidate}* disponível no menu.`
+        );
+
+    }
+
+
+    if (
+        candidates.length === 1
+    ) {
+
+        const candidate =
+            candidates[0]?.product;
+
+        if (!candidate) {
 
             return (
-                `âŒ NÃ£o temos *${productCandidate}* disponÃ­vel no menu.`
+                `❌ Não foi possível identificar o produto *${productCandidate}*.`
             );
 
         }
 
-
         return (
-            `âœ… Sim, temos *${product.name}*.\n\n` +
-            `ðŸ’° PreÃ§o: *${product.price} MT*\n\n` +
-            'Deseja adicionar ao pedido?'
+            `🤔 Talvez esteja a procurar *${candidate.name}*.\n\n` +
+            `💰 Preço: *${candidate.price} MT*\n\n` +
+            'É esse produto que deseja?'
         );
+
     }
 
+
+    const options =
+        candidates
+            .filter(candidate => candidate?.product)
+            .map(
+                (candidate, index) => {
+
+                    const product =
+                        candidate.product;
+
+                    return (
+                        `${index + 1}️⃣ *${product.name}* — ${product.price} MT`
+                    );
+                }
+            )
+            .join('\n');
+
+
+    return (
+        `🤔 Não encontrei exatamente *${productCandidate}*.\n\n` +
+        `Talvez esteja a procurar um destes produtos:\n\n` +
+        `${options}\n\n` +
+        `Digite o número do produto que deseja.`
+    );
+
+}
 
     /**
      * =====================================================
@@ -4708,7 +4777,6 @@ if (
 
         if (
             texto === '1' ||
-            intent === 'confirm' ||
             texto === 'adicionar' ||
             texto === 'outro'
         ) {
@@ -4733,10 +4801,19 @@ if (
 
 
         if (
-            texto === '2' ||
-            texto === 'finalizar' ||
-            texto === 'terminar'
-        ) {
+    texto === '2' ||
+    texto === 'finalizar' ||
+    texto === 'terminar' ||
+    texto === 'pode confirmar' ||
+    texto === 'podes confirmar' ||
+    texto === 'pode finalizar' ||
+    texto === 'podes finalizar' ||
+    texto === 'quero finalizar' ||
+    texto === 'quero confirmar' ||
+    texto === 'pode fazer o pedido' ||
+    texto === 'pode mandar' ||
+    texto === 'pode fechar'
+) {
 
             if (
                 cart.length === 0
@@ -5238,7 +5315,7 @@ const quantity =
              */
             return (
                 `✅ *${oldProduct.product_name}* foi substituído por ` +
-                `*${replacementProduct.name}* (${quantity} un.).\n\n`
+                `*${replacementProduct.name}* (${quantity} un.).\n\n`+
 
                 `${formatCart(cart)}\n\n` +
 
@@ -6764,7 +6841,8 @@ const quantity =
  */
 
 module.exports = {
-    processMessage
+    processMessage,
+    getCompany
 };
 
 

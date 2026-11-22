@@ -5,14 +5,27 @@ const {
 } = require('./bot/botEngine');
 
 const {
+    getCompany
+} = require('./bot/botEngine');
+
+const {
     getConversationState,
     clearConversationState
+} = require('./services/conversationStateService');
+
+const {
+    getOrCreateConversation
 } = require('./services/conversationService');
+
+const {
+    getOrCreateCustomer
+} = require('./services/customerService');
 
 const {
     getBotSettings
 } = require('./services/botSettingsService');
 
+const crypto = require('crypto');
 
 
 async function main() {
@@ -41,9 +54,41 @@ async function main() {
         );
     }
 
-    const conversationId =
-        `natural-test-${Date.now()}`;
+    const customerPhone =
+    process.env.TEST_CUSTOMER_PHONE;
 
+if (!customerPhone) {
+    throw new Error(
+        '❌ Defina TEST_CUSTOMER_PHONE no ambiente.'
+    );
+}
+
+const customer =
+    await getOrCreateCustomer(
+        companyId,
+        customerPhone
+    );
+
+if (!customer) {
+    throw new Error(
+        '❌ Não foi possível obter/criar o cliente.'
+    );
+}
+
+const conversation =
+    await getOrCreateConversation(
+        companyId,
+        customer.id
+    );
+
+if (!conversation) {
+    throw new Error(
+        '❌ Não foi possível obter/criar a conversa.'
+    );
+}
+
+const conversationId =
+    conversation.id;
     console.log('\n========================================');
     console.log('🧠 TESTE DE CONVERSA NATURAL');
     console.log('========================================\n');
@@ -58,7 +103,7 @@ async function main() {
      */
 
     const company =
-        await getCompanyById(companyId);
+        await getCompany(companyId);
 
     if (!company) {
         throw new Error(
@@ -130,7 +175,10 @@ async function main() {
         'O que tenho no meu pedido?',
 
         // 9. Confirmação
-        'Pode confirmar'
+        'Pode confirmar',
+
+        // 10. Confirmação efetiva do pedido
+        '1'
     ];
 
     for (
