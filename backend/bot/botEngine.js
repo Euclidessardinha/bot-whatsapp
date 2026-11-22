@@ -1544,6 +1544,148 @@ function getCartProductIndex(
 }
 
 
+async function processAddProductActions(
+    actions,
+    companyId,
+    conversationId,
+    context
+) {
+    if (
+        !Array.isArray(actions) ||
+        actions.length === 0 ||
+        !companyId
+    ) {
+        return null;
+    }
+
+    const addActions = actions.filter(
+        action =>
+            action &&
+            action.type === 'add_product' &&
+            action.candidate
+    );
+
+    if (!addActions.length) {
+        return null;
+    }
+
+    let cart = Array.isArray(context?.cart)
+        ? context.cart
+        : [];
+
+    const resolvedProducts = [];
+
+    // Primeiro resolve TODOS os produtos.
+    // Só depois altera o carrinho.
+    for (const action of addActions) {
+        const product =
+            await resolveProductCandidate(
+                companyId,
+                action.candidate
+            );
+
+        if (!product) {
+            console.warn(
+                '⚠️ Ação add_product não pôde ser resolvida:',
+                {
+                    companyId,
+                    candidate: action.candidate
+                }
+            );
+
+            return {
+                handled: true,
+                response: null
+            };
+        }
+
+        const productContext =
+            createProductContext(product);
+
+        if (!productContext?.product_id) {
+            console.warn(
+                '⚠️ Produto resolvido sem product_id:',
+                product
+            );
+
+            return {
+                handled: true,
+                response: null
+            };
+        }
+
+        const actionQuantity =
+            Number(action.quantity);
+
+        const quantity =
+            Number.isFinite(actionQuantity) &&
+            actionQuantity > 0
+                ? actionQuantity
+                : 1;
+
+        resolvedProducts.push({
+            productContext,
+            quantity
+        });
+    }
+
+    // Agora adiciona todos os produtos ao carrinho.
+    for (const item of resolvedProducts) {
+        cart = addProductToCart(
+            cart,
+            item.productContext,
+            item.quantity
+        );
+    }
+
+    const lastAdded =
+        resolvedProducts[
+            resolvedProducts.length - 1
+        ].productContext;
+
+    const newContext =
+        rememberProduct(
+            {
+                ...context,
+                cart,
+                awaitingConfirmation: false
+            },
+            lastAdded
+        );
+
+    const total = calculateCartTotal(cart);
+
+    await updateConversationState(
+        companyId,
+        conversationId,
+        'cart_menu',
+        {
+            ...newContext,
+            total
+        }
+    );
+
+    const addedSummary =
+        resolvedProducts
+            .map(
+                item =>
+                    `• ${item.quantity}x ${item.productContext.product_name}`
+            )
+            .join('\n');
+
+    return {
+        handled: true,
+        response:
+            `✅ Adicionei ao pedido:\n\n` +
+            `${addedSummary}\n\n` +
+            `${formatCart(cart)}\n\n` +
+            `💵 *Total: ${total} MT*\n\n` +
+            'Deseja adicionar mais alguma coisa ou finalizar o pedido?'
+    };
+}
+
+
+
 /**
  * =========================================================
  * PROCESSAMENTO PRINCIPAL
@@ -1750,6 +1892,28 @@ async function processMessage(
     parseCompositeCartAction(
         rawMessage
     );    
+
+
+    const intelligenceActions =
+    Array.isArray(intelligence.actions)
+        ? intelligence.actions
+        : [];
+
+const hasAddProductActions =
+    intelligenceActions.some(
+        action =>
+            action?.type === 'add_product' &&
+            action?.candidate
+    );
+
+console.log(
+    '🧠 INTELLIGENCE ACTIONS:',
+    JSON.stringify(
+        intelligenceActions,
+        null,
+        2
+    )
+);
 
 
     console.log(
@@ -2011,6 +2175,68 @@ if (
         context = {};
     }
 
+    
+    /**
+ * =====================================================
+ * PROCESSAMENTO DE MÚLTIPLAS AÇÕES DE PRODUTO
+ * =====================================================
+ *
+ * Exemplo:
+ *
+ * "Quero chicken e batata"
+ *
+ * intelligence.actions:
+ * [
+ *   {
+ *     type: 'add_product',
+ *     candidate: 'chicken',
+ *     quantity: null
+ *   },
+ *   {
+ *     type: 'add_product',
+ *     candidate: 'batata',
+ *     quantity: null
+ *   }
+ * ]
+ *
+ * Cada produto é resolvido separadamente usando
+ * companyId para preservar o isolamento multiempresa.
+ */
+
+if (
+    hasAddProductActions &&
+    businessType !== 'services' &&
+    settings.orders_enabled
+) {
+
+    const addProductResult =
+        await processAddProductActions(
+            intelligenceActions,
+            companyId,
+            conversationId,
+            context
+        );
+
+    if (
+        addProductResult?.handled
+    ) {
+
+        /**
+         * Se alguma ação não puder ser resolvida,
+         * permanecemos em silêncio.
+         */
+        if (
+            !addProductResult.response
+        ) {
+            return null;
+        }
+
+        return addProductResult.response;
+    }
+}
+
+
+
 
     /**
      * =====================================================
@@ -2149,11 +2375,10 @@ if (
 
 
     return (
-        `🤔 Não encontrei exatamente *${productCandidate}*.\n\n` +
-        `Talvez esteja a procurar um destes produtos:\n\n` +
-        `${options}\n\n` +
-        `Digite o número do produto que deseja.`
-    );
+    `✅ Sim, temos opções de *${productCandidate}* no nosso menu:\n\n` +
+    `${options}\n\n` +
+    `Qual deseja?`
+);
 
 }
 

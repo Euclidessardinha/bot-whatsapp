@@ -16,39 +16,65 @@ const {
  * KNOWLEDGE ENGINE
  * =========================================================
  *
- * Centro de InteligÃªncia Conversacional.
+ * Centro de Inteligência Conversacional.
  *
  * Responsabilidades:
  *
  * 1. Normalizar a mensagem
- * 2. Detectar intenÃ§Ã£o inicial
+ * 2. Detectar intenção inicial
  * 3. Interpretar a mensagem dentro do contexto
  * 4. Extrair entidades
- * 5. Identificar aÃ§Ãµes
- * 6. Identificar alvo da aÃ§Ã£o
+ * 5. Identificar ações
+ * 6. Identificar alvo da ação
  * 7. Identificar comportamento esperado
- * 8. Determinar situaÃ§Ã£o conversacional
+ * 8. Determinar situação conversacional
  *
  * IMPORTANTE:
  *
- * O intentService fornece uma intenÃ§Ã£o inicial.
- * Essa intenÃ§Ã£o Ã© uma evidÃªncia, nÃ£o uma verdade absoluta.
+ * O intentService fornece uma intenção inicial.
+ * Essa intenção é uma evidência, não uma verdade absoluta.
  *
  * O contexto da conversa pode determinar o comportamento
  * real que o cliente pretende executar.
  *
- * O Knowledge Engine NÃƒO resolve produtos ou serviÃ§os
+ * O Knowledge Engine NÃO resolve produtos ou serviços
  * diretamente no banco.
  *
- * Ele produz candidatos linguÃ­sticos.
+ * Ele produz candidatos linguísticos.
  *
- * A resoluÃ§Ã£o concreta continua sendo responsabilidade de:
+ * A resolução concreta continua sendo responsabilidade de:
  *
  * productService
  * serviceService
  * botEngine
  *
  * Isso preserva o isolamento multi-tenant.
+ *
+ * NOVA CAPACIDADE:
+ *
+ * Mensagens compostas de produtos podem gerar múltiplas
+ * ações de add_product.
+ *
+ * Exemplo:
+ *
+ * "Quero chicken e batata"
+ *
+ * =>
+ *
+ * [
+ *   {
+ *      type: 'add_product',
+ *      candidate: 'chicken',
+ *      quantity: null
+ *   },
+ *   {
+ *      type: 'add_product',
+ *      candidate: 'batata',
+ *      quantity: null
+ *   }
+ * ]
+ *
+ * Nenhum produto é hardcoded aqui.
  * =========================================================
  */
 
@@ -115,7 +141,7 @@ const NEGATIVE_WORDS = [
 
 /**
  * =========================================================
- * REFERÃŠNCIAS / SELEÃ‡Ã•ES
+ * REFERÊNCIAS / SELEÇÕES
  * =========================================================
  */
 
@@ -183,7 +209,7 @@ const REFERENCE_STATES = [
 
 /**
  * =========================================================
- * ESTADOS DE SELEÃ‡ÃƒO DE PRODUTO
+ * ESTADOS DE SELEÇÃO DE PRODUTO
  * =========================================================
  */
 
@@ -202,7 +228,7 @@ const PRODUCT_SELECTION_STATES = [
 
 /**
  * =========================================================
- * ESTADOS DE SELEÃ‡ÃƒO DE SERVIÃ‡O
+ * ESTADOS DE SELEÇÃO DE SERVIÇO
  * =========================================================
  */
 
@@ -216,7 +242,7 @@ const SERVICE_SELECTION_STATES = [
 
 /**
  * =========================================================
- * NORMALIZAÃ‡ÃƒO
+ * NORMALIZAÇÃO
  * =========================================================
  */
 
@@ -231,7 +257,7 @@ function normalizeForComparison(text) {
 
 /**
  * =========================================================
- * AFIRMAÃ‡ÃƒO
+ * AFIRMAÇÃO
  * =========================================================
  */
 
@@ -249,7 +275,7 @@ function isAffirmative(text) {
 
 /**
  * =========================================================
- * NEGAÃ‡ÃƒO
+ * NEGAÇÃO
  * =========================================================
  */
 
@@ -267,7 +293,7 @@ function isNegative(text) {
 
 /**
  * =========================================================
- * REFERÃŠNCIA / SELEÃ‡ÃƒO
+ * REFERÊNCIA / SELEÇÃO
  * =========================================================
  */
 
@@ -285,17 +311,21 @@ function isReferenceConfirmation(text) {
 
 /**
  * =========================================================
- * NÃšMEROS POR EXTENSO
+ * NÚMEROS POR EXTENSO
  * =========================================================
  */
 
 const NUMBER_WORDS = {
+
     zero: 0,
     um: 1,
     uma: 1,
+
     dois: 2,
     duas: 2,
+
     tres: 3,
+
     quatro: 4,
     cinco: 5,
     seis: 6,
@@ -303,6 +333,7 @@ const NUMBER_WORDS = {
     oito: 8,
     nove: 9,
     dez: 10
+
 };
 
 
@@ -323,8 +354,9 @@ function extractQuantity(text) {
 
 
     /**
-     * Mensagem composta apenas por nÃºmero.
+     * Mensagem composta apenas por número.
      */
+
     const numericOnly =
         normalized.match(/^\d+$/);
 
@@ -338,8 +370,9 @@ function extractQuantity(text) {
 
 
     /**
-     * NÃºmero em algarismos.
+     * Número em algarismos.
      */
+
     const digitMatch =
         normalized.match(
             /\b(\d+)\b/
@@ -355,8 +388,9 @@ function extractQuantity(text) {
 
 
     /**
-     * NÃºmero por extenso.
+     * Número por extenso.
      */
+
     for (
         const [word, value]
         of Object.entries(NUMBER_WORDS)
@@ -384,7 +418,7 @@ function extractQuantity(text) {
 
 /**
  * =========================================================
- * POSIÃ‡ÃƒO DO PRODUTO
+ * POSIÇÃO DO PRODUTO
  * =========================================================
  */
 
@@ -464,7 +498,7 @@ function extractProductPosition(text) {
 
 /**
  * =========================================================
- * REFERÃŠNCIA CONTEXTUAL
+ * REFERÊNCIA CONTEXTUAL
  * =========================================================
  */
 
@@ -477,9 +511,10 @@ function extractReference(text) {
         return null;
     }
 
-    // =====================================================
-    // POSIÇÃO EXPLÍCITA
-    // =====================================================
+
+    /**
+     * Posição explícita.
+     */
 
     const position =
         extractProductPosition(normalized);
@@ -487,16 +522,19 @@ function extractReference(text) {
     if (position !== null) {
 
         return {
+
             type: 'position',
+
             value: position
+
         };
 
     }
 
 
-    // =====================================================
-    // REFERÊNCIA RELATIVA
-    // =====================================================
+    /**
+     * Referência relativa.
+     */
 
     if (
         /\b(esse mesmo|essa mesma|aquele mesmo|aquela mesma)\b/
@@ -504,8 +542,11 @@ function extractReference(text) {
     ) {
 
         return {
+
             type: 'relative',
+
             value: 'last'
+
         };
 
     }
@@ -517,8 +558,11 @@ function extractReference(text) {
     ) {
 
         return {
+
             type: 'relative',
+
             value: 'last'
+
         };
 
     }
@@ -530,8 +574,11 @@ function extractReference(text) {
     ) {
 
         return {
+
             type: 'relative',
+
             value: 'last'
+
         };
 
     }
@@ -543,7 +590,7 @@ function extractReference(text) {
 
 /**
  * =========================================================
- * AÃ‡ÃƒO DE ADICIONAR
+ * AÇÃO DE ADICIONAR
  * =========================================================
  */
 
@@ -554,20 +601,21 @@ function isAddAction(text) {
 
 
     /**
- * "quero remover..."
- * "quero tirar..."
- * "quero eliminar..."
- *
- * nunca é uma ação de adicionar.
- */
-if (
-    /\b(quero|vou querer)\s+(remover|tirar|eliminar)\b/
-        .test(normalized)
-) {
+     * "quero remover..."
+     * "quero tirar..."
+     * "quero eliminar..."
+     *
+     * Nunca é ação de adicionar.
+     */
 
-    return false;
+    if (
+        /\b(quero|vou querer)\s+(remover|tirar|eliminar)\b/
+            .test(normalized)
+    ) {
 
-}    
+        return false;
+
+    }
 
 
     const phrases = [
@@ -594,11 +642,12 @@ if (
 
         'quero pedir',
 
-        'peÃ§o',
+        'peço',
         'peco',
 
         'pede',
         'pedir'
+
     ];
 
 
@@ -615,7 +664,7 @@ if (
 
 /**
  * =========================================================
- * AÃ‡ÃƒO DE REMOVER
+ * AÇÃO DE REMOVER
  * =========================================================
  */
 
@@ -654,6 +703,7 @@ function isRemoveAction(text) {
 
         'tira esse',
         'tira essa'
+
     ];
 
 
@@ -670,7 +720,7 @@ function isRemoveAction(text) {
 
 /**
  * =========================================================
- * AÃ‡ÃƒO DE ALTERAR
+ * AÇÃO DE ALTERAR
  * =========================================================
  */
 
@@ -695,6 +745,7 @@ function isEditAction(text) {
 
         'substitui',
         'substituir'
+
     ];
 
 
@@ -711,7 +762,7 @@ function isEditAction(text) {
 
 /**
  * =========================================================
- * AÃ‡ÃƒO DE ALTERAR QUANTIDADE
+ * AÇÃO DE ALTERAR QUANTIDADE
  * =========================================================
  */
 
@@ -724,46 +775,55 @@ function isQuantityEditAction(
     const normalized =
         normalizeForComparison(text);
 
-    if (quantity === null) {
+    if (
+        quantity === null
+    ) {
+
         return false;
+
     }
 
+
     /**
-     * Se o fluxo jÃ¡ estÃ¡ perguntando a quantidade,
-     * qualquer quantidade vÃ¡lida pode ser a resposta.
-     *
-     * Ex:
-     * Bot: Quantas unidades?
-     * Cliente: 3
+     * Se o fluxo já está perguntando a quantidade,
+     * qualquer quantidade válida pode ser a resposta.
      */
+
     if (
         state === 'editing_cart_item' ||
         state === 'waiting_quantity'
     ) {
 
         return true;
+
     }
 
-    /**
-     * AlteraÃ§Ã£o explÃ­cita.
-     */
-   if (
-    /\b(muda|mudar|altera|alterar|modifica|modificar|troca|trocar)\b/
-        .test(normalized)
-) {
 
-    return true;
-}
+    /**
+     * Alteração explícita.
+     */
+
+    if (
+        /\b(muda|mudar|altera|alterar|modifica|modificar|troca|trocar)\b/
+            .test(normalized)
+    ) {
+
+        return true;
+
+    }
+
 
     /**
      * Aumentar / diminuir.
      */
+
     if (
         /\b(aumenta|aumentar|reduz|reduzir|diminui|diminuir)\b/
             .test(normalized)
     ) {
 
         return true;
+
     }
 
 
@@ -775,22 +835,21 @@ function isQuantityEditAction(
      * "fica em 3"
      * "fica 3"
      */
-    if (
-    /\b(fica|passa|muda|altera|modifica)\b/.test(normalized) &&
-    /\b(para|em|com|a)?\s*\d+\b/.test(normalized)
-) {
 
-    return true;
-}
+    if (
+        /\b(fica|passa|muda|altera|modifica)\b/.test(normalized) &&
+        /\b(para|em|com|a)?\s*\d+\b/.test(normalized)
+    ) {
+
+        return true;
+
+    }
+
 
     /**
-     * NÃºmero + contexto de alteraÃ§Ã£o.
-     *
-     * "quero ficar com 3"
-     * "quero 3 unidades"
-     *
-     * SÃ³ vale em estados de ediÃ§Ã£o.
+     * Número + contexto de alteração.
      */
+
     if (
         (
             state === 'editing_cart' ||
@@ -803,13 +862,17 @@ function isQuantityEditAction(
     ) {
 
         return true;
+
     }
+
 
     return false;
 }
+
+
 /**
  * =========================================================
- * DETECTA SUBSTITUIÃ‡ÃƒO
+ * DETECTA SUBSTITUIÇÃO
  * =========================================================
  */
 
@@ -855,6 +918,7 @@ function isBackAction(text) {
 
         'cancelar',
         'sair'
+
     ];
 
 
@@ -863,7 +927,6 @@ function isBackAction(text) {
     );
 
 }
-
 
 
 /**
@@ -918,7 +981,7 @@ function cleanItemCandidate(text) {
 
         'quero pedir',
 
-        'peÃ§o',
+        'peço',
         'peco',
 
         'pedir',
@@ -976,7 +1039,6 @@ function cleanItemCandidate(text) {
         'gostaria do',
         'gostaria da',
 
-        'preciso de',
         'preciso do',
         'preciso da',
 
@@ -985,8 +1047,6 @@ function cleanItemCandidate(text) {
         'quero servico',
 
         'solicito',
-        'solicita',
-
         'pedido de',
         'pedido para',
 
@@ -995,12 +1055,14 @@ function cleanItemCandidate(text) {
 
         'servico de',
         'servico para'
+
     ];
 
 
     /**
-     * Remove o prefixo mais especÃ­fico primeiro.
+     * Remove primeiro os prefixos mais específicos.
      */
+
     prefixes.sort(
         (a, b) =>
             b.length - a.length
@@ -1009,8 +1071,11 @@ function cleanItemCandidate(text) {
 
     let prefixRemoved = true;
 
+
     while (prefixRemoved) {
+
         prefixRemoved = false;
+
 
         for (
             const prefix
@@ -1020,7 +1085,9 @@ function cleanItemCandidate(text) {
             if (
                 value === prefix
             ) {
+
                 return '';
+
             }
 
 
@@ -1036,37 +1103,42 @@ function cleanItemCandidate(text) {
                         .trim();
 
                 prefixRemoved = true;
+
                 break;
 
             }
 
         }
+
     }
 
 
     /**
      * Remove quantidade inicial.
      */
+
     value =
         value.replace(
             /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
             ''
         );
 
-    /**
- * Remove artigos novamente após a limpeza
- * dos prefixos de ação.
- */
-value =
-    value.replace(
-        /^(o|a|os|as|um|uma|uns|umas)\s+/,
-        ''
-    );    
-
 
     /**
-     * Remove artigos.
+     * Remove artigos após limpeza dos prefixos.
      */
+
+    value =
+        value.replace(
+            /^(o|a|os|as|um|uma|uns|umas)\s+/,
+            ''
+        );
+
+
+    /**
+     * Remove artigos novamente.
+     */
+
     value =
         value.replace(
             /^(o|a|os|as)\s+/,
@@ -1075,8 +1147,9 @@ value =
 
 
     /**
-     * Remove referÃªncias no final.
+     * Remove referências no final.
      */
+
     value =
         value
             .replace(/\s+esse mesmo$/i, '')
@@ -1131,7 +1204,7 @@ function extractItemCandidate(text) {
 
         /^quero pedir\s+/,
 
-        /^peÃ§o\s+/,
+        /^peço\s+/,
         /^peco\s+/,
         /^pedir\s+/,
 
@@ -1182,7 +1255,11 @@ function extractItemCandidate(text) {
         /^solicita\s+/,
         /^solicitar\s+/,
 
-        /^preciso de\s+/
+        /^preciso de\s+/,
+        /^gostaria de\s+/,
+        /^gostaria do\s+/,
+        /^gostaria da\s+/
+
     ];
 
 
@@ -1194,7 +1271,9 @@ function extractItemCandidate(text) {
 
 
     if (!hasAction) {
+
         return null;
+
     }
 
 
@@ -1204,9 +1283,6 @@ function extractItemCandidate(text) {
         );
 
 
-    /**
-     * Limpeza adicional de perguntas.
-     */
     candidate =
         candidate
             .replace(
@@ -1261,8 +1337,7 @@ function extractItemCandidate(text) {
                 /^preciso de\s+/i,
                 ''
             )
-
-                        .replace(
+            .replace(
                 /^gostaria de\s+/i,
                 ''
             )
@@ -1327,16 +1402,6 @@ function extractItemCandidate(text) {
  * =========================================================
  * CANDIDATO DIRETO
  * =========================================================
- *
- * Quando o cliente responde apenas:
- *
- * "Coca"
- * "Fanta"
- * "ManutenÃ§Ã£o"
- *
- * o estado da conversa pode tornar essa mensagem
- * suficientemente clara para ser um candidato.
- * =========================================================
  */
 
 function extractDirectItemCandidate(
@@ -1364,6 +1429,7 @@ function extractDirectItemCandidate(
 
         'editing_cart_item',
         'waiting_quantity'
+
     ];
 
 
@@ -1396,9 +1462,6 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * NÃ£o tratar apenas nÃºmeros como produto/serviÃ§o.
-     */
     if (
         /^\d+$/.test(normalized)
     ) {
@@ -1408,9 +1471,6 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * NÃ£o transformar perguntas genÃ©ricas em candidatos.
-     */
     if (
         /^(quanto|qual|onde|como|quando|tem|tens|voces|voce)\b/
             .test(normalized)
@@ -1457,7 +1517,7 @@ function extractProductCandidate(
 
 /**
  * =========================================================
- * CANDIDATO DE SERVIÃ‡O
+ * CANDIDATO DE SERVIÇO
  * =========================================================
  */
 
@@ -1483,10 +1543,6 @@ function extractServiceCandidate(
     }
 
 
-    /**
-     * Primeiro tentamos interpretar pedidos explÃ­citos
-     * de serviÃ§o.
-     */
     const serviceRequestPatterns = [
 
         /^quero solicitar\s+/,
@@ -1520,6 +1576,7 @@ function extractServiceCandidate(
         /^orcamento de\s+/,
 
         /^orcamento para\s+/
+
     ];
 
 
@@ -1536,6 +1593,7 @@ function extractServiceCandidate(
             cleanItemCandidate(
                 normalized
             );
+
 
         candidate =
             candidate
@@ -1613,9 +1671,6 @@ function extractServiceCandidate(
     }
 
 
-    /**
-     * Depois usamos a lÃ³gica genÃ©rica.
-     */
     return (
         extractItemCandidate(text) ||
         extractDirectItemCandidate(
@@ -1629,17 +1684,6 @@ function extractServiceCandidate(
 /**
  * =========================================================
  * EXTRAI ALVO DE QUANTIDADE
- * =========================================================
- *
- * Ajuda a distinguir:
- *
- * "quero 3"
- *
- * de:
- *
- * "muda para 3"
- *
- * sem resolver o produto.
  * =========================================================
  */
 
@@ -1709,6 +1753,7 @@ function detectTarget({
     /**
      * Carrinho / pedido.
      */
+
     if (
         /\b(total|tudo|carrinho|pedido|pedidos|pagar|deu|fica tudo)\b/
             .test(normalized)
@@ -1718,9 +1763,11 @@ function detectTarget({
 
     }
 
-        /**
-     * ServiÃ§o.
+
+    /**
+     * Serviço.
      */
+
     if (
         serviceCandidate ||
         context?.service_id ||
@@ -1739,6 +1786,7 @@ function detectTarget({
     /**
      * Produto.
      */
+
     if (
         productCandidate ||
         context?.currentProduct ||
@@ -1748,37 +1796,6 @@ function detectTarget({
     ) {
 
         return 'product';
-
-    }
-
-
-    /**
-     * Produto.
-     */
-    if (
-        productCandidate ||
-        context?.currentProduct ||
-        context?.lastProduct ||
-        context?.product_id ||
-        context?.productId
-    ) {
-
-        return 'product';
-
-    }
-
-
-    /**
-     * ServiÃ§o.
-     */
-    if (
-        serviceCandidate ||
-        context?.service_id ||
-        context?.serviceId ||
-        context?.service_name
-    ) {
-
-        return 'service';
 
     }
 
@@ -1786,6 +1803,7 @@ function detectTarget({
     /**
      * Quantidade.
      */
+
     if (
         extractQuantityTarget(normalized)
     ) {
@@ -1796,8 +1814,9 @@ function detectTarget({
 
 
     /**
-     * Pedido em confirmaÃ§Ã£o.
+     * Pedido em confirmação.
      */
+
     if (
         state === 'confirming_order' ||
         intent === 'CONFIRM' ||
@@ -1840,35 +1859,31 @@ function detectBehavior({
 
 
     /**
-     * =====================================================
      * VOLTAR
-     * =====================================================
      */
 
     if (backAction) {
+
         return 'go_back';
+
     }
 
 
     /**
- * =====================================================
- * AÇÃO COMPOSTA DE CARRINHO
- * =====================================================
- */
+     * AÇÃO COMPOSTA DE CARRINHO
+     */
 
-if (
-    hasCompoundCartAction
-) {
+    if (
+        hasCompoundCartAction
+    ) {
 
-    return 'composite_cart_action';
+        return 'composite_cart_action';
 
-}
+    }
 
 
     /**
-     * =====================================================
      * CANCELAMENTO
-     * =====================================================
      */
 
     if (
@@ -1882,9 +1897,7 @@ if (
 
 
     /**
-     * =====================================================
-     * CONFIRMAÃ‡ÃƒO
-     * =====================================================
+     * CONFIRMAÇÃO
      */
 
     if (
@@ -1900,13 +1913,12 @@ if (
         }
 
         return 'confirm';
+
     }
 
 
     /**
-     * =====================================================
-     * NEGAÃ‡ÃƒO
-     * =====================================================
+     * NEGAÇÃO
      */
 
     if (
@@ -1922,13 +1934,12 @@ if (
         }
 
         return 'deny';
+
     }
 
 
     /**
-     * =====================================================
      * TOTAL DO CARRINHO
-     * =====================================================
      */
 
     if (
@@ -1947,13 +1958,12 @@ if (
     ) {
 
         return 'ask_total';
+
     }
 
 
     /**
-     * =====================================================
-     * SUBSTITUIÃ‡ÃƒO
-     * =====================================================
+     * SUBSTITUIÇÃO
      */
 
     if (
@@ -1961,13 +1971,12 @@ if (
     ) {
 
         return 'replace_product';
+
     }
 
 
     /**
-     * =====================================================
      * REMOVER
-     * =====================================================
      */
 
     if (
@@ -1975,13 +1984,12 @@ if (
     ) {
 
         return 'remove_product';
+
     }
 
 
     /**
-     * =====================================================
      * ALTERAR QUANTIDADE
-     * =====================================================
      */
 
     if (
@@ -1993,16 +2001,12 @@ if (
     ) {
 
         return 'change_quantity';
+
     }
 
 
-        /**
-     * =====================================================
-     * PEDIDO / SELEÃ‡ÃƒO DE SERVIÃ‡O
-     * =====================================================
-     *
-     * ServiÃ§os tÃªm prioridade quando estamos dentro
-     * do fluxo de serviÃ§os.
+    /**
+     * SELEÇÃO DE SERVIÇO
      */
 
     if (
@@ -2015,13 +2019,12 @@ if (
     ) {
 
         return 'select_service';
+
     }
 
 
     /**
-     * =====================================================
-     * PEDIDO DE SERVIÃ‡O
-     * =====================================================
+     * PEDIDO DE SERVIÇO
      */
 
     if (
@@ -2029,13 +2032,12 @@ if (
     ) {
 
         return 'request_service';
+
     }
 
 
     /**
-     * =====================================================
      * ADICIONAR PRODUTO
-     * =====================================================
      */
 
     if (
@@ -2054,11 +2056,12 @@ if (
     ) {
 
         return 'add_product';
+
     }
+
+
     /**
-     * =====================================================
      * SELECIONAR PRODUTO
-     * =====================================================
      */
 
     if (
@@ -2072,13 +2075,12 @@ if (
     ) {
 
         return 'select_product';
+
     }
 
 
     /**
-     * =====================================================
-     * SELECIONAR SERVIÃ‡O
-     * =====================================================
+     * SELECIONAR SERVIÇO
      */
 
     if (
@@ -2091,13 +2093,12 @@ if (
     ) {
 
         return 'select_service';
+
     }
 
 
     /**
-     * =====================================================
-     * PEDIDO DE SERVIÃ‡O
-     * =====================================================
+     * PEDIDO DE SERVIÇO
      */
 
     if (
@@ -2105,136 +2106,137 @@ if (
     ) {
 
         return 'request_service';
+
     }
 
 
     /**
-     * =====================================================
-     * PREÃ‡O
-     * ===================================================== */
+     * PREÇO
+     */
 
     if (
         intent === 'PRICE'
     ) {
 
         return 'ask_price';
+
     }
 
 
     /**
-     * =====================================================
      * MENU
-     * ===================================================== */
+     */
 
     if (
         intent === 'MENU'
     ) {
 
         return 'show_menu';
+
     }
 
 
     /**
-     * =====================================================
-     * SERVIÃ‡OS
-     * ===================================================== */
+     * SERVIÇOS
+     */
 
     if (
         intent === 'SERVICES'
     ) {
 
         return 'show_services';
+
     }
 
 
     /**
-     * =====================================================
      * PEDIDO
-     * ===================================================== */
+     */
 
     if (
         intent === 'ORDER'
     ) {
 
         return 'start_order';
+
     }
 
 
     /**
-     * =====================================================
-     * LOCALIZAÃ‡ÃƒO
-     * ===================================================== */
+     * LOCALIZAÇÃO
+     */
 
     if (
         intent === 'LOCATION'
     ) {
 
         return 'show_location';
+
     }
 
 
     /**
-     * =====================================================
-     * HORÃRIO
-     * ===================================================== */
+     * HORÁRIO
+     */
 
     if (
         intent === 'HOURS'
     ) {
 
         return 'show_hours';
+
     }
 
 
     /**
-     * =====================================================
      * ATENDENTE
-     * ===================================================== */
+     */
 
     if (
         intent === 'ATTENDANT'
     ) {
 
         return 'human_support';
+
     }
 
 
     /**
-     * =====================================================
      * AJUDA
-     * ===================================================== */
+     */
 
     if (
         intent === 'HELP'
     ) {
 
         return 'show_help';
+
     }
 
 
     /**
-     * =====================================================
      * AGRADECIMENTO
-     * ===================================================== */
+     */
 
     if (
         intent === 'THANKS'
     ) {
 
         return 'respond_thanks';
+
     }
 
 
     /**
-     * =====================================================
      * DESPEDIDA
-     * ===================================================== */
+     */
 
     if (
         intent === 'GOODBYE'
     ) {
 
         return 'goodbye';
+
     }
 
 
@@ -2244,210 +2246,7 @@ if (
 
 /**
  * =========================================================
- * DETECTA AÃ‡Ã•ES COMPOSTAS
- * =========================================================
- *
- * Exemplos:
- *
- * "tira a coca e coloca duas fanta"
- *
- * "remove a coca e adiciona duas fanta"
- *
- * "troca a coca por fanta"
- *
- * Nesta camada apenas identificamos a estrutura.
- *
- * A resoluÃ§Ã£o dos produtos continua no productService.
- * =========================================================
- */
-
-function detectCompoundActions(text) {
-    const normalized = normalizeForComparison(text);
-
-    if (!normalized) {
-        return [];
-    }
-
-    const actions = [];
-
-    // =========================================================
-    // TROCA DE PRODUTO
-    // Ex.: "troca a coca por fanta"
-    // =========================================================
-
-    if (isReplaceAction(normalized)) {
-        const replacement = extractReplacementCandidates(normalized);
-
-        if (
-            replacement.targetProductCandidate ||
-            replacement.replacementCandidate
-        ) {
-            actions.push({
-                type: 'replace_product',
-
-                target: {
-                    type:
-                        extractProductPosition(
-                            replacement.targetProductCandidate
-                        ) !== null
-                            ? 'position'
-                            : 'candidate',
-
-                    value: replacement.targetProductCandidate
-                },
-
-                replacementCandidate:
-                    replacement.replacementCandidate,
-
-                quantity: extractQuantity(normalized)
-            });
-        }
-
-        return actions;
-    }
-
-    // =========================================================
-    // SEPARAÇÃO DE AÇÕES COMPOSTAS
-    // Ex.:
-    // "remove a coca e adiciona uma fanta"
-    // =========================================================
-
-    const parts = normalized
-        .split(/\s+(?:e|tambem|também|mas)\s+/i)
-        .map(part => part.trim())
-        .filter(Boolean);
-
-    const segments =
-        parts.length > 1
-            ? parts
-            : [normalized];
-
-    // =========================================================
-    // ANALISA CADA PARTE
-    // =========================================================
-
-    for (const segment of segments) {
-        if (!segment) {
-            continue;
-        }
-
-        // =====================================================
-        // REMOVER PRODUTO
-        // =====================================================
-
-        if (isRemoveAction(segment)) {
-            const position =
-                extractProductPosition(segment);
-
-            const reference =
-                extractReference(segment);
-
-            let candidate = null;
-
-            if (
-                position === null &&
-                !reference
-            ) {
-                candidate =
-                    cleanItemCandidate(segment);
-            }
-
-            actions.push({
-                type: 'remove_product',
-
-                target:
-                    position !== null
-                        ? {
-                              type: 'position',
-                              value: position
-                          }
-                        : reference
-                            ? reference
-                            : {
-                                  type: 'candidate',
-                                  value: candidate
-                              },
-
-                candidate
-            });
-
-            continue;
-        }
-
-        // =====================================================
-        // ALTERAR QUANTIDADE
-        // =====================================================
-
-        const quantity =
-            extractQuantity(segment);
-
-        if (
-            isQuantityEditAction(
-                segment,
-                'editing_cart',
-                quantity
-            )
-        ) {
-            const reference =
-                extractReference(segment);
-
-            const position =
-                extractProductPosition(segment);
-
-            actions.push({
-                type: 'change_quantity',
-
-                quantity,
-
-                target:
-                    position !== null
-                        ? {
-                              type: 'position',
-                              value: position
-                          }
-                        : reference
-                            ? reference
-                            : {
-                                  type: 'current'
-                              }
-            });
-
-            continue;
-        }
-
-        // =====================================================
-        // ADICIONAR PRODUTO
-        // =====================================================
-
-        if (isAddAction(segment)) {
-            const candidate =
-                cleanItemCandidate(segment);
-
-            if (candidate) {
-                actions.push({
-                    type: 'add_product',
-
-                    candidate,
-
-                    quantity:
-                        extractQuantity(segment)
-                });
-            }
-
-            continue;
-        }
-    }
-
-    return actions;
-}
-/**
- * =========================================================
- * EXTRAI PRODUTO ANTIGO E PRODUTO DE SUBSTITUIÃ‡ÃƒO
- * =========================================================
- *
- * NÃ£o resolve no banco.
- *
- * Apenas separa linguisticamente os candidatos.
+ * EXTRAI PRODUTO ANTIGO E PRODUTO DE SUBSTITUIÇÃO
  * =========================================================
  */
 
@@ -2466,8 +2265,11 @@ function extractReplacementCandidates(text) {
     if (!match) {
 
         return {
+
             targetProductCandidate: null,
+
             replacementCandidate: null
+
         };
 
     }
@@ -2492,13 +2294,693 @@ function extractReplacementCandidates(text) {
 
         replacementCandidate:
             replacement || null
+
     };
 }
 
 
 /**
  * =========================================================
- * RESOLUÃ‡ÃƒO CONTEXTUAL DA INTENÃ‡ÃƒO
+ * EXTRAI MÚLTIPLOS CANDIDATOS DE ADIÇÃO
+ * =========================================================
+ *
+ * Esta função é importante para mensagens como:
+ *
+ * "Quero chicken e batata"
+ *
+ * "Quero chicken, batata e refrigerante"
+ *
+ * "Manda duas pizzas e uma água"
+ *
+ * O Knowledge Engine não resolve os produtos.
+ *
+ * Apenas separa candidatos linguísticos.
+ *
+ * IMPORTANTE:
+ *
+ * Não fazemos simplesmente:
+ *
+ * text.split(' e ')
+ *
+ * porque nomes de produtos podem conter "e".
+ *
+ * A divisão é feita somente quando a primeira parte
+ * demonstra claramente intenção de adicionar.
+ * =========================================================
+ */
+
+function extractMultipleAddCandidates(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return [];
+    }
+
+
+    /**
+     * Primeiro tratamos vírgulas.
+     */
+
+    const commaParts =
+        normalized
+            .split(/\s*,\s*/)
+            .map(
+                part =>
+                    part.trim()
+            )
+            .filter(Boolean);
+
+
+    /**
+     * Se houver vírgulas, cada parte pode representar
+     * um item independente.
+     *
+     * Exemplo:
+     *
+     * "quero chicken, batata, refrigerante"
+     */
+
+    if (
+        commaParts.length > 1
+    ) {
+
+        const candidates = [];
+
+        for (
+            const part
+            of commaParts
+        ) {
+
+            const candidate =
+                cleanItemCandidate(
+                    part
+                );
+
+            if (
+                candidate
+            ) {
+
+                candidates.push({
+                    candidate,
+
+                    quantity:
+                        extractQuantity(part)
+                });
+
+            }
+
+        }
+
+
+        if (
+            candidates.length > 1
+        ) {
+
+            return candidates;
+
+        }
+
+    }
+
+
+    /**
+     * Detecta uma intenção de adição no início.
+     *
+     * Exemplos:
+     *
+     * "quero chicken e batata"
+     * "manda chicken e batata"
+     * "adiciona chicken e batata"
+     * "vou querer chicken e batata"
+     */
+
+    const addPrefixMatch =
+        normalized.match(
+            /^(quero|vou querer|manda|mandar|adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|pode adicionar|pode colocar|quero pedir|peço|peco|pede|pedir)\s+(.+)$/i
+        );
+
+
+    let prefix = '';
+    let remaining = normalized;
+
+    if (addPrefixMatch) {
+
+        prefix =
+            addPrefixMatch[1];
+
+        remaining =
+            addPrefixMatch[2]
+                .trim();
+
+    } else {
+
+        const directParts =
+            normalized
+                .split(/\s*(?:\+|\be\b|tambem|também)\s*/i)
+                .map(
+                    part =>
+                        part.trim()
+                )
+                .filter(Boolean);
+
+        if (directParts.length < 2) {
+
+            return [];
+
+        }
+
+        const directCandidates = [];
+
+        for (
+            const part
+            of directParts
+        ) {
+
+            const candidate =
+                cleanItemCandidate(
+                    part
+                );
+
+            if (!candidate) {
+                continue;
+            }
+
+            directCandidates.push({
+
+                candidate,
+
+                quantity:
+                    extractQuantity(part)
+
+            });
+
+        }
+
+        if (
+            directCandidates.length < 2
+        ) {
+
+            return [];
+
+        }
+
+        return directCandidates;
+
+    }
+
+
+    /**
+     * Separação conservadora.
+     *
+     * Depois de uma intenção explícita de adicionar,
+     * " e " pode representar outro item.
+     *
+     * Não dividimos quando não existe intenção clara
+     * de adicionar.
+     */
+
+    const parts =
+        remaining
+                .split(/\s*(?:\+|\be\b|tambem|também)\s*/i)            
+                .map(
+                part =>
+                    part.trim()
+            )
+            .filter(Boolean);
+
+
+    /**
+     * Se não houve separação, não é mensagem composta.
+     */
+
+    if (
+        parts.length < 2
+    ) {
+
+        return [];
+
+    }
+
+
+    const candidates = [];
+
+
+    for (
+        let index = 0;
+        index < parts.length;
+        index++
+    ) {
+
+        let part =
+            parts[index];
+
+
+        /**
+         * A primeira parte pode ainda conter o prefixo.
+         */
+
+        if (
+            index === 0
+        ) {
+
+            part =
+                `${prefix} ${part}`;
+
+        }
+
+
+        const candidate =
+            cleanItemCandidate(
+                part
+            );
+
+
+        if (!candidate) {
+            continue;
+        }
+
+
+        candidates.push({
+
+            candidate,
+
+            quantity:
+                extractQuantity(part)
+
+        });
+
+    }
+
+
+    /**
+     * Só consideramos composto quando temos pelo menos
+     * dois candidatos reais.
+     */
+
+    if (
+        candidates.length < 2
+    ) {
+
+        return [];
+
+    }
+
+
+    return candidates;
+}
+
+
+/**
+ * =========================================================
+ * DETECTA MÚLTIPLAS AÇÕES DE ADIÇÃO
+ * =========================================================
+ */
+
+function detectMultipleAddActions(text) {
+
+    const candidates =
+        extractMultipleAddCandidates(
+            text
+        );
+
+
+    return candidates.map(
+        item => ({
+
+            type: 'add_product',
+
+            candidate:
+                item.candidate,
+
+            quantity:
+                item.quantity
+
+        })
+    );
+
+}
+
+
+/**
+ * =========================================================
+ * DETECTA AÇÕES COMPOSTAS
+ * =========================================================
+ *
+ * Exemplos:
+ *
+ * "tira a coca e coloca duas fanta"
+ *
+ * "remove a coca e adiciona duas fanta"
+ *
+ * "quero chicken e batata"
+ *
+ * "troca a coca por fanta"
+ *
+ * A resolução concreta dos produtos continua no
+ * productService/botEngine.
+ * =========================================================
+ */
+
+function detectCompoundActions(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+
+        return [];
+
+    }
+
+
+    const actions = [];
+
+
+    /**
+     * =====================================================
+     * TROCA DE PRODUTO
+     * =====================================================
+     */
+
+    if (
+        isReplaceAction(normalized)
+    ) {
+
+        const replacement =
+            extractReplacementCandidates(
+                normalized
+            );
+
+
+        if (
+            replacement.targetProductCandidate ||
+            replacement.replacementCandidate
+        ) {
+
+            actions.push({
+
+                type: 'replace_product',
+
+                target: {
+
+                    type:
+                        extractProductPosition(
+                            replacement.targetProductCandidate
+                        ) !== null
+                            ? 'position'
+                            : 'candidate',
+
+                    value:
+                        replacement.targetProductCandidate
+
+                },
+
+                replacementCandidate:
+                    replacement.replacementCandidate,
+
+                quantity:
+                    extractQuantity(
+                        normalized
+                    )
+
+            });
+
+        }
+
+
+        return actions;
+
+    }
+
+
+    /**
+     * =====================================================
+     * MÚLTIPLAS ADIÇÕES
+     * =====================================================
+     *
+     * IMPORTANTE:
+     *
+     * Esta verificação acontece antes do split genérico.
+     *
+     * Isso corrige:
+     *
+     * "Quero chicken e batata"
+     */
+
+    const multipleAddActions =
+        detectMultipleAddActions(
+            normalized
+        );
+
+
+    if (
+        multipleAddActions.length > 1
+    ) {
+
+        actions.push(
+            ...multipleAddActions
+        );
+
+        return actions;
+
+    }
+
+
+    /**
+     * =====================================================
+     * SEPARAÇÃO DE AÇÕES COMPOSTAS
+     * =====================================================
+     *
+     * Exemplo:
+     *
+     * "remove a coca e adiciona uma fanta"
+     */
+
+    const parts =
+        normalized
+            .split(
+                /\s+(?:e|tambem|também|mas)\s+/i
+            )
+            .map(
+                part =>
+                    part.trim()
+            )
+            .filter(Boolean);
+
+
+    const segments =
+        parts.length > 1
+            ? parts
+            : [normalized];
+
+
+    /**
+     * =====================================================
+     * ANALISA CADA PARTE
+     * =====================================================
+     */
+
+    for (
+        const segment
+        of segments
+    ) {
+
+        if (!segment) {
+            continue;
+        }
+
+
+        /**
+         * =================================================
+         * REMOVER PRODUTO
+         * =================================================
+         */
+
+        if (
+            isRemoveAction(segment)
+        ) {
+
+            const position =
+                extractProductPosition(
+                    segment
+                );
+
+
+            const reference =
+                extractReference(
+                    segment
+                );
+
+
+            let candidate = null;
+
+
+            if (
+                position === null &&
+                !reference
+            ) {
+
+                candidate =
+                    cleanItemCandidate(
+                        segment
+                    );
+
+            }
+
+
+            actions.push({
+
+                type: 'remove_product',
+
+                target:
+                    position !== null
+
+                        ? {
+                              type: 'position',
+
+                              value: position
+                          }
+
+                        : reference
+
+                            ? reference
+
+                            : {
+                                  type:
+                                      'candidate',
+
+                                  value:
+                                      candidate
+                              },
+
+                candidate
+
+            });
+
+
+            continue;
+
+        }
+
+
+        /**
+         * =================================================
+         * ALTERAR QUANTIDADE
+         * =================================================
+         */
+
+        const quantity =
+            extractQuantity(
+                segment
+            );
+
+
+        if (
+            isQuantityEditAction(
+                segment,
+                'editing_cart',
+                quantity
+            )
+        ) {
+
+            const reference =
+                extractReference(
+                    segment
+                );
+
+
+            const position =
+                extractProductPosition(
+                    segment
+                );
+
+
+            actions.push({
+
+                type:
+                    'change_quantity',
+
+                quantity,
+
+                target:
+                    position !== null
+
+                        ? {
+                              type:
+                                  'position',
+
+                              value:
+                                  position
+                          }
+
+                        : reference
+
+                            ? reference
+
+                            : {
+                                  type:
+                                      'current'
+                              }
+
+            });
+
+
+            continue;
+
+        }
+
+
+        /**
+         * =================================================
+         * ADICIONAR PRODUTO
+         * =================================================
+         */
+
+        if (
+            isAddAction(segment)
+        ) {
+
+            const candidate =
+                cleanItemCandidate(
+                    segment
+                );
+
+
+            if (candidate) {
+
+                actions.push({
+
+                    type:
+                        'add_product',
+
+                    candidate,
+
+                    quantity:
+                        extractQuantity(
+                            segment
+                        )
+
+                });
+
+            }
+
+
+            continue;
+
+        }
+
+    }
+
+
+    return actions;
+}
+
+
+/**
+ * =========================================================
+ * RESOLUÇÃO CONTEXTUAL DA INTENÇÃO
  * =========================================================
  */
 
@@ -2511,29 +2993,34 @@ function resolveContextualIntent({
 
     const detectedIntent =
         String(
-            detected?.intent || 'unknown'
+            detected?.intent ||
+            'unknown'
         ).toUpperCase();
 
 
     const text =
-        normalizeForComparison(message);
+        normalizeForComparison(
+            message
+        );
 
 
     if (!text) {
 
         return {
+
             intent: 'UNKNOWN',
+
             confidence: 0,
+
             source: 'unknown'
+
         };
 
     }
 
 
     /**
-     * =====================================================
-     * CONFIRMAÃ‡ÃƒO CONTEXTUAL
-     * =====================================================
+     * CONFIRMAÇÃO CONTEXTUAL
      */
 
     if (
@@ -2542,18 +3029,20 @@ function resolveContextualIntent({
     ) {
 
         return {
+
             intent: 'CONFIRM',
+
             confidence: 0.98,
+
             source: 'context'
+
         };
 
     }
 
 
     /**
-     * =====================================================
-     * NEGAÃ‡ÃƒO CONTEXTUAL
-     * =====================================================
+     * NEGAÇÃO CONTEXTUAL
      */
 
     if (
@@ -2562,18 +3051,20 @@ function resolveContextualIntent({
     ) {
 
         return {
+
             intent: 'DENY',
+
             confidence: 0.98,
+
             source: 'context'
+
         };
 
     }
 
 
     /**
-     * =====================================================
-     * REFERÃŠNCIA COMO CONFIRMAÃ‡ÃƒO
-     * =====================================================
+     * REFERÊNCIA COMO CONFIRMAÇÃO
      */
 
     if (
@@ -2582,18 +3073,20 @@ function resolveContextualIntent({
     ) {
 
         return {
+
             intent: 'CONFIRM',
+
             confidence: 0.95,
+
             source: 'context'
+
         };
 
     }
 
 
     /**
-     * =====================================================
-     * CONFIRMAÃ‡ÃƒO EXPLÃCITA
-     * =====================================================
+     * CONFIRMAÇÃO EXPLÍCITA
      */
 
     if (
@@ -2605,9 +3098,13 @@ function resolveContextualIntent({
         ) {
 
             return {
+
                 intent: 'CONFIRM',
+
                 confidence: 0.99,
+
                 source: 'context'
+
             };
 
         }
@@ -2618,9 +3115,13 @@ function resolveContextualIntent({
         ) {
 
             return {
+
                 intent: 'DENY',
+
                 confidence: 0.99,
+
                 source: 'context'
+
             };
 
         }
@@ -2629,13 +3130,7 @@ function resolveContextualIntent({
 
 
     /**
-     * =====================================================
-     * REFERÃŠNCIA COM CONTEXTO
-     * =====================================================
-     *
-     * Quando o cliente responde apenas "esse",
-     * "essa", etc., o contexto pode ser mais importante
-     * do que uma intenÃ§Ã£o genÃ©rica.
+     * REFERÊNCIA COM CONTEXTO
      */
 
     if (
@@ -2649,18 +3144,20 @@ function resolveContextualIntent({
     ) {
 
         return {
+
             intent: 'CONFIRM',
+
             confidence: 0.96,
+
             source: 'context'
+
         };
 
     }
 
 
     /**
-     * =====================================================
-     * INTENÃ‡ÃƒO EXPLÃCITA
-     * =====================================================
+     * INTENÇÃO EXPLÍCITA
      */
 
     if (
@@ -2668,30 +3165,35 @@ function resolveContextualIntent({
     ) {
 
         return {
-            intent: detectedIntent,
+
+            intent:
+                detectedIntent,
 
             confidence:
                 detected?.confidence ?? 1,
 
-            source: 'explicit'
+            source:
+                'explicit'
+
         };
 
     }
 
 
     /**
-     * =====================================================
      * UNKNOWN
-     * =====================================================
      */
 
     return {
+
         intent: 'UNKNOWN',
 
         confidence:
             detected?.confidence ?? 0,
 
-        source: 'unknown'
+        source:
+            'unknown'
+
     };
 }
 
@@ -2709,7 +3211,9 @@ function analyzeMessage({
 }) {
 
     const detected =
-        detectIntent(message);
+        detectIntent(
+            message
+        );
 
 
     const resolved =
@@ -2722,16 +3226,19 @@ function analyzeMessage({
             state,
 
             context
+
         });
 
 
     const normalizedMessage =
-        normalizeForComparison(message);
+        normalizeForComparison(
+            message
+        );
 
 
     /**
      * =====================================================
-     * ENTIDADES
+     * ENTIDADES BÁSICAS
      * =====================================================
      */
 
@@ -2783,12 +3290,77 @@ function analyzeMessage({
         );
 
 
-    const productCandidate =
-        extractProductCandidate(
-            normalizedMessage,
-            state
+    /**
+     * =====================================================
+     * AÇÕES COMPOSTAS
+     * =====================================================
+     */
+
+    const compoundActions =
+        detectCompoundActions(
+            normalizedMessage
         );
 
+
+    const hasCompoundCartAction =
+        compoundActions.length > 1;
+
+
+    /**
+     * =====================================================
+     * CANDIDATOS DE PRODUTOS
+     * =====================================================
+     *
+     * Exemplo:
+     *
+     * "Quero chicken e batata"
+     *
+     * productCandidates:
+     *
+     * [
+     *   "chicken",
+     *   "batata"
+     * ]
+     *
+     * O candidato singular continua disponível para
+     * compatibilidade com o fluxo existente.
+     */
+
+    const addProductActions =
+        compoundActions.filter(
+            action =>
+                action.type === 'add_product' &&
+                action.candidate
+        );
+
+
+    const productCandidates =
+        addProductActions.map(
+            action =>
+                action.candidate
+        );
+
+
+    const hasMultipleProductCandidates =
+        productCandidates.length > 1;
+
+
+    const productCandidate =
+        hasMultipleProductCandidates
+
+            ? null
+
+            : extractProductCandidate(
+                  normalizedMessage,
+                  state
+              );
+
+
+    /**
+     * =====================================================
+     * CANDIDATO DE SERVIÇO
+     * =====================================================
+     */
 
     const serviceCandidate =
         extractServiceCandidate(
@@ -2796,6 +3368,12 @@ function analyzeMessage({
             state
         );
 
+
+    /**
+     * =====================================================
+     * SUBSTITUIÇÃO
+     * =====================================================
+     */
 
     const replacementCandidates =
         extractReplacementCandidates(
@@ -2805,34 +3383,26 @@ function analyzeMessage({
 
     /**
      * =====================================================
-     * AÃ‡Ã•ES COMPOSTAS
+     * DEBUG
      * =====================================================
      */
 
-    const compoundActions =
-        detectCompoundActions(
-            normalizedMessage
-        );
-
-    const hasCompoundCartAction =
-    compoundActions.length > 1;
+    console.log(
+        '🔎 COMPOUND DEBUG:',
+        JSON.stringify(
+            compoundActions,
+            null,
+            2
+        )
+    );
 
 
     console.log(
-    '🔎 COMPOUND DEBUG:',
-    JSON.stringify(
-        compoundActions,
-        null,
-        2
-    )
-);
+        '🔎 hasCompoundCartAction:',
+        hasCompoundCartAction
+    );
 
-console.log(
-    '🔎 hasCompoundCartAction:',
-    hasCompoundCartAction
-);
 
-        
     /**
      * =====================================================
      * COMPORTAMENTO INTERPRETADO
@@ -2840,36 +3410,37 @@ console.log(
      */
 
     const behavior =
-    detectBehavior({
+        detectBehavior({
 
-        text:
-            normalizedMessage,
+            text:
+                normalizedMessage,
 
-        state,
+            state,
 
-        intent:
-            resolved.intent,
+            intent:
+                resolved.intent,
 
-        quantity,
+            quantity,
 
-        addAction,
+            addAction,
 
-        removeAction,
+            removeAction,
 
-        editAction,
+            editAction,
 
-        backAction,
+            backAction,
 
-        productCandidate,
+            productCandidate,
 
-        serviceCandidate,
+            serviceCandidate,
 
-        reference,
+            reference,
 
-        context,
+            context,
 
-        hasCompoundCartAction
-    });
+            hasCompoundCartAction
+
+        });
 
 
     /**
@@ -2894,12 +3465,13 @@ console.log(
             serviceCandidate,
 
             context
+
         });
 
 
     /**
      * =====================================================
-     * SITUAÃ‡ÃƒO
+     * SITUAÇÃO
      * =====================================================
      */
 
@@ -2909,6 +3481,7 @@ console.log(
             resolved.intent.toLowerCase(),
 
             state
+
         );
 
 
@@ -2916,8 +3489,6 @@ console.log(
      * =====================================================
      * BEHAVIOR CONFIGURADO
      * =====================================================
-     *
-     * Mantemos a arquitetura antiga intacta.
      */
 
     const configuredBehavior =
@@ -2943,8 +3514,9 @@ console.log(
 
 
         /**
-         * IntenÃ§Ã£o final.
+         * Intenção final.
          */
+
         intent:
             resolved.intent,
 
@@ -2958,24 +3530,25 @@ console.log(
 
 
         /**
-         * IntenÃ§Ã£o originalmente detectada.
+         * Intenção originalmente detectada.
          */
+
         detectedIntent:
             detected.intent,
 
 
         /**
-         * SituaÃ§Ã£o conversacional.
+         * Situação conversacional.
          */
+
         situation:
             situation.key,
 
 
         /**
          * Behavior da arquitetura existente.
-         *
-         * NÃƒO remover.
          */
+
         behavior:
             situation.behavior,
 
@@ -2985,13 +3558,9 @@ console.log(
 
 
         /**
-         * =================================================
-         * NOVA CAMADA DE INTELIGÃŠNCIA
-         * =================================================
-         *
-         * Este Ã© o comportamento mais especÃ­fico
-         * interpretado da mensagem.
+         * Comportamento específico interpretado.
          */
+
         interpretedBehavior:
             behavior,
 
@@ -2999,33 +3568,30 @@ console.log(
         /**
          * Alvo principal.
          */
+
         target,
 
 
         /**
          * Estado recebido.
          */
+
         state,
 
 
         /**
          * Contexto recebido.
          */
+
         context,
 
 
         /**
          * =================================================
-         * AÃ‡Ã•ES ESTRUTURADAS
+         * AÇÕES ESTRUTURADAS
          * =================================================
-         *
-         * Agora actions nÃ£o sÃ£o apenas:
-         *
-         * { type: 'add_product' }
-         *
-         * Quando possÃ­vel, tambÃ©m carregam os candidatos
-         * e a quantidade.
          */
+
         actions:
             compoundActions,
 
@@ -3050,26 +3616,58 @@ console.log(
 
             backAction,
 
+
+            /**
+             * Compatibilidade com o fluxo existente.
+             *
+             * Se houver vários produtos, fica null.
+             */
+
             productCandidate,
+
+
+            /**
+             * NOVO:
+             *
+             * Lista de candidatos de produtos.
+             */
+
+            productCandidates,
+
+
+            /**
+             * NOVO:
+             *
+             * Indica se existem múltiplos produtos.
+             */
+
+            hasMultipleProductCandidates,
+
 
             serviceCandidate,
 
+
             productPosition,
 
+
             reference,
+
 
             targetProductCandidate:
                 replacementCandidates
                     .targetProductCandidate,
 
+
             replacementCandidate:
                 replacementCandidates
                     .replacementCandidate,
+
 
             quantityTarget:
                 extractQuantityTarget(
                     normalizedMessage
                 )
+
         }
 
     };
@@ -3078,7 +3676,7 @@ console.log(
 
 /**
  * =========================================================
- * EXPORTAÃ‡Ã•ES
+ * EXPORTAÇÕES
  * =========================================================
  */
 
@@ -3124,7 +3722,12 @@ module.exports = {
 
     detectCompoundActions,
 
+    detectMultipleAddActions,
+
+    extractMultipleAddCandidates,
+
     extractReplacementCandidates,
 
     cleanItemCandidate
+
 };

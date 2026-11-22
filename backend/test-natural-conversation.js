@@ -1,10 +1,8 @@
+
 require('dotenv').config();
 
 const {
-    processMessage
-} = require('./bot/botEngine');
-
-const {
+    processMessage,
     getCompany
 } = require('./bot/botEngine');
 
@@ -25,8 +23,6 @@ const {
     getBotSettings
 } = require('./services/botSettingsService');
 
-const crypto = require('crypto');
-
 
 async function main() {
 
@@ -41,7 +37,17 @@ async function main() {
      *
      * $env:TEST_COMPANY_ID="..."
      *
-     * ou use uma variável já existente no .env.
+     * $env:TEST_CUSTOMER_PHONE="..."
+     *
+     * Opcional:
+     *
+     * $env:TEST_MESSAGE="Quero 2 chicken"
+     *
+     * Se TEST_MESSAGE existir, o teste processará
+     * somente essa mensagem.
+     *
+     * Se TEST_MESSAGE NÃO existir, será executada
+     * a conversa completa abaixo.
      */
 
     const companyId =
@@ -55,45 +61,48 @@ async function main() {
     }
 
     const customerPhone =
-    process.env.TEST_CUSTOMER_PHONE;
+        process.env.TEST_CUSTOMER_PHONE;
 
-if (!customerPhone) {
-    throw new Error(
-        '❌ Defina TEST_CUSTOMER_PHONE no ambiente.'
-    );
-}
+    if (!customerPhone) {
+        throw new Error(
+            '❌ Defina TEST_CUSTOMER_PHONE no ambiente.'
+        );
+    }
 
-const customer =
-    await getOrCreateCustomer(
-        companyId,
-        customerPhone
-    );
+    const customer =
+        await getOrCreateCustomer(
+            companyId,
+            customerPhone
+        );
 
-if (!customer) {
-    throw new Error(
-        '❌ Não foi possível obter/criar o cliente.'
-    );
-}
+    if (!customer) {
+        throw new Error(
+            '❌ Não foi possível obter/criar o cliente.'
+        );
+    }
 
-const conversation =
-    await getOrCreateConversation(
-        companyId,
-        customer.id
-    );
+    const conversation =
+        await getOrCreateConversation(
+            companyId,
+            customer.id
+        );
 
-if (!conversation) {
-    throw new Error(
-        '❌ Não foi possível obter/criar a conversa.'
-    );
-}
+    if (!conversation) {
+        throw new Error(
+            '❌ Não foi possível obter/criar a conversa.'
+        );
+    }
 
-const conversationId =
-    conversation.id;
+    const conversationId =
+        conversation.id;
+
     console.log('\n========================================');
     console.log('🧠 TESTE DE CONVERSA NATURAL');
     console.log('========================================\n');
 
     console.log('🏢 Company ID:', companyId);
+    console.log('👤 Customer ID:', customer.id);
+    console.log('📱 Customer Phone:', customerPhone);
     console.log('💬 Conversation ID:', conversationId);
 
     /**
@@ -112,6 +121,7 @@ const conversationId =
     }
 
     console.log('\n🏢 EMPRESA:');
+
     console.log({
         name: company.name,
         business_type: company.business_type,
@@ -129,12 +139,18 @@ const conversationId =
         await getBotSettings(companyId);
 
     console.log('\n⚙️ BOT SETTINGS:');
+
     console.log(settings);
 
     /**
      * =====================================================
      * GARANTIR CONVERSA NOVA
      * =====================================================
+     *
+     * Limpamos somente o estado da conversa.
+     *
+     * Os dados da empresa, cliente e conversa continuam
+     * pertencendo ao companyId recebido.
      */
 
     await clearConversationState(
@@ -144,42 +160,62 @@ const conversationId =
 
     /**
      * =====================================================
-     * CONVERSA
+     * MODO DE TESTE
+     * =====================================================
+     *
+     * Se TEST_MESSAGE existir, usamos somente essa
+     * mensagem.
+     *
+     * Caso contrário, usamos a sequência completa.
+     */
+
+    const testMessage =
+        process.env.TEST_MESSAGE?.trim();
+
+    const messages = testMessage
+    ? [testMessage]
+    : [
+
+        // 1. Adicionar vários produtos
+        'chicken + batata + refrigerante',
+
+        // 2. Aumentar quantidade de um produto
+        'quero mais 1 chicken',
+
+        // 3. Remover um produto
+        'tira a batata',
+
+        // 4. Reduzir quantidade de um produto
+        'fica só 1 chicken'
+    ];
+
+    /**
+     * =====================================================
+     * IDENTIFICAÇÃO DO MODO
      * =====================================================
      */
 
-    const messages = [
+    if (testMessage) {
 
-        // 1. Saudação simples
-        'Oi',
+        console.log('\n🧪 MODO: MENSAGEM INDIVIDUAL');
 
-        // 2. Pergunta sobre o negócio
-        'O que vocês têm?',
+        console.log('📝 TEST_MESSAGE:');
+        console.log(testMessage);
 
-        // 3. Pergunta sobre produtos
-        'Vocês têm hambúrguer?',
+    } else {
 
-        // 4. Pergunta de preço
-        'Quanto custa o chicken?',
+        console.log('\n🧪 MODO: CONVERSA COMPLETA');
 
-        // 5. Pedido de menu
-        'Me mostra o menu',
+        console.log(
+            `📝 Total de mensagens: ${messages.length}`
+        );
+    }
 
-        // 6. Escolha
-        'Quero o Chicken Burger',
-
-        // 7. Quantidade
-        'Manda 2',
-
-        // 8. Consulta do pedido
-        'O que tenho no meu pedido?',
-
-        // 9. Confirmação
-        'Pode confirmar',
-
-        // 10. Confirmação efetiva do pedido
-        '1'
-    ];
+    /**
+     * =====================================================
+     * PROCESSAMENTO DAS MENSAGENS
+     * =====================================================
+     */
 
     for (
         let i = 0;
@@ -198,7 +234,9 @@ const conversationId =
         console.log(message);
 
         /**
-         * Estado ANTES
+         * =================================================
+         * ESTADO ANTES
+         * =================================================
          */
 
         const stateBefore =
@@ -208,6 +246,7 @@ const conversationId =
             );
 
         console.log('\n📥 Estado antes:');
+
         console.log(
             JSON.stringify(
                 stateBefore,
@@ -217,7 +256,9 @@ const conversationId =
         );
 
         /**
-         * Processar mensagem
+         * =================================================
+         * PROCESSAR MENSAGEM
+         * =================================================
          */
 
         const response =
@@ -228,10 +269,13 @@ const conversationId =
             );
 
         console.log('\n🤖 Bot:');
+
         console.log(response);
 
         /**
-         * Estado DEPOIS
+         * =================================================
+         * ESTADO DEPOIS
+         * =================================================
          */
 
         const stateAfter =
@@ -241,6 +285,7 @@ const conversationId =
             );
 
         console.log('\n📤 Estado depois:');
+
         console.log(
             JSON.stringify(
                 stateAfter,
@@ -274,10 +319,17 @@ const conversationId =
         )
     );
 
+    /**
+     * =====================================================
+     * FINAL
+     * =====================================================
+     */
+
     console.log('\n========================================');
     console.log('✅ TESTE TERMINADO');
     console.log('========================================\n');
 }
+
 
 main()
     .catch(error => {
