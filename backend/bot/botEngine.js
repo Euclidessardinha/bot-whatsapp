@@ -2025,6 +2025,13 @@ if (
         ? intelligence.actions
         : [];
 
+const changeQuantityAction =
+    intelligenceActions.find(
+        action =>
+            action?.type === 'change_quantity'
+    );
+
+
 const hasAddProductActions =
     intelligenceActions.some(
         action =>
@@ -4639,6 +4646,16 @@ if (
             );
         }
 
+        const changeQuantityAction =
+    intelligenceActions.find(
+        action =>
+            action?.type === 'change_quantity'
+    );
+
+const hasChangeQuantityAction =
+    Boolean(changeQuantityAction);
+
+
 
         /**
          * =================================================
@@ -4647,8 +4664,9 @@ if (
          */
 
         if (
-            /quanto|total|deu|pagar|fica|valor/i.test(texto) &&
-            !productCandidate
+            /quanto|total|deu|pagar|valor/i.test(texto) &&
+            !productCandidate &&
+            !hasChangeQuantityAction
         ) {
 
             const total =
@@ -4684,6 +4702,7 @@ if (
             )
         ) {
             let itemIndex = -1;
+            let resolvedProduct = null;
 
 
             if (
@@ -4698,26 +4717,26 @@ if (
 
 
             if (
-                itemIndex < 0 &&
-                productCandidate
-            ) {
+    itemIndex < 0 &&
+    productCandidate
+) {
 
-                const product =
-                    await resolveProductCandidate(
-                        companyId,
-                        productCandidate
-                    );
+    resolvedProduct =
+        await resolveProductCandidate(
+            companyId,
+            productCandidate
+        );
 
 
-                if (product) {
+    if (resolvedProduct) {
 
-                    itemIndex =
-                        getCartProductIndex(
-                            cart,
-                            product.id
-                        );
-                }
-            }
+        itemIndex =
+            getCartProductIndex(
+                cart,
+                resolvedProduct.id
+            );
+    }
+}
 
 
             if (
@@ -4728,6 +4747,19 @@ if (
                 itemIndex =
                     cart.length - 1;
             }
+
+
+            if (
+    itemIndex < 0 &&
+    resolvedProduct
+) {
+
+    return (
+        `ℹ️ *${resolvedProduct.name}* não está no seu pedido.\n\n`
+        
+    );
+}
+
 
 
             if (
@@ -4826,14 +4858,6 @@ if (
  * Não depende de resolvedProductCandidate.
  */
 
-const changeQuantityAction =
-    intelligenceActions.find(
-        action =>
-            action?.type === 'change_quantity'
-    );
-
-const hasChangeQuantityAction =
-    Boolean(changeQuantityAction);
 
 
 const quantityProductCandidate =
@@ -4846,6 +4870,22 @@ const quantityProductCandidate =
     productCandidate ||
     null;
 
+
+      console.log('\n🛒 DEBUG CHANGE QUANTITY');
+console.log({
+    state,
+    cart,
+    cartLength: Array.isArray(cart) ? cart.length : 'INVALID',
+    behavior: intelligence?.behavior,
+    hasChangeQuantityAction,
+    changeQuantityAction,
+    intelligenceQuantity,
+    quantityProductCandidate,
+    contextualProduct,
+    productCandidate,
+    productPosition: entities?.productPosition,
+    reference: entities?.reference
+});
 
 if (
     (
@@ -6219,15 +6259,45 @@ const quantity =
          */
 
         if (
-            /^(adiciona|adicionar|coloca|manda|quero|quero mais|manda mais)/i
-                .test(texto)
-        ) {
+    /^(adiciona|adicionar|coloca|manda|quero|mete)(?:\s+mais)?/i
+        .test(texto)
+) {
 
-            const product =
-                await resolveProductCandidate(
-                    companyId,
-                    contextualProductName
-                );
+    const contextualAddMatch =
+        texto.match(
+            /^(?:adiciona|adicionar|coloca|manda|quero|mete)(?:\s+mais)?\s+(?:um|uma|1)\s+(.+)$/i
+        ) ||
+        texto.match(
+            /^(?:adiciona|adicionar|coloca|manda|quero|mete)(?:\s+mais)?\s+(\d+)\s+(.+)$/i
+        ) ||
+        texto.match(
+            /^(?:adiciona|adicionar|coloca|manda|quero|mete)(?:\s+mais)?\s+(.+)$/i
+        );
+
+    let contextualCandidate =
+        null;
+
+    if (contextualAddMatch) {
+        contextualCandidate =
+            (
+                contextualAddMatch[2] ||
+                contextualAddMatch[1] ||
+                ''
+            )
+                .trim()
+                .replace(/[.!?,]+$/, '')
+                .trim();
+    }
+
+    const productCandidateForAdd =
+        contextualCandidate ||
+        contextualProductName;
+
+    const product =
+        await resolveProductCandidate(
+            companyId,
+            productCandidateForAdd
+        );
 
 
             if (product) {
@@ -6347,9 +6417,9 @@ const quantity =
 
         if (
     !(entities.removeAction || intelligence.behavior === 'remove_product') &&
-    /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
+    /\b(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
         .test(texto)
-        ) {
+) {
 
             const cart =
                 Array.isArray(context.cart)
