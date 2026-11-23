@@ -1733,6 +1733,94 @@ function extractQuantityTarget(text) {
 
 /**
  * =========================================================
+ * EXTRAI CANDIDATO DE PRODUTO PARA ALTERAÇÃO DE QUANTIDADE
+ * =========================================================
+ *
+ * Exemplos:
+ *
+ * "fica só 1 chicken"
+ * "fica 2 batatas"
+ * "deixa 1 refrigerante"
+ * "passa o chicken para 1"
+ * "muda batata para 2"
+ *
+ * Retorna apenas o candidato linguístico.
+ *
+ * Não resolve produto no banco.
+ * =========================================================
+ */
+
+function extractQuantityProductCandidate(text) {
+
+    let normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    /*
+     * Remove estruturas de alteração.
+     */
+
+    normalized =
+        normalized
+            .replace(
+                /^(fica|deixa|passa|muda|altera|modifica)\s+/i,
+                ''
+            )
+            .replace(
+                /^fica\s+só\s+/i,
+                ''
+            );
+
+
+    /*
+     * Remove expressões de quantidade.
+     */
+
+    normalized =
+        normalized
+            .replace(
+                /\b(para|em|com)\b\s*/i,
+                ''
+            )
+            .replace(
+                /\b\d+\b/,
+                ''
+            )
+            .replace(
+                /\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/i,
+                ''
+            );
+
+
+    /*
+     * Remove "só".
+     */
+
+    normalized =
+        normalized
+            .replace(
+                /\bso\b/gi,
+                ''
+            )
+            .replace(
+                /\s+/g,
+                ' '
+            )
+            .trim();
+
+
+    return normalized || null;
+}
+
+
+
+
+/**
+ * =========================================================
  * DETECTA ALVO
  * =========================================================
  */
@@ -1851,7 +1939,9 @@ function detectBehavior({
     serviceCandidate,
     reference,
     context,
-    hasCompoundCartAction
+    hasCompoundCartAction,
+    hasQuantityChangeAction
+
 }) {
 
     const normalized =
@@ -1880,6 +1970,14 @@ function detectBehavior({
         return 'composite_cart_action';
 
     }
+
+    if (
+    hasQuantityChangeAction
+) {
+
+    return 'change_quantity';
+
+}
 
 
     /**
@@ -2886,48 +2984,102 @@ function detectCompoundActions(text) {
         ) {
 
             const reference =
-                extractReference(
-                    segment
-                );
+    extractReference(
+        segment
+    );
 
 
-            const position =
-                extractProductPosition(
-                    segment
-                );
+const position =
+    extractProductPosition(
+        segment
+    );
 
 
-            actions.push({
-
-                type:
-                    'change_quantity',
-
-                quantity,
-
-                target:
-                    position !== null
-
-                        ? {
-                              type:
-                                  'position',
-
-                              value:
-                                  position
-                          }
-
-                        : reference
-
-                            ? reference
-
-                            : {
-                                  type:
-                                      'current'
-                              }
-
-            });
+let quantityProductCandidate = null;
 
 
-            continue;
+/*
+ * Tenta identificar o produto mencionado
+ * juntamente com a alteração de quantidade.
+ */
+
+quantityProductCandidate =
+    cleanItemCandidate(
+        segment
+    );
+
+
+/*
+ * Remove a estrutura específica da alteração
+ * de quantidade.
+ */
+
+quantityProductCandidate =
+    quantityProductCandidate
+        .replace(
+            /\b(fica|fica só|passa|deixa)\b/gi,
+            ''
+        )
+        .replace(
+            /\b(para|em|com)\b/gi,
+            ''
+        )
+        .replace(
+            /\b\d+\b/g,
+            ''
+        )
+        .replace(
+            /\bso\b/gi,
+            ''
+        )
+        .replace(
+            /\s+/g,
+            ' '
+        )
+        .trim();
+
+
+actions.push({
+
+    type:
+        'change_quantity',
+
+    quantity,
+
+    target:
+        position !== null
+
+            ? {
+                  type:
+                      'position',
+
+                  value:
+                      position
+              }
+
+            : reference
+
+                ? reference
+
+                : quantityProductCandidate
+
+                    ? {
+                          type:
+                              'candidate',
+
+                          value:
+                              quantityProductCandidate
+                      }
+
+                    : {
+                          type:
+                              'current'
+                      }
+
+});
+
+
+continue;
 
         }
 
@@ -3303,8 +3455,13 @@ function analyzeMessage({
 
 
     const hasCompoundCartAction =
-        compoundActions.length > 1;
+    compoundActions.length > 1;
 
+const hasQuantityChangeAction =
+    compoundActions.some(
+        action =>
+            action.type === 'change_quantity'
+    );
 
     /**
      * =====================================================
@@ -3438,7 +3595,10 @@ function analyzeMessage({
 
             context,
 
-            hasCompoundCartAction
+            hasCompoundCartAction,
+
+            hasQuantityChangeAction
+
 
         });
 
@@ -3728,6 +3888,9 @@ module.exports = {
 
     extractReplacementCandidates,
 
+    extractQuantityProductCandidate,
+    
     cleanItemCandidate
+
 
 };

@@ -375,6 +375,14 @@ async function getImageForBotResponse(
             );
 
 
+            console.log('🔎 ESTADO ANTES DO PROCESSAMENTO');
+console.log({
+    conversationId: conversation?.id,
+    state: previousConversationState?.state,
+    context: previousConversationState?.context
+});
+
+
         if (!conversationState) {
             return null;
         }
@@ -652,6 +660,16 @@ async function handleIncomingMessage(message, session) {
             );
 
 
+    console.log('🔎 IDENTIDADE DA CONVERSA');
+console.log({
+    companyId,
+    phone,
+    customerId: customer?.id,
+    conversationId: conversation?.id
+});            
+
+
+
         // =================================================
         // VERIFICAR ESTADO ANTERIOR
         // =================================================
@@ -661,6 +679,8 @@ async function handleIncomingMessage(message, session) {
                 companyId,
                 conversation.id
             );
+
+
 
 
         const isNewConversation =

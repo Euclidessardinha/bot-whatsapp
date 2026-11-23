@@ -1124,6 +1124,54 @@ async function resolveProductCandidate(
 }
 
 
+function extractQuantityProductCandidate(text) {
+
+    if (!text) {
+        return null;
+    }
+
+    let candidate =
+        String(text)
+            .trim()
+            .toLowerCase();
+
+    candidate =
+        candidate
+            .replace(
+                /^(fica|ficar|deixa|deixar|passa|passar|muda|mudar|altera|alterar)\s+/i,
+                ''
+            );
+
+    candidate =
+        candidate
+            .replace(
+                /^s[oó]\s+/i,
+                ''
+            );
+
+    candidate =
+        candidate
+            .replace(
+                /^\d+\s+/i,
+                ''
+            );
+
+    candidate =
+        candidate
+            .replace(
+                /^(para|pra|com)\s+/i,
+                ''
+            );
+
+    candidate =
+        candidate
+            .trim();
+
+    return candidate || null;
+}
+
+
+
 /**
  * =========================================================
  * RESOLUÃ‡ÃƒO INTELIGENTE DE SERVIÃ‡O
@@ -1197,8 +1245,50 @@ function getIntelligenceQuantity(
     intelligence
 ) {
 
-    const quantity =
+    const entityQuantity =
         intelligence?.entities?.quantity;
+
+    let quantity =
+        entityQuantity;
+
+    /*
+     * Algumas ações estruturadas, como
+     * change_quantity, carregam a quantidade
+     * diretamente dentro da própria action.
+     *
+     * Exemplo:
+     *
+     * {
+     *   type: "change_quantity",
+     *   quantity: 1,
+     *   target: {
+     *      type: "candidate",
+     *      value: "chicken"
+     *   }
+     * }
+     *
+     * Se entities.quantity não existir,
+     * usamos a quantidade da ação estruturada.
+     */
+    if (
+        quantity === null ||
+        quantity === undefined
+    ) {
+
+        const changeQuantityAction =
+            Array.isArray(
+                intelligence?.actions
+            )
+                ? intelligence.actions.find(
+                    action =>
+                        action?.type ===
+                        'change_quantity'
+                )
+                : null;
+
+        quantity =
+            changeQuantityAction?.quantity;
+    }
 
 
     if (
@@ -1873,10 +1963,46 @@ async function processMessage(
         intelligence.entities || {};
 
 
-    const productCandidate =
+    let productCandidate =
         entities.productCandidate ||
         null;
 
+
+  /*
+ * Algumas frases naturais de alteração de quantidade,
+ * como "fica só 1 chicken", podem ser classificadas
+ * corretamente como change_quantity, mas o cérebro
+ * não preencher entities.productCandidate.
+ *
+ * Nesse caso, extraímos o produto da própria mensagem.
+ */
+if (
+    !productCandidate &&
+    intelligence.behavior === 'change_quantity'
+) {
+
+    const quantityProductMatch =
+        rawMessage.match(
+            /(?:fica|ficar|deixa|deixar|mantem|mantém|passa|passar)\s+(?:so|só)\s*\d+\s+(.+)$/i
+        ) ||
+        rawMessage.match(
+            /(?:fica|ficar|deixa|deixar|mantem|mantém|passa|passar)\s+\d+\s+(.+)$/i
+        ) ||
+        rawMessage.match(
+            /^(?:so|só)\s*\d+\s+(.+)$/i
+        );
+
+    if (
+        quantityProductMatch?.[1]
+    ) {
+
+        productCandidate =
+            quantityProductMatch[1]
+                .trim()
+                .replace(/[.!?,]+$/, '')
+                .trim();
+    }
+}
 
     const serviceCandidate =
         entities.serviceCandidate ||
@@ -1946,17 +2072,46 @@ console.log(
 
 
     let resolvedProductCandidate =
-        productCandidate;
+    productCandidate;
 
+
+/*
+ * Algumas alterações de quantidade são detectadas
+ * corretamente em intelligence.actions, mesmo quando
+ * entities.productCandidate permanece vazio.
+ *
+ * Exemplo:
+ * "fica só 1 chicken"
+ *
+ * Nesse caso, usamos o produto indicado pela própria
+ * ação change_quantity.
+ */
+if (
+    !resolvedProductCandidate
+) {
+    const changeQuantityAction =
+        intelligenceActions.find(
+            action =>
+                action?.type === 'change_quantity'
+        );
 
     if (
-        !resolvedProductCandidate &&
-        contextualProduct
+        changeQuantityAction?.target?.value
     ) {
-
         resolvedProductCandidate =
-            contextualProduct.product_name;
+            changeQuantityAction.target.value;
     }
+}
+
+
+if (
+    !resolvedProductCandidate &&
+    contextualProduct
+) {
+
+    resolvedProductCandidate =
+        contextualProduct.product_name;
+}
 
 
     /**
@@ -2699,6 +2854,9 @@ if (
     if (
     productCandidate &&
     !compositeCartAction &&
+    intelligence.behavior !== 'remove_product' &&
+    intelligence.behavior !== 'change_quantity' &&
+    !entities.removeAction &&
     businessType !== 'services' &&
     settings.orders_enabled
 ) {
@@ -4518,7 +4676,7 @@ if (
         if (
             state !== 'editing_cart' &&
             state !== 'editing_cart_item' &&
-            entities.removeAction &&
+            (entities.removeAction || intelligence.behavior === 'remove_product') &&
             (
                 productCandidate ||
                 entities.productPosition ||
@@ -4648,31 +4806,61 @@ if (
         }
 
 
-        /**
-         * =================================================
-         * ALTERAR QUANTIDADE
-         * =================================================
-         */
+        
 
 
-        /*
-         * ALTERAR QUANTIDADE POR POSIÇÃO
-         *
-         * Exemplo:
-         * "quero o segundo com 3"
-         *
-         * Usa diretamente a posição existente no carrinho.
-         * Não depende de resolvedProductCandidate.
-         */
-        if (
-    intelligence.behavior === 'change_quantity' &&
+       /**
+ * =================================================
+ * ALTERAR QUANTIDADE
+ * =================================================
+ */
+
+
+/*
+ * ALTERAR QUANTIDADE POR POSIÇÃO
+ *
+ * Exemplo:
+ * "quero o segundo com 3"
+ *
+ * Usa diretamente a posição existente no carrinho.
+ * Não depende de resolvedProductCandidate.
+ */
+
+const changeQuantityAction =
+    intelligenceActions.find(
+        action =>
+            action?.type === 'change_quantity'
+    );
+
+const hasChangeQuantityAction =
+    Boolean(changeQuantityAction);
+
+
+const quantityProductCandidate =
+    extractQuantityProductCandidate(
+        typeof segment === 'string'
+            ? segment
+            : rawMessage
+    ) ||
+    changeQuantityAction?.target?.value ||
+    productCandidate ||
+    null;
+
+
+if (
+    (
+        intelligence.behavior === 'change_quantity' ||
+        hasChangeQuantityAction
+    ) &&
     intelligenceQuantity &&
     (
         (
             entities.productPosition !== null &&
             entities.productPosition !== undefined
         ) ||
-        contextualProduct
+        contextualProduct ||
+        quantityProductCandidate ||
+        changeQuantityAction?.target?.type === 'current'
     )
 ) {
             let itemIndex = -1;
@@ -4716,6 +4904,31 @@ if (
             cart,
             contextualProduct.product_id
         );
+}
+
+
+/*
+ * PRODUTO IDENTIFICADO NA PRÓPRIA MENSAGEM
+ */
+if (
+    itemIndex < 0 &&
+    quantityProductCandidate
+) {
+
+    const product =
+        await resolveProductCandidate(
+            companyId,
+            quantityProductCandidate
+        );
+
+    if (product) {
+
+        itemIndex =
+            getCartProductIndex(
+                cart,
+                product.id
+            );
+    }
 }
 
 
@@ -5151,7 +5364,7 @@ if (
 
     if (
     state !== 'cart_menu' &&
-    entities.removeAction &&
+    (entities.removeAction || intelligence.behavior === 'remove_product') &&
     (
         productCandidate ||
         contextualProduct ||
@@ -6128,13 +6341,12 @@ const quantity =
             }
         }
 
-
         /**
          * REMOVER
          */
 
         if (
-    !entities.removeAction &&
+    !(entities.removeAction || intelligence.behavior === 'remove_product') &&
     /^(remove|remover|tira|tirar|retira|retirar|exclui|excluir)\b/i
         .test(texto)
         ) {
@@ -7069,5 +7281,6 @@ module.exports = {
     processMessage,
     getCompany
 };
+
 
 
