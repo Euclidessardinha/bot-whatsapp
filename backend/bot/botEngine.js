@@ -6924,17 +6924,6 @@ const quantity =
         intent === 'service_request'
     ) {
 
-        if (
-            businessType !== 'services'
-        ) {
-
-            return (
-                'â„¹ï¸ Esta opÃ§Ã£o nÃ£o estÃ¡ disponÃ­vel para este negÃ³cio.'
-            );
-        }
-
-
-
         await updateConversationState(
             companyId,
             conversationId,

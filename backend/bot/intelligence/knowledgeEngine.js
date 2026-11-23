@@ -235,8 +235,7 @@ const PRODUCT_SELECTION_STATES = [
 const SERVICE_SELECTION_STATES = [
     'viewing_services',
     'viewing_service',
-    'service_request',
-    'idle'
+    'service_request'
 ];
 
 
@@ -600,16 +599,31 @@ function isAddAction(text) {
         normalizeForComparison(text);
 
 
+    if (!normalized) {
+        return false;
+    }
+
+
     /**
-     * "quero remover..."
-     * "quero tirar..."
-     * "quero eliminar..."
+     * =====================================================
+     * NUNCA É ADIÇÃO
+     * =====================================================
      *
-     * Nunca é ação de adicionar.
+     * Frases que começam com "quero" podem representar
+     * muitas intenções diferentes:
+     *
+     * "quero ver o menu"
+     * "quero ver o carrinho"
+     * "quero fazer um pedido"
+     * "quero falar com uma pessoa"
+     *
+     * Portanto, "quero" sozinho NÃO é suficiente
+     * para caracterizar add_product.
      */
 
+
     if (
-        /\b(quero|vou querer)\s+(remover|tirar|eliminar)\b/
+        /\b(quero|vou querer)\s+(remover|tirar|eliminar|excluir|apagar)\b/
             .test(normalized)
     ) {
 
@@ -618,7 +632,44 @@ function isAddAction(text) {
     }
 
 
-    const phrases = [
+
+    /**
+ * =====================================================
+ * SOLICITAÇÃO DE SERVIÇO NÃO É ADIÇÃO DE PRODUTO
+ * =====================================================
+ *
+ * "quero pedir um serviço"
+ * "quero pedir serviço"
+ * "pedir um serviço"
+ *
+ * representam uma solicitação de serviço/orçamento,
+ * não a adição de um produto ao carrinho.
+ *
+ * Não dependemos de nenhuma empresa específica.
+ */
+
+if (
+    /\b(quero\s+)?pedir\s+(um|uma|o|a|os|as)?\s*servi[cç]o(s)?\b/
+        .test(normalized)
+) {
+
+    return false;
+
+}
+
+
+
+    /**
+     * =====================================================
+     * AÇÕES EXPLÍCITAS DE ADIÇÃO
+     * =====================================================
+     *
+     * Estas palavras indicam diretamente que o cliente
+     * pretende adicionar/colocar/acrescentar algo.
+     */
+
+
+    const explicitAddPrefixes = [
 
         'adiciona',
         'adicionar',
@@ -634,9 +685,6 @@ function isAddAction(text) {
         'manda',
         'mandar',
 
-        'quero',
-        'vou querer',
-
         'pode adicionar',
         'pode colocar',
 
@@ -651,13 +699,118 @@ function isAddAction(text) {
     ];
 
 
-    return phrases.some(
-        phrase =>
-            normalized === phrase ||
-            normalized.startsWith(
-                `${phrase} `
-            )
-    );
+    if (
+        explicitAddPrefixes.some(
+            phrase =>
+                normalized === phrase ||
+                normalized.startsWith(
+                    `${phrase} `
+                )
+        )
+    ) {
+
+        return true;
+
+    }
+
+
+    /**
+     * =====================================================
+     * "QUERO" / "VOU QUERER"
+     * =====================================================
+     *
+     * Só consideramos adição quando existe algo que
+     * realmente parece um item sendo pedido logo depois.
+     *
+     * Exemplos válidos:
+     *
+     * "quero 2 burgers"
+     * "quero um burger"
+     * "quero burger"
+     * "vou querer uma coca"
+     *
+     * Exemplos inválidos:
+     *
+     * "quero ver o carrinho"
+     * "quero ver o menu"
+     * "quero fazer um pedido"
+     * "quero falar com uma pessoa"
+     */
+
+
+    const wantMatch =
+        normalized.match(
+            /^(quero|vou querer)\s+(.+)$/i
+        );
+
+
+    if (
+        !wantMatch
+    ) {
+
+        return false;
+
+    }
+
+
+    const requested =
+        wantMatch[2]
+            .trim();
+
+
+    if (!requested) {
+        return false;
+    }
+
+
+    /**
+     * Verbos/estruturas que indicam que o cliente está
+     * falando sobre uma ação, consulta ou fluxo,
+     * e não adicionando um produto.
+     */
+
+
+    const nonProductPatterns = [
+
+        /^(ver|mostrar|mostra|consultar|consultar|saber)\b/,
+
+        /^(fazer|efetuar|realizar)\s+(um|uma)?\s*(pedido|compra)\b/,
+
+        /^(falar|conversar)\s+(com|com uma|com um)\b/,
+
+        /^(pedir)\s+(informação|informacoes|informações|ajuda)\b/,
+
+        /^(saber|ver)\s+(o|a|os|as)?\s*(menu|carrinho|total|preço|preco|valor)\b/
+
+    ];
+
+
+    if (
+        nonProductPatterns.some(
+            pattern =>
+                pattern.test(requested)
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    /**
+     * =====================================================
+     * CASOS NATURAIS DE "QUERO"
+     * =====================================================
+     *
+     * Se não parece uma instrução de consulta/fluxo,
+     * mantemos "quero X" como potencial adição.
+     *
+     * A resolução real do produto continua sendo feita
+     * posteriormente pelos serviços da empresa.
+     */
+
+
+    return true;
 
 }
 
@@ -1402,6 +1555,31 @@ function extractItemCandidate(text) {
  * =========================================================
  * CANDIDATO DIRETO
  * =========================================================
+ *
+ * Extrai um item quando o utilizador envia diretamente
+ * o nome de um produto/serviço dentro de um estado de
+ * seleção.
+ *
+ * IMPORTANTE:
+ *
+ * Não devemos transformar palavras genéricas ou comandos
+ * conversacionais em candidatos.
+ *
+ * Exemplos que NÃO são candidatos:
+ *
+ * "quero ver tudo"
+ * "menu"
+ * "quero ver o menu"
+ * "quero fazer um pedido"
+ * "quero falar com uma pessoa"
+ * "isso"
+ * "aquilo"
+ * "sim"
+ * "não"
+ *
+ * A resolução real do produto/serviço continua dependente
+ * dos dados da empresa.
+ * =========================================================
  */
 
 function extractDirectItemCandidate(
@@ -1442,6 +1620,12 @@ function extractDirectItemCandidate(
     }
 
 
+    /**
+     * =====================================================
+     * LIMITE DE TAMANHO
+     * =====================================================
+     */
+
     if (
         normalized.length > 80
     ) {
@@ -1450,6 +1634,12 @@ function extractDirectItemCandidate(
 
     }
 
+
+    /**
+     * =====================================================
+     * RESPOSTAS CONVERSACIONAIS
+     * =====================================================
+     */
 
     if (
         isAffirmative(normalized) ||
@@ -1462,6 +1652,12 @@ function extractDirectItemCandidate(
     }
 
 
+    /**
+     * =====================================================
+     * APENAS NÚMERO
+     * =====================================================
+     */
+
     if (
         /^\d+$/.test(normalized)
     ) {
@@ -1470,6 +1666,12 @@ function extractDirectItemCandidate(
 
     }
 
+
+    /**
+     * =====================================================
+     * PERGUNTAS GENÉRICAS
+     * =====================================================
+     */
 
     if (
         /^(quanto|qual|onde|como|quando|tem|tens|voces|voce)\b/
@@ -1481,9 +1683,164 @@ function extractDirectItemCandidate(
     }
 
 
+    /**
+     * =====================================================
+     * INTENÇÕES / COMANDOS GENÉRICOS
+     * =====================================================
+     *
+     * Estes textos representam intenção conversacional,
+     * não nomes de produtos ou serviços.
+     *
+     * Isto evita falsos candidatos como:
+     *
+     * "quero ver tudo"
+     * "quero ver o menu"
+     * "quero fazer um pedido"
+     * "quero falar com uma pessoa"
+     */
+
+    const genericIntentPatterns = [
+
+        /^quero ver\b/,
+
+        /^quero olhar\b/,
+
+        /^quero conhecer\b/,
+
+        /^quero saber\b/,
+
+        /^quero fazer\b/,
+
+        /^quero falar\b/,
+
+        /^quero conversar\b/,
+
+        /^quero pedir\b/,
+
+        /^quero solicitar\b/,
+
+        /^quero um pedido\b/,
+
+        /^quero o pedido\b/,
+
+        /^quero o menu\b/,
+
+        /^quero menu\b/,
+
+        /^ver o menu\b/,
+
+        /^ver menu\b/,
+
+        /^mostrar o menu\b/,
+
+        /^mostrar menu\b/,
+
+        /^mostra o menu\b/,
+
+        /^mostra menu\b/,
+
+        /^ver tudo\b/,
+
+        /^mostrar tudo\b/,
+
+        /^mostra tudo\b/,
+
+        /^tudo\b/,
+
+        /^menu\b/,
+
+        /^cardapio\b/,
+
+        /^cardápio\b/,
+
+        /^pedido\b/,
+
+        /^pedidos\b/,
+
+        /^carrinho\b/,
+
+        /^total\b/,
+
+        /^falar com\b/,
+
+        /^falar com uma pessoa\b/,
+
+        /^falar com alguem\b/,
+
+        /^falar com alguém\b/,
+
+        /^atendente\b/,
+
+        /^pessoa\b/,
+
+        /^humano\b/,
+
+        /^ajuda\b/,
+
+        /^obrigado\b/,
+
+        /^obrigada\b/,
+
+        /^tchau\b/,
+
+        /^adeus\b/
+
+    ];
+
+
+    if (
+        genericIntentPatterns.some(
+            pattern =>
+                pattern.test(normalized)
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    /**
+     * =====================================================
+     * REFERÊNCIAS VAGAS
+     * =====================================================
+     */
+
+    const vagueReferencePatterns = [
+
+        /^(isso|isto|aquilo|esse|essa|este|esta|aquele|aquela)$/,
+
+        /^(ele|ela|eles|elas)$/,
+
+        /^(esse aqui|essa aqui|este aqui|esta aqui)$/,
+
+        /^(o mesmo|a mesma)$/,
+
+        /^(qualquer um|qualquer uma)$/,
+
+        /^(qualquer coisa)$/,
+
+        /^(qualquer)$/,
+
+        /^(tudo|nada)$/,
+
+    ];
+
+
+    if (
+        vagueReferencePatterns.some(
+            pattern =>
+                pattern.test(normalized)
+        )
+    ) {
+
+        return null;
+
+    }
+
+
     return normalized;
 }
-
 
 /**
  * =========================================================
@@ -1839,12 +2196,95 @@ function detectTarget({
 
 
     /**
-     * Carrinho / pedido.
+     * =========================================================
+     * INTENÇÕES EXPLÍCITAS
+     * =========================================================
+     *
+     * Quando o intentService já identificou claramente a
+     * intenção, essa intenção deve ter prioridade sobre
+     * candidatos contextuais.
+     *
+     * Isto evita casos como:
+     *
+     * "quero ver tudo"
+     * → serviceCandidate falso positivo
+     * → target: service
+     *
+     * A intenção explícita deve vencer.
      */
 
     if (
-        /\b(total|tudo|carrinho|pedido|pedidos|pagar|deu|fica tudo)\b/
-            .test(normalized)
+        intent === 'HUMAN' ||
+        intent === 'ATTENDANT'
+    ) {
+
+        return 'human';
+
+    }
+
+
+    if (
+        intent === 'MENU'
+    ) {
+
+        return 'menu';
+
+    }
+
+
+    if (
+        intent === 'SERVICES' ||
+        intent === 'SERVICE_REQUEST'
+    ) {
+
+        return 'service';
+
+    }
+
+
+    if (
+        intent === 'ORDER'
+    ) {
+
+        return 'order';
+
+    }
+
+
+    if (
+        intent === 'LOCATION'
+    ) {
+
+        return 'location';
+
+    }
+
+
+    if (
+        intent === 'HOURS'
+    ) {
+
+        return 'hours';
+
+    }
+
+
+    /**
+     * =========================================================
+     * CARRINHO / TOTAL
+     * =========================================================
+     */
+
+    if (
+        /\b(total|carrinho|pedido|pedidos|pagar)\b/
+            .test(normalized) ||
+        /\b(deu|fica tudo)\b/
+            .test(normalized) ||
+        (
+            /\btudo\b/.test(normalized) &&
+            /\b(total|carrinho|pedido|pedidos|pagar|preço|preco|valor|quanto|comprar|itens)\b/
+                .test(normalized)
+        )
     ) {
 
         return 'cart';
@@ -1853,7 +2293,9 @@ function detectTarget({
 
 
     /**
-     * Serviço.
+     * =========================================================
+     * SERVIÇO
+     * =========================================================
      */
 
     if (
@@ -1872,7 +2314,9 @@ function detectTarget({
 
 
     /**
-     * Produto.
+     * =========================================================
+     * PRODUTO
+     * =========================================================
      */
 
     if (
@@ -1889,11 +2333,15 @@ function detectTarget({
 
 
     /**
-     * Quantidade.
+     * =========================================================
+     * QUANTIDADE
+     * =========================================================
      */
 
     if (
-        extractQuantityTarget(normalized)
+        extractQuantityTarget(
+            normalized
+        )
     ) {
 
         return 'quantity';
@@ -1902,7 +2350,9 @@ function detectTarget({
 
 
     /**
-     * Pedido em confirmação.
+     * =========================================================
+     * PEDIDO EM CONFIRMAÇÃO
+     * =========================================================
      */
 
     if (
@@ -1918,7 +2368,6 @@ function detectTarget({
 
     return null;
 }
-
 
 /**
  * =========================================================
@@ -2239,12 +2688,11 @@ function detectBehavior({
      */
 
     if (
-        intent === 'SERVICES'
-    ) {
-
-        return 'show_services';
-
-    }
+    intent === 'SERVICE' ||
+    intent === 'SERVICES'
+) {
+    return 'show_services';
+}
 
 
     /**
@@ -2287,16 +2735,23 @@ function detectBehavior({
 
 
     /**
-     * ATENDENTE
-     */
+ * =========================================================
+ * ATENDIMENTO HUMANO
+ * =========================================================
+ *
+ * HUMAN é a intenção moderna usada pelo intentService.
+ * ATTENDANT é mantido por compatibilidade com classificações
+ * anteriores.
+ */
 
-    if (
-        intent === 'ATTENDANT'
-    ) {
+if (
+    intent === 'HUMAN' ||
+    intent === 'ATTENDANT'
+) {
 
-        return 'human_support';
+    return 'human_support';
 
-    }
+}
 
 
     /**
@@ -2741,12 +3196,19 @@ function detectMultipleAddActions(text) {
  * =========================================================
  */
 
-function detectCompoundActions(text) {
+function detectCompoundActions(text, intent = null) {
 
     const normalized =
         normalizeForComparison(text);
 
     if (!normalized) {
+
+        return [];
+
+    }
+
+
+    if (intent === "SERVICE_REQUEST") {
 
         return [];
 
@@ -2978,7 +3440,7 @@ function detectCompoundActions(text) {
         if (
             isQuantityEditAction(
                 segment,
-                'editing_cart',
+                null,
                 quantity
             )
         ) {
@@ -3450,7 +3912,8 @@ function analyzeMessage({
 
     const compoundActions =
         detectCompoundActions(
-            normalizedMessage
+            normalizedMessage,
+            resolved.intent
         );
 
 
@@ -3502,28 +3965,67 @@ const hasQuantityChangeAction =
         productCandidates.length > 1;
 
 
-    const productCandidate =
-        hasMultipleProductCandidates
-
-            ? null
-
-            : extractProductCandidate(
-                  normalizedMessage,
-                  state
-              );
-
-
     /**
-     * =====================================================
-     * CANDIDATO DE SERVIÇO
-     * =====================================================
-     */
+ * =====================================================
+ * CANDIDATOS DE PRODUTO / SERVIÇO
+ * =====================================================
+ *
+ * Intenções explícitas de navegação/conversa não devem
+ * gerar candidatos genéricos.
+ *
+ * Exemplos:
+ *
+ * "quero ver o menu"
+ * "quero ver os serviços"
+ * "quero falar com uma pessoa"
+ * "quero fazer um pedido"
+ *
+ * Nestes casos a intenção já está identificada.
+ */
 
-    const serviceCandidate =
-        extractServiceCandidate(
-            normalizedMessage,
-            state
+const explicitNonItemIntent =
+    [
+        'GREETING',
+        'MENU',
+        'SERVICE',
+        'SERVICES',
+        'SERVICE_REQUEST',
+        'HUMAN',
+        'ATTENDANT',
+        'LOCATION',
+        'HOURS',
+        'HELP',
+        'THANKS',
+        'GOODBYE'
+    ].includes(
+        resolved.intent
+    );
+
+
+const productCandidate =
+    explicitNonItemIntent
+
+        ? null
+
+        : (
+            hasMultipleProductCandidates
+
+                ? null
+
+                : extractProductCandidate(
+                      normalizedMessage,
+                      state
+                  )
         );
+
+
+const serviceCandidate =
+    explicitNonItemIntent || productCandidate
+        ? null
+        : extractServiceCandidate(
+              normalizedMessage,
+              state
+          );
 
 
     /**

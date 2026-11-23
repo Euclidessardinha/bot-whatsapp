@@ -36,7 +36,7 @@ async function createRequest(
         error: customerError
     } = await supabase
         .from('customers')
-        .select('id, customer_id')
+        .select('id')
         .eq('id', customerId)
         .eq('company_id', companyId)
         .maybeSingle();
@@ -121,7 +121,7 @@ async function createRequest(
             error: serviceError
         } = await supabase
             .from('services')
-            .select('id, customer_id')
+            .select('id')
             .eq('id', serviceId)
             .eq('company_id', companyId)
             .maybeSingle();
