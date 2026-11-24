@@ -1,0 +1,1252 @@
+
+/* =========================================================
+   OVERLAY
+   ========================================================= */
+
+.variants-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    background: rgba(15, 23, 42, 0.68);
+
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+
+/* =========================================================
+   MODAL PRINCIPAL
+   ========================================================= */
+
+.variants-modal {
+    width: min(1050px, 100%);
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+
+    box-shadow:
+        0 25px 70px rgba(15, 23, 42, 0.25),
+        0 8px 24px rgba(15, 23, 42, 0.08);
+
+    padding: 28px;
+
+    animation: variantsModalIn 0.2s ease-out;
+}
+
+
+@keyframes variantsModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   CABEÇALHO
+   ========================================================= */
+
+.variants-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 20px;
+
+    padding-bottom: 22px;
+
+    border-bottom: 1px solid #eef0f3;
+}
+
+
+.variants-header h3 {
+    margin: 0;
+
+    font-size: 26px;
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    color: #111827;
+}
+
+
+.variants-header p {
+    margin: 7px 0 0;
+
+    font-size: 15px;
+    font-weight: 500;
+
+    color: #4b5563;
+}
+
+
+.variants-header small {
+    display: block;
+
+    max-width: 680px;
+
+    margin-top: 8px;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+
+.variants-close {
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #6b7280;
+
+    font-size: 25px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.variants-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+    border-color: #d1d5db;
+
+    transform: rotate(3deg);
+}
+
+
+/* =========================================================
+   MENSAGEM DE ERRO
+   ========================================================= */
+
+.variants-error {
+    display: flex;
+    align-items: center;
+
+    margin-top: 18px;
+    padding: 13px 15px;
+
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.variants-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+
+    margin: 22px 0;
+}
+
+
+.variants-toolbar > div {
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+.variants-toolbar strong {
+    color: #111827;
+
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   BOTÃO PRINCIPAL
+   ========================================================= */
+
+.variants-toolbar .btn-primary,
+.variants-empty .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 40px;
+
+    padding: 0 16px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: #111827;
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow: 0 4px 10px rgba(17, 24, 39, 0.12);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.variants-toolbar .btn-primary:hover,
+.variants-empty .btn-primary:hover {
+    background: #000000;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 7px 16px rgba(17, 24, 39, 0.18);
+}
+
+
+.variants-toolbar .btn-primary:active,
+.variants-empty .btn-primary:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   FORMULÁRIO DE VARIANTE
+   ========================================================= */
+
+.variant-form-card {
+    margin-bottom: 24px;
+
+    padding: 22px;
+
+    border: 1px solid #dbe3ef;
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #f8fafc 0%,
+            #ffffff 100%
+        );
+
+    box-shadow:
+        0 5px 18px rgba(15, 23, 42, 0.06);
+
+    animation: variantFormIn 0.2s ease-out;
+}
+
+
+@keyframes variantFormIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.variant-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+}
+
+
+.variant-form-header h4 {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    color: #111827;
+}
+
+
+.variant-form-header p {
+    margin: 5px 0 0;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+
+.variant-form-header > button {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.variant-form-header > button:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+
+/* =========================================================
+   FORMULÁRIO / CAMPOS
+   ========================================================= */
+
+.variant-form-card form {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+}
+
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #374151;
+}
+
+
+.form-group small {
+    font-size: 12px;
+    line-height: 1.4;
+
+    color: #9ca3af;
+}
+
+
+.form-group input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    min-height: 42px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.form-group input:hover {
+    border-color: #9ca3af;
+}
+
+
+.form-group input:focus {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+
+    border-color: #111827;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 24, 39, 0.08);
+
+    outline: none;
+}
+
+.form-group input:focus::placeholder {
+    color: #9ca3af;
+}
+
+
+.variant-form-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 16px;
+}
+
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
+
+.variant-checkbox {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    width: fit-content;
+
+    padding: 9px 0;
+
+    color: #374151;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+}
+
+
+.variant-checkbox input {
+    width: 17px;
+    height: 17px;
+
+    margin: 0;
+
+    accent-color: #111827;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   AÇÕES DO FORMULÁRIO
+   ========================================================= */
+
+.variant-form-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 4px;
+    padding-top: 18px;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+
+.variant-form-actions button {
+    min-height: 40px;
+
+    padding: 0 16px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.variant-form-actions button:first-child:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+
+.variant-form-actions button:last-child {
+    border-color: #111827;
+
+    background: #111827;
+    color: #ffffff;
+}
+
+
+.variant-form-actions button:last-child:hover {
+    background: #000000;
+
+    transform: translateY(-1px);
+}
+
+
+.variant-form-actions button:disabled {
+    opacity: 0.55;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.variants-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 220px;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   ESTADO VAZIO
+   ========================================================= */
+
+.variants-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    max-width: 600px;
+
+    margin: 35px auto 15px;
+
+    padding: 45px 30px;
+
+    border: 1px dashed #d1d5db;
+    border-radius: 16px;
+
+    background: #fafafa;
+
+    text-align: center;
+}
+
+
+.variants-empty-icon {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 15px;
+
+    border-radius: 16px;
+
+    background: #f3f4f6;
+
+    font-size: 25px;
+}
+
+
+.variants-empty h4 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+
+.variants-empty p {
+    max-width: 520px;
+
+    margin: 8px 0 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+
+.variants-empty .btn-primary {
+    margin-top: 22px;
+}
+
+
+/* =========================================================
+   LISTA DE VARIANTES
+   ========================================================= */
+
+.variants-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+}
+
+
+/* =========================================================
+   CARD DA VARIANTE
+   ========================================================= */
+
+.variant-card {
+    padding: 20px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.04);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.variant-card:hover {
+    border-color: #d1d5db;
+
+    box-shadow:
+        0 7px 20px rgba(15, 23, 42, 0.07);
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   CABEÇALHO DA VARIANTE
+   ========================================================= */
+
+.variant-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 15px;
+
+    padding-bottom: 15px;
+
+    border-bottom: 1px solid #f0f1f3;
+}
+
+
+.variant-title {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.variant-title > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.variant-title strong {
+    color: #111827;
+
+    font-size: 16px;
+    font-weight: 700;
+}
+
+
+.variant-title small {
+    color: #9ca3af;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.variant-status {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 25px;
+
+    padding: 0 9px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+.variant-status.available {
+    background: #ecfdf3;
+
+    color: #15803d;
+}
+
+
+.variant-status.unavailable {
+    background: #fef2f2;
+
+    color: #b91c1c;
+}
+
+
+/* =========================================================
+   AÇÕES DA VARIANTE
+   ========================================================= */
+
+.variant-actions {
+    display: flex;
+
+    gap: 5px;
+}
+
+
+.variant-actions button,
+.attribute-row button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.variant-actions button:hover,
+.attribute-row button:hover {
+    background: #f3f4f6;
+
+    border-color: #e5e7eb;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   INFORMAÇÕES DA VARIANTE
+   ========================================================= */
+
+.variant-info {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(120px, 180px));
+
+    gap: 20px;
+
+    padding: 17px 0;
+}
+
+
+.variant-info div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.variant-info span {
+    color: #9ca3af;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+
+.variant-info strong {
+    color: #111827;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ATRIBUTOS
+   ========================================================= */
+
+.attributes-section {
+    padding-top: 17px;
+
+    border-top: 1px solid #f0f1f3;
+}
+
+
+.attributes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 12px;
+}
+
+
+.attributes-header h4 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+
+.attributes-header small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #9ca3af;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   LISTA DE ATRIBUTOS
+   ========================================================= */
+
+.attributes-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 13px;
+}
+
+
+.attribute-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 42px;
+
+    padding: 4px 6px 4px 12px;
+
+    border: 1px solid #eef0f2;
+    border-radius: 9px;
+
+    background: #fafafa;
+
+    color: #4b5563;
+
+    font-size: 13px;
+}
+
+
+.attribute-row > span {
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.attribute-row strong {
+    color: #111827;
+
+    font-weight: 600;
+}
+
+
+.attribute-row > div {
+    display: flex;
+
+    gap: 2px;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   SEM ATRIBUTOS
+   ========================================================= */
+
+.no-attributes {
+    margin: 0 0 12px;
+
+    color: #9ca3af;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   FORMULÁRIO DE ATRIBUTO
+   ========================================================= */
+
+.attribute-form {
+    display: grid;
+
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+
+    gap: 8px;
+}
+
+
+.attribute-form input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    min-height: 40px;
+
+    padding: 9px 11px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 13px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.attribute-form input::placeholder {
+    color: #9ca3af;
+}
+
+
+.attribute-form input:hover {
+    border-color: #9ca3af;
+}
+
+
+.attribute-form input:focus {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+
+    border-color: #111827;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 24, 39, 0.07);
+
+    outline: none;
+}
+
+.attribute-form input:focus::placeholder {
+    color: #9ca3af;
+}
+
+
+.attribute-form button {
+    min-height: 40px;
+
+    padding: 0 14px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: #111827;
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.attribute-form button:hover {
+    background: #000000;
+
+    transform: translateY(-1px);
+}
+
+.form-group input,
+.form-group input:focus,
+.attribute-form input,
+.attribute-form input:focus {
+    -webkit-text-fill-color: #111827;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.variants-modal::-webkit-scrollbar {
+    width: 7px;
+}
+
+
+.variants-modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.variants-modal::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+
+    border-radius: 999px;
+}
+
+
+.variants-modal::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .variants-overlay {
+        padding: 12px;
+    }
+
+
+    .variants-modal {
+        max-height: 94vh;
+
+        padding: 20px;
+
+        border-radius: 17px;
+    }
+
+
+    .variant-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .attribute-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+
+    .attribute-form button {
+        grid-column: 1 / -1;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .variants-header {
+        gap: 12px;
+    }
+
+
+    .variants-header h3 {
+        font-size: 22px;
+    }
+
+
+    .variants-toolbar {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+
+    .variants-toolbar .btn-primary {
+        width: 100%;
+    }
+
+
+    .variant-card {
+        padding: 16px;
+    }
+
+
+    .variant-card-header {
+        align-items: flex-start;
+    }
+
+
+    .variant-title {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 6px;
+    }
+
+
+    .variant-info {
+        grid-template-columns: 1fr 1fr;
+
+        gap: 12px;
+    }
+
+
+    .attribute-form {
+        grid-template-columns: 1fr;
+    }
+
+
+    .attribute-form button {
+        grid-column: auto;
+
+        width: 100%;
+    }
+
+
+    .attribute-row {
+        align-items: flex-start;
+
+        padding: 7px 6px 7px 10px;
+    }
+
+
+    .attribute-row > span {
+        padding-top: 7px;
+    }
+
+
+    .variant-form-card {
+        padding: 17px;
+    }
+
+
+    .variant-form-actions {
+        flex-direction: column-reverse;
+    }
+
+
+    .variant-form-actions button {
+        width: 100%;
+    }
+
+
+    .variants-empty {
+        padding: 35px 20px;
+    }
+}
+
+
+@media (max-width: 380px) {
+
+    .variants-modal {
+        padding: 16px;
+    }
+
+
+    .variant-info {
+        grid-template-columns: 1fr;
+    }
+
+
+    .variant-card-header {
+        flex-direction: column;
+    }
+
+
+    .variant-actions {
+        align-self: flex-end;
+    }
+}

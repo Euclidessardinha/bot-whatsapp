@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 
 import { getCurrentProfile } from '../services/authService';
 
+import ProdutoVariantes from './ProdutoVariantes';
+
 import {
     getProducts,
     createProduct,
@@ -25,6 +27,8 @@ function Produtos() {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const [variantProduct, setVariantProduct] =
+    useState(null);
 
     const [form, setForm] = useState({
     name: '',
@@ -229,6 +233,7 @@ function handleRemoveImage() {
 
             const updated =
                 await updateProduct(
+                    profile.company_id,
                     editingProduct.id,
                     {
                         ...form,
@@ -279,6 +284,7 @@ function handleRemoveImage() {
 
                 finalProduct =
                     await updateProduct(
+                        profile.company_id,
                         created.id,
                         {
                             ...form,
@@ -322,7 +328,7 @@ function handleRemoveImage() {
         }
 
         try {
-            await deleteProduct(product.id);
+            await deleteProduct(profile.company_id, product.id);
 
             setProducts((current) =>
                 current.filter(
@@ -343,6 +349,7 @@ function handleRemoveImage() {
         try {
             const updated =
                 await updateProduct(
+                    profile.company_id,
                     product.id,
                     {
                         name: product.name,
@@ -367,6 +374,10 @@ function handleRemoveImage() {
             );
         }
     }
+
+    function openVariants(product) {
+    setVariantProduct(product);
+}
 
     const totalProducts =
         products.length;
@@ -634,6 +645,15 @@ function handleRemoveImage() {
                                                     <button
                                                         className="btn-edit"
                                                         onClick={() =>
+                                                            openVariants(product)
+                                                        }
+                                                    >
+                                                        ⚙️ Variantes
+                                                    </button>
+
+                                                    <button
+                                                        className="btn-edit"
+                                                        onClick={() =>
                                                             openEditForm(
                                                                 product
                                                             )
@@ -840,6 +860,16 @@ function handleRemoveImage() {
                 </div>
 
             )}
+
+            {variantProduct && profile && (
+    <ProdutoVariantes
+        companyId={profile.company_id}
+        product={variantProduct}
+        onClose={() =>
+            setVariantProduct(null)
+        }
+    />
+)}
 
         </div>
     );

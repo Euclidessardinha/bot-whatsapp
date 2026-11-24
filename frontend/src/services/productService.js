@@ -67,6 +67,7 @@ export async function createProduct(
 }
 
 export async function updateProduct(
+    companyId,
     productId,
     product
 ) {
@@ -92,6 +93,7 @@ export async function updateProduct(
     } = await supabase
         .from('products')
         .update(updateData)
+        .eq('company_id', companyId)
         .eq('id', productId)
         .select()
         .single();
@@ -109,6 +111,7 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(
+    companyId,
     productId
 ) {
     const {
@@ -116,6 +119,7 @@ export async function deleteProduct(
     } = await supabase
         .from('products')
         .delete()
+        .eq('company_id', companyId)
         .eq('id', productId);
 
     if (error) {
