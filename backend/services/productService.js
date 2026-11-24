@@ -921,7 +921,558 @@ async function getProductByName(
 }
 
 
+/**
+ * =========================================================
+ * VARIANTES DE PRODUTO
+ * =========================================================
+ *
+ * Todas as operações são obrigatoriamente limitadas
+ * ao company_id atual.
+ */
+
+
+/**
+ * =========================================================
+ * BUSCAR VARIANTES DE UM PRODUTO
+ * =========================================================
+ */
+async function getProductVariants(
+    companyId,
+    productId,
+    options = {}
+) {
+
+    if (
+        !companyId ||
+        !productId
+    ) {
+        return [];
+    }
+
+    const {
+        includeUnavailable = false
+    } = options;
+
+    try {
+
+        let query = supabase
+            .from('product_variants')
+            .select('*')
+            .eq('company_id', companyId)
+            .eq('product_id', productId);
+
+        if (!includeUnavailable) {
+
+            query = query.eq(
+                'available',
+                true
+            );
+        }
+
+        const {
+            data,
+            error
+        } = await query;
+
+        if (error) {
+
+            console.error(
+                '❌ Erro ao buscar variantes do produto:',
+                error
+            );
+
+            return [];
+        }
+
+        return data || [];
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar variantes:',
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/**
+ * =========================================================
+ * BUSCAR ATRIBUTOS DE UMA VARIANTE
+ * =========================================================
+ */
+async function getVariantAttributes(
+    companyId,
+    variantId
+) {
+
+    if (
+        !companyId ||
+        !variantId
+    ) {
+        return [];
+    }
+
+    try {
+
+        const {
+            data,
+            error
+        } = await supabase
+            .from('product_variant_attributes')
+            .select('*')
+            .eq(
+                'company_id',
+                companyId
+            )
+            .eq(
+                'variant_id',
+                variantId
+            );
+
+        if (error) {
+
+            console.error(
+                '❌ Erro ao buscar atributos da variante:',
+                error
+            );
+
+            return [];
+        }
+
+        return data || [];
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar atributos:',
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/**
+ * =========================================================
+ * BUSCAR VARIANTES COM ATRIBUTO
+ * =========================================================
+ *
+ * Exemplo:
+ *
+ * findVariantsByAttribute(
+ *     companyId,
+ *     'tamanho',
+ *     '35'
+ * )
+ *
+ * Retorna variantes que possuem:
+ *
+ * tamanho = 35
+ */
+async function findVariantsByAttribute(
+    companyId,
+    attributeName,
+    attributeValue
+) {
+
+    if (
+        !companyId ||
+        !attributeName ||
+        !attributeValue
+    ) {
+        return [];
+    }
+
+    const normalizedName =
+        normalizeText(
+            attributeName
+        );
+
+    const normalizedValue =
+        normalizeText(
+            attributeValue
+        );
+
+    if (
+        !normalizedName ||
+        !normalizedValue
+    ) {
+        return [];
+    }
+
+    try {
+
+        /**
+         * Primeiro encontramos os atributos
+         * pertencentes à empresa.
+         */
+        const {
+            data: attributes,
+            error: attributesError
+        } = await supabase
+            .from(
+                'product_variant_attributes'
+            )
+            .select(
+                'variant_id'
+            )
+            .eq(
+                'company_id',
+                companyId
+            )
+            .ilike(
+        'name',
+        attributeName.toString().trim()
+            )
+            
+            .eq(
+    'value',
+    attributeValue.toString().trim()
+);
+
+        if (attributesError) {
+
+            console.error(
+                '❌ Erro ao pesquisar atributo:',
+                attributesError
+            );
+
+            return [];
+        }
+
+        if (
+            !attributes ||
+            !attributes.length
+        ) {
+            return [];
+        }
+
+        const variantIds =
+            [
+                ...new Set(
+                    attributes.map(
+                        item =>
+                            item.variant_id
+                    )
+                )
+            ];
+
+        /**
+         * Agora buscamos as variantes,
+         * novamente limitadas ao company_id.
+         */
+        const {
+            data: variants,
+            error: variantsError
+        } = await supabase
+            .from(
+                'product_variants'
+            )
+            .select('*')
+            .eq(
+                'company_id',
+                companyId
+            )
+            .eq(
+                'available',
+                true
+            )
+            .in(
+                'id',
+                variantIds
+            );
+
+        if (variantsError) {
+
+            console.error(
+                '❌ Erro ao buscar variantes:',
+                variantsError
+            );
+
+            return [];
+        }
+
+        return variants || [];
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar variantes por atributo:',
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/**
+ * =========================================================
+ * BUSCAR VALORES DISPONÍVEIS DE UM ATRIBUTO
+ * =========================================================
+ *
+ * Exemplo:
+ *
+ * getProductAttributeValues(
+ *     companyId,
+ *     productId,
+ *     'tamanho'
+ * )
+ *
+ * Resultado:
+ *
+ * ['35', '36', '37', '38']
+ */
+async function getProductAttributeValues(
+    companyId,
+    productId,
+    attributeName
+) {
+
+    if (
+        !companyId ||
+        !productId ||
+        !attributeName
+    ) {
+        return [];
+    }
+
+    const normalizedName =
+        normalizeText(
+            attributeName
+        );
+
+    if (!normalizedName) {
+        return [];
+    }
+
+    try {
+
+        /**
+         * Primeiro obtemos as variantes
+         * do produto.
+         */
+        const variants =
+            await getProductVariants(
+                companyId,
+                productId
+            );
+
+        if (!variants.length) {
+            return [];
+        }
+
+        const variantIds =
+            variants.map(
+                variant =>
+                    variant.id
+            );
+
+        /**
+         * Depois procuramos os atributos
+         * dessas variantes.
+         */
+        const {
+            data,
+            error
+        } = await supabase
+            .from(
+                'product_variant_attributes'
+            )
+            .select(
+                'value'
+            )
+            .eq(
+                'company_id',
+                companyId
+            )
+            .in(
+                'variant_id',
+                variantIds
+            )
+            .ilike(
+                'name',
+                normalizedName
+            );
+
+        if (error) {
+
+            console.error(
+                '❌ Erro ao buscar valores do atributo:',
+                error
+            );
+
+            return [];
+        }
+
+        if (!data) {
+            return [];
+        }
+
+        /**
+         * Remove duplicados.
+         */
+        return [
+            ...new Set(
+                data
+                    .map(
+                        item =>
+                            item.value
+                    )
+                    .filter(Boolean)
+            )
+        ];
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao buscar valores do atributo:',
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/**
+ * =========================================================
+ * BUSCAR VARIANTE POR ATRIBUTOS
+ * =========================================================
+ *
+ * Exemplo:
+ *
+ * {
+ *     tamanho: '35',
+ *     cor: 'preto'
+ * }
+ *
+ * Retorna a variante que possui
+ * exatamente esses atributos.
+ */
+async function findProductVariant(
+    companyId,
+    productId,
+    attributes = {}
+) {
+
+    if (
+        !companyId ||
+        !productId ||
+        !attributes ||
+        typeof attributes !== 'object'
+    ) {
+        return null;
+    }
+
+    const attributeEntries =
+        Object.entries(
+            attributes
+        );
+
+    if (!attributeEntries.length) {
+        return null;
+    }
+
+    try {
+
+        const variants =
+            await getProductVariants(
+                companyId,
+                productId
+            );
+
+        if (!variants.length) {
+            return null;
+        }
+
+        /**
+         * Verificamos cada variante.
+         */
+        for (
+            const variant
+            of variants
+        ) {
+
+            const variantAttributes =
+                await getVariantAttributes(
+                    companyId,
+                    variant.id
+                );
+
+            if (
+                !variantAttributes.length
+            ) {
+                continue;
+            }
+
+            const matches =
+                attributeEntries.every(
+                    ([name, value]) => {
+
+                        const normalizedName =
+                            normalizeText(
+                                name
+                            );
+
+                        const normalizedValue =
+                            normalizeText(
+                                value
+                            );
+
+                        return variantAttributes.some(
+                            attribute =>
+                                normalizeText(
+                                    attribute.name
+                                ) ===
+                                normalizedName
+                                &&
+                                normalizeText(
+                                    attribute.value
+                                ) ===
+                                normalizedValue
+                        );
+                    }
+                );
+
+            if (matches) {
+
+                return {
+
+                    ...variant,
+
+                    attributes:
+                        variantAttributes
+
+                };
+            }
+        }
+
+        return null;
+
+    } catch (error) {
+
+        console.error(
+            '❌ Erro inesperado ao encontrar variante:',
+            error
+        );
+
+        return null;
+    }
+}
+
+
 module.exports = {
     getProductByName,
-    getProductCandidates
+    getProductCandidates,
+
+    getProductVariants,
+    getVariantAttributes,
+    findVariantsByAttribute,
+    getProductAttributeValues,
+    findProductVariant
 };

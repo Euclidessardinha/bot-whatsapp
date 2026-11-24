@@ -297,19 +297,32 @@ const SERVICE_SELECTION_STATES = [
  */
 
 const GREETING_PREFIXES = [
+    'oi',
+    'oie',
     'ola',
     'olá',
-    'oi',
     'bom dia',
     'boa tarde',
-    'boa noite',
-    'bom dia pessoal',
-    'boa tarde pessoal',
-    'boa noite pessoal',
-    'ola pessoal',
-    'oi pessoal'
+    'boa noite'
 ];
 
+const SOCIAL_GREETING_PREFIXES = [
+    'pessoal',
+    'amigo',
+    'amiga',
+    'chefe',
+    'malta',
+    'gente'
+];
+
+const SOCIAL_GREETING_QUESTIONS = [
+    'tudo bem',
+    'tudo bom',
+    'como vai',
+    'como vais',
+    'como está',
+    'como estás'
+];
 
 /**
  * =========================================================
@@ -324,6 +337,295 @@ function normalizeForComparison(text) {
         .trim();
 
 }
+
+
+
+function escapeRegExp(value) {
+    return String(value || '')
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+/**
+ * =========================================================
+ * DETECÇÃO FLEXÍVEL DE SAUDAÇÕES
+ * =========================================================
+ *
+ * A ideia aqui NÃO é cadastrar todas as frases possíveis.
+ *
+ * Reconhecemos famílias:
+ *
+ * oi
+ * oii
+ * oiii
+ * oie
+ * oiee
+ *
+ * ola
+ * olá
+ * olaaa
+ * olááá
+ *
+ * bom dia
+ * bom diaaa
+ *
+ * boa tarde
+ * boa tardeee
+ *
+ * boa noite
+ * boa noiteeee
+ *
+ * =========================================================
+ */
+
+function getGreetingPatterns() {
+
+    return [
+
+        // OI
+        /^oi+(?=\s|[,;:!?-]|$)/i,
+
+        // OIE
+        /^oie+(?=\s|[,;:!?-]|$)/i,
+
+        // OLA / OLÁ
+        /^ola+(?=\s|[,;:!?-]|$)/i,
+
+        // BOM DIA
+        /^bom\s+dia+(?=\s|[,;:!?-]|$)/i,
+
+        // BOA TARDE
+        /^boa\s+tarde+(?=\s|[,;:!?-]|$)/i,
+
+        // BOA NOITE
+        /^boa\s+noite+(?=\s|[,;:!?-]|$)/i
+    ];
+}
+
+
+/**
+ * Detecta se existe uma saudação no início.
+ *
+ * Retorna:
+ *
+ * {
+ *   greeting: "...",
+ *   remaining: "..."
+ * }
+ *
+ * ou null.
+ */
+function detectLeadingGreeting(text) {
+
+    const value =
+        normalizeForComparison(text);
+
+    if (!value) {
+        return null;
+    }
+
+
+    for (
+        const pattern
+        of getGreetingPatterns()
+    ) {
+
+        const match =
+            value.match(pattern);
+
+        if (!match) {
+            continue;
+        }
+
+
+        let afterGreeting =
+            value
+                .slice(match[0].length)
+                .trim();
+
+
+        afterGreeting =
+            afterGreeting
+                .replace(
+                    /^[,;:!?-]+\s*/,
+                    ''
+                )
+                .trim();
+
+
+        /*
+         * -----------------------------------------
+         * SAUDAÇÃO SOZINHA
+         * -----------------------------------------
+         *
+         * Ex:
+         *
+         * oi
+         * oiii
+         * olá
+         * bom dia
+         *
+         * Mantemos a mensagem inteira.
+         */
+
+        if (!afterGreeting) {
+
+            return {
+                greeting: match[0],
+                remaining: ''
+            };
+        }
+
+
+        /*
+         * -----------------------------------------
+         * SAUDAÇÃO + PESSOA
+         * -----------------------------------------
+         *
+         * Ex:
+         *
+         * oi amigo
+         * oi chefe
+         * olá pessoal
+         *
+         * Se for apenas isso, também é uma
+         * saudação completa.
+         */
+
+        const socialPattern =
+            new RegExp(
+                `^(${SOCIAL_GREETING_PREFIXES
+                    .map(escapeRegExp)
+                    .join('|')})(?=\\s|[,;:!?-]|$)`,
+                'i'
+            );
+
+
+        const socialMatch =
+            afterGreeting.match(
+                socialPattern
+            );
+
+
+        if (socialMatch) {
+
+            let afterSocial =
+                afterGreeting
+                    .slice(
+                        socialMatch[0].length
+                    )
+                    .trim();
+
+
+            afterSocial =
+                afterSocial
+                    .replace(
+                        /^[,;:!?-]+\s*/,
+                        ''
+                    )
+                    .trim();
+
+
+            /*
+             * "oi amigo"
+             *
+             * É uma saudação completa.
+             */
+            if (!afterSocial) {
+
+                return {
+                    greeting:
+                        `${match[0]} ${socialMatch[0]}`,
+                    remaining: ''
+                };
+            }
+
+
+            /*
+             * "oi amigo quero fazer um pedido"
+             *
+             * Agora sim removemos toda a saudação.
+             */
+            return {
+                greeting:
+                    `${match[0]} ${socialMatch[0]}`,
+                remaining:
+                    afterSocial
+            };
+        }
+
+
+        /*
+         * -----------------------------------------
+         * SAUDAÇÃO + INTENÇÃO
+         * -----------------------------------------
+         *
+         * Ex:
+         *
+         * oi quero chicken
+         * bom dia quero menu
+         * olá quanto custa
+         */
+
+        return {
+            greeting:
+                match[0],
+            remaining:
+                afterGreeting
+        };
+    }
+
+
+    /*
+     * ---------------------------------------------
+     * CUMPRIMENTOS CONVERSACIONAIS
+     * ---------------------------------------------
+     */
+
+    const socialQuestionPattern =
+        new RegExp(
+            `^(${SOCIAL_GREETING_QUESTIONS
+                .map(escapeRegExp)
+                .join('|')})(?=\\s|[,;:!?-]|$)`,
+            'i'
+        );
+
+
+    const socialQuestionMatch =
+        value.match(
+            socialQuestionPattern
+        );
+
+
+    if (!socialQuestionMatch) {
+        return null;
+    }
+
+
+    let remaining =
+        value
+            .slice(
+                socialQuestionMatch[0].length
+            )
+            .trim();
+
+
+    remaining =
+        remaining
+            .replace(
+                /^[,;:!?-]+\s*/,
+                ''
+            )
+            .trim();
+
+
+    return {
+        greeting:
+            socialQuestionMatch[0],
+        remaining
+    };
+}
+
 
 
 /**
@@ -351,7 +653,7 @@ function normalizeForComparison(text) {
 
 function removeLeadingGreeting(text) {
 
-    let value =
+    const value =
         normalizeForComparison(text);
 
     if (!value) {
@@ -359,46 +661,39 @@ function removeLeadingGreeting(text) {
     }
 
 
-    let changed = true;
+    const detected =
+        detectLeadingGreeting(value);
 
-    while (changed) {
 
-        changed = false;
-
-        for (
-            const greeting
-            of GREETING_PREFIXES
-        ) {
-
-            const pattern =
-                new RegExp(
-                    `^${greeting.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s*[,;:!?-]\\s*|\\s+)`,
-                    'i'
-                );
-
-            if (
-                pattern.test(value)
-            ) {
-
-                value =
-                    value
-                        .replace(
-                            pattern,
-                            ''
-                        )
-                        .trim();
-
-                changed = true;
-
-                break;
-            }
-        }
+    if (!detected) {
+        return value;
     }
 
 
-    return value;
-}
+    /*
+     * IMPORTANTE:
+     *
+     * Se a mensagem for apenas:
+     *
+     * "oi"
+     * "oiii"
+     * "olá"
+     * "bom dia"
+     * "boa tarde"
+     *
+     * NÃO removemos a saudação.
+     *
+     * Assim o intentService ainda poderá
+     * identificá-la como GREETING.
+     */
 
+    if (!detected.remaining) {
+        return value;
+    }
+
+
+    return detected.remaining;
+}
 
 /**
  * =========================================================
@@ -907,6 +1202,77 @@ function isAddAction(text) {
 
     /**
      * =====================================================
+     * QUANTIDADE + PRODUTO
+     * =====================================================
+     *
+     * Exemplos:
+     *
+     * "2 chicken"
+     * "duas chicken"
+     * "3 batatas"
+     *
+     * A quantidade só é considerada uma ação de
+     * adição quando existe conteúdo depois dela.
+     *
+     * Assim:
+     *
+     * "2"  -> false
+     * "2?" -> false
+     *
+     * A resolução do produto continua sendo feita
+     * posteriormente pelas camadas responsáveis.
+     * Nenhum produto é hardcoded aqui.
+     * =====================================================
+     */
+
+    const leadingQuantity =
+        extractLeadingQuantity(
+            normalized
+        );
+
+
+    if (
+        leadingQuantity !== null
+    ) {
+
+        const quantityPattern =
+            new RegExp(
+                '^' +
+                '(?:\\d+|' +
+                Object.keys(NUMBER_WORDS)
+                    .sort(
+                        (a, b) =>
+                            b.length - a.length
+                    )
+                    .map(escapeRegExp)
+                    .join('|') +
+                ')' +
+                '\\b\\s+(.+)$',
+                'i'
+            );
+
+
+        const quantityMatch =
+            normalized.match(
+                quantityPattern
+            );
+
+
+        if (
+            quantityMatch &&
+            quantityMatch[1] &&
+            quantityMatch[1].trim()
+        ) {
+
+            return true;
+
+        }
+
+    }
+
+
+    /**
+     * =====================================================
      * AÇÕES EXPLÍCITAS DE ADIÇÃO
      * =====================================================
      */
@@ -964,9 +1330,9 @@ function isAddAction(text) {
      */
 
     const wantMatch =
-    normalized.match(
-        /^(quero|queria|vou querer|gostaria|desejo|pretendo)\s+(.+)$/i
-    );
+        normalized.match(
+            /^(quero|queria|vou querer|gostaria|desejo|pretendo)\s+(.+)$/i
+        );
 
 
     if (!wantMatch) {
@@ -3712,7 +4078,7 @@ if (
                     candidate,
 
                     quantity:
-                        extractLeadingQuantity(
+                        extractQuantity(
                             segment
                         )
 
@@ -4019,6 +4385,23 @@ function analyzeMessage({
         );
 
 
+      const leadingGreeting =
+    detectLeadingGreeting(originalMessage);
+
+if (
+    leadingGreeting &&
+    !leadingGreeting.remaining &&
+    detected.intent === 'UNKNOWN'
+) {
+
+    detected = {
+        ...detected,
+        intent: 'GREETING',
+        confidence: 0.98
+    };
+}  
+
+
     /**
      * Se a mensagem começa por cumprimento e a primeira
      * classificação não capturou a intenção real, tentamos
@@ -4153,6 +4536,33 @@ function analyzeMessage({
         extractReference(
             intentMessage
         );
+
+
+    /**
+ * =====================================================
+ * CONSULTA DE ATRIBUTO DE PRODUTO
+ * =====================================================
+ *
+ * O Knowledge Engine apenas interpreta a pergunta.
+ * A resolução real do produto/atributo continua
+ * nas camadas superiores, respeitando company_id.
+ *
+ * Exemplos:
+ *
+ * "esse sapato tem tamanho 35?"
+ * "tem em preto?"
+ * "quais tamanhos tem?"
+ *
+ * Se não houver confiança suficiente, o detector
+ * retorna null.
+ * =====================================================
+ */
+
+const productAttributeQuery =
+    detectProductAttributeQuery(
+        intentMessage
+    );    
+
 
 
     /**
@@ -4597,6 +5007,22 @@ function analyzeMessage({
 
 
             /**
+ * Consulta de atributo do produto.
+ *
+ * Ex:
+ * {
+ *   type: 'product_attribute_query',
+ *   attribute: 'tamanho',
+ *   value: '35',
+ *   hasValue: true,
+ *   confidence: 0.95
+ * }
+ */
+
+productAttributeQuery,
+
+
+            /**
              * Produto antigo em substituição.
              */
 
@@ -4640,6 +5066,244 @@ function analyzeMessage({
 
 /**
  * =========================================================
+ * ATRIBUTOS DE CATÁLOGO
+ * =========================================================
+ *
+ * Interpreta perguntas sobre atributos de produtos
+ * sem assumir um tipo específico de negócio.
+ *
+ * Exemplos:
+ *
+ * "esse sapato tem tamanho 35?"
+ * "esse produto tem cor preta?"
+ * "tem em preto?"
+ * "quais cores tem?"
+ * "quais tamanhos tem?"
+ * "tem armazenamento de 256gb?"
+ *
+ * O Knowledge Engine apenas interpreta.
+ * A resolução real continua no productService.
+ * =========================================================
+ */
+
+const ATTRIBUTE_QUERY_PATTERNS = [
+
+    {
+        attribute: 'tamanho',
+
+        patterns: [
+            /\b(?:tem|possui|existe|ha|há|temos)\b.*?\btamanho\s+([a-z0-9]+)/i,
+            /\btamanho\s+([a-z0-9]+)\b/i
+        ]
+    },
+
+    {
+        attribute: 'cor',
+
+        patterns: [
+            /\b(?:tem|possui|existe|ha|há|temos)\b.*?\b(?:cor|em)\s+([a-z0-9]+)/i,
+            /\bcor\s+([a-z0-9]+)\b/i
+        ]
+    },
+
+    {
+        attribute: 'armazenamento',
+
+        patterns: [
+            /\b(?:tem|possui|existe|ha|há|temos)\b.*?\barmazenamento\s+([a-z0-9]+)/i,
+            /\barmazenamento\s+([a-z0-9]+)/i
+        ]
+    },
+
+    {
+        attribute: 'memoria',
+
+        patterns: [
+            /\b(?:tem|possui|existe|ha|há|temos)\b.*?\bmemoria\s+([a-z0-9]+)/i,
+            /\bmemoria\s+([a-z0-9]+)/i
+        ]
+    }
+
+];
+
+
+/**
+ * =========================================================
+ * DETECTAR CONSULTA DE ATRIBUTO
+ * =========================================================
+ */
+function detectProductAttributeQuery(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    /**
+     * -----------------------------------------------------
+     * 1. PERGUNTAS COM VALOR
+     * -----------------------------------------------------
+     *
+     * Ex:
+     *
+     * "esse sapato tem tamanho 35?"
+     * "tem em preto?"
+     * "esse produto tem cor preta?"
+     */
+    for (
+        const definition
+        of ATTRIBUTE_QUERY_PATTERNS
+    ) {
+
+        for (
+            const pattern
+            of definition.patterns
+        ) {
+
+            const match =
+                normalized.match(
+                    pattern
+                );
+
+            if (!match) {
+                continue;
+            }
+
+
+            const value =
+                match[1]
+                    ?.trim();
+
+
+            if (!value) {
+                continue;
+            }
+
+
+            return {
+
+                type:
+                    'product_attribute_query',
+
+                attribute:
+                    definition.attribute,
+
+                value,
+
+                hasValue:
+                    true,
+
+                confidence:
+                    0.95
+
+            };
+        }
+    }
+
+
+    /**
+     * -----------------------------------------------------
+     * 2. PERGUNTAS QUE PEDEM OS VALORES DISPONÍVEIS
+     * -----------------------------------------------------
+     *
+     * Ex:
+     *
+     * "quais tamanhos tem?"
+     * "quais cores tem?"
+     * "que cores possui?"
+     */
+    const availableValuesPatterns = [
+
+        {
+            attribute: 'tamanho',
+
+            patterns: [
+                /\bquais?\s+tamanhos?\b/i,
+                /\bque\s+tamanhos?\b/i,
+                /\btamanhos?\s+(?:tem|possui|ha|há|existem)\b/i
+            ]
+        },
+
+        {
+            attribute: 'cor',
+
+            patterns: [
+                /\bquais?\s+cores?\b/i,
+                /\bque\s+cores?\b/i,
+                /\bcores?\s+(?:tem|possui|ha|há|existem)\b/i
+            ]
+        },
+
+        {
+            attribute: 'armazenamento',
+
+            patterns: [
+                /\bquais?\s+armazenamentos?\b/i,
+                /\bque\s+armazenamentos?\b/i
+            ]
+        },
+
+        {
+            attribute: 'memoria',
+
+            patterns: [
+                /\bquais?\s+memorias?\b/i,
+                /\bque\s+memorias?\b/i
+            ]
+        }
+
+    ];
+
+
+    for (
+        const definition
+        of availableValuesPatterns
+    ) {
+
+        for (
+            const pattern
+            of definition.patterns
+        ) {
+
+            if (
+                pattern.test(
+                    normalized
+                )
+            ) {
+
+                return {
+
+                    type:
+                        'product_attribute_query',
+
+                    attribute:
+                        definition.attribute,
+
+                    value:
+                        null,
+
+                    hasValue:
+                        false,
+
+                    confidence:
+                        0.95
+
+                };
+            }
+        }
+    }
+
+
+    return null;
+}
+
+
+
+/**
+ * =========================================================
  * EXPORTAÇÕES
  * =========================================================
  */
@@ -4649,6 +5313,8 @@ module.exports = {
     analyzeMessage,
 
     resolveContextualIntent,
+
+    detectProductAttributeQuery,
 
     isAffirmative,
 

@@ -5,15 +5,13 @@ const {
 } = require('../services/botSettingsService');
 
 const {
-    getConversationState,
-    updateConversationState,
-    touchConversationActivity,
-    clearConversationState
-} = require('../services/conversationStateService');
-
-const {
     getProductByName,
-    getProductCandidates
+    getProductCandidates,
+    getProductVariants,
+    getVariantAttributes,
+    findVariantsByAttribute,
+    getProductAttributeValues,
+    findProductVariant
 } = require('../services/productService');
 
 const {
@@ -2039,6 +2037,18 @@ const hasAddProductActions =
             action?.candidate
     );
 
+
+    const hasMixedCartActions =
+    intelligenceActions.some(
+        action =>
+            action?.type === 'remove_product' ||
+            action?.type === 'edit_product' ||
+            action?.type === 'replace_product'
+    );
+
+
+
+
 console.log(
     '🧠 INTELLIGENCE ACTIONS:',
     JSON.stringify(
@@ -2367,6 +2377,7 @@ if (
 
 if (
     hasAddProductActions &&
+    !hasMixedCartActions &&
     businessType !== 'services' &&
     settings.orders_enabled
 ) {
@@ -2397,6 +2408,253 @@ if (
     }
 }
 
+
+/**
+ * =====================================================
+ * CONSULTA DE ATRIBUTO DE PRODUTO
+ * =====================================================
+ *
+ * Exemplos:
+ *
+ * "esse sapato tem tamanho 35?"
+ * "tem em preto?"
+ * "quais tamanhos tem?"
+ * "quais cores tem?"
+ *
+ * O Knowledge Engine apenas identifica:
+ *
+ * entities.productAttributeQuery
+ *
+ * A resolução real vem do catálogo da empresa.
+ * Tudo é filtrado por companyId.
+ * =====================================================
+ */
+
+const productAttributeQuery =
+    entities.productAttributeQuery || null;
+
+
+if (
+    productAttributeQuery &&
+    productAttributeQuery.confidence >= 0.90
+) {
+
+    const attribute =
+        productAttributeQuery.attribute;
+
+    const value =
+        productAttributeQuery.value;
+
+    const hasValue =
+        productAttributeQuery.hasValue === true;
+
+
+    /**
+     * -------------------------------------------------
+     * 1. IDENTIFICAR O PRODUTO
+     * -------------------------------------------------
+     *
+     * Primeiro usamos a referência contextual.
+     * Ex:
+     *
+     * Cliente:
+     * "mostra-me o Nike Air"
+     *
+     * Depois:
+     * "tem em preto?"
+     *
+     * O produto vem de contextualProduct.
+     *
+     * Se não houver contexto, usamos productCandidate.
+     * -------------------------------------------------
+     */
+
+    let attributeProduct =
+        contextualProduct || null;
+
+
+    if (
+        !attributeProduct &&
+        productCandidate
+    ) {
+
+        attributeProduct =
+            await resolveProductCandidate(
+                companyId,
+                productCandidate
+            );
+    }
+
+
+    /**
+     * Sem produto identificado,
+     * não devemos inventar uma resposta.
+     *
+     * Regra do SaaS:
+     * quando não há confiança suficiente,
+     * silêncio.
+     */
+    if (
+        !attributeProduct
+    ) {
+        return null;
+    }
+
+
+    const productId =
+        attributeProduct.product_id ||
+        attributeProduct.id;
+
+
+    if (
+        !productId
+    ) {
+        return null;
+    }
+
+
+    /**
+     * -------------------------------------------------
+     * 2. PERGUNTA COM VALOR
+     * -------------------------------------------------
+     *
+     * Ex:
+     *
+     * "tem tamanho 35?"
+     * "tem em preto?"
+     * -------------------------------------------------
+     */
+
+    if (
+        hasValue &&
+        value
+    ) {
+
+        const variant =
+            await findProductVariant(
+                companyId,
+                productId,
+                {
+                    [attribute]:
+                        value
+                }
+            );
+
+
+        /**
+         * Encontrou exatamente a combinação.
+         */
+        if (
+            variant
+        ) {
+
+            const productName =
+                attributeProduct.product_name ||
+                attributeProduct.name ||
+                'este produto';
+
+
+            return (
+                `✅ Sim, *${productName}* ` +
+                `tem ${attribute} *${value}*.`
+            );
+        }
+
+
+        /**
+         * -------------------------------------------------
+         * O produto possui valores configurados para
+         * esse atributo?
+         * -------------------------------------------------
+         *
+         * Só podemos responder "não" quando realmente
+         * existe informação desse atributo no catálogo.
+         */
+
+        const availableValues =
+            await getProductAttributeValues(
+                companyId,
+                productId,
+                attribute
+            );
+
+
+        if (
+            !Array.isArray(availableValues) ||
+            availableValues.length === 0
+        ) {
+
+            /**
+             * O catálogo não possui informação suficiente.
+             *
+             * Não inventar.
+             * Não dizer "não".
+             * Silêncio.
+             */
+            return null;
+        }
+
+
+        const productName =
+            attributeProduct.product_name ||
+            attributeProduct.name ||
+            'este produto';
+
+
+        return (
+            `❌ Não, *${productName}* ` +
+            `não tem ${attribute} *${value}*.\n\n` +
+            `Disponível: ${availableValues.join(', ')}`
+        );
+    }
+
+
+    /**
+     * -------------------------------------------------
+     * 3. PERGUNTA SEM VALOR
+     * -------------------------------------------------
+     *
+     * Ex:
+     *
+     * "quais tamanhos tem?"
+     * "quais cores tem?"
+     * -------------------------------------------------
+     */
+
+    const availableValues =
+        await getProductAttributeValues(
+            companyId,
+            productId,
+            attribute
+        );
+
+
+    /**
+     * Se o catálogo não tiver esse atributo
+     * configurado, não inventar.
+     */
+    if (
+        !Array.isArray(availableValues) ||
+        availableValues.length === 0
+    ) {
+        return null;
+    }
+
+
+    const productName =
+        attributeProduct.product_name ||
+        attributeProduct.name ||
+        'este produto';
+
+
+    return (
+        `📦 *${productName}*\n\n` +
+        `Opções de ${attribute}:\n` +
+        availableValues
+            .map(value => `• ${value}`)
+            .join('\n')
+    );
+}
 
 
 

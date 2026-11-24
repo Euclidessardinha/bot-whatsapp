@@ -1,13 +1,6 @@
-const {
-    analyzeMessage
-} = require('./bot/intelligence/knowledgeEngine');
+const { analyzeMessage } = require('./bot/intelligence/knowledgeEngine');
 
-const messages = [
-    'remove o segundo e adiciona 2 chicken burger',
-    'tira a coca e coloca duas fanta',
-    'remove a batata e adiciona um burger',
-    'troca a coca por fanta'
-];
+const messages = ['Quero 2 chicken e 3 batatas'];
 
 for (const message of messages) {
 

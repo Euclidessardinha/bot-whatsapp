@@ -1151,6 +1151,8 @@ function detectIntent(message) {
 
     const orderPatterns = [
 
+        /^quero (.+)$/,
+
         /^queria (.+)$/,
 
         /^gostaria de (.+)$/,
