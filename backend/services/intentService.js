@@ -1,3 +1,4 @@
+
 /**
  * Detecta a intenção principal de uma mensagem recebida pelo bot.
  *
@@ -63,6 +64,132 @@ function containsAny(text, phrases) {
         return pattern.test(text);
     });
 }
+
+
+
+// --------------------------------------------------
+// REMOVE SAUDAÇÃO INICIAL PARA ANÁLISE SECUNDÁRIA
+// --------------------------------------------------
+//
+// Esta função NÃO altera a mensagem original.
+//
+// Ela apenas remove uma saudação que aparece no início
+// para permitir detectar uma segunda intenção.
+//
+// Exemplos:
+//
+// "bom dia queria uma pizza"
+// -> "queria uma pizza"
+//
+// "olá, vocês têm batata?"
+// -> "vocês têm batata"
+//
+// "boa tarde, quanto custa?"
+// -> "quanto custa"
+//
+// "bom dia"
+// -> ""
+//
+// A mensagem original continua preservada em `text`.
+//
+// --------------------------------------------------
+
+function removeLeadingGreeting(text) {
+
+    let result = normalizeText(text);
+
+    if (!result) {
+        return result;
+    }
+
+    const greetings = [
+        'boa madrugada',
+        'bom dia',
+        'boa tarde',
+        'boa noite',
+        'boa manha',
+
+        'tudo bem por ai',
+        'tudo bem',
+        'tudo bom',
+        'tudo certo',
+        'tudo tranquilo',
+
+        'como voces estao',
+        'como voces vao',
+        'como estas',
+        'como esta',
+        'como vao',
+        'como vai',
+
+        'estao bem',
+        'esta tudo bem',
+
+        'e ai pessoal',
+        'e ai',
+        'eai',
+
+        'olaaaa',
+        'olaaa',
+        'olaa',
+
+        'oiiiii',
+        'oiiii',
+        'oiii',
+        'oii',
+
+        'ola pessoal',
+        'oi pessoal',
+        'ola gente',
+        'oi gente',
+
+        'saudacoes',
+
+        'ola',
+        'oi',
+        'hey',
+        'hello',
+        'hi'
+    ];
+
+    // Mais longas primeiro para evitar que, por exemplo,
+    // "boa tarde" seja tratado apenas como "boa".
+    greetings.sort((a, b) => b.length - a.length);
+
+    let changed = true;
+
+    // Permite casos como:
+    // "Olá, bom dia, queria fazer um pedido"
+    //
+    // removendo as saudações iniciais uma a uma.
+    while (changed && result) {
+
+        changed = false;
+
+        for (const greeting of greetings) {
+
+            const pattern = new RegExp(
+                `^${escapeRegExp(greeting)}(?:\\s+|$)`,
+                'i'
+            );
+
+            if (pattern.test(result)) {
+
+                result = result
+                    .replace(pattern, '')
+                    .trim();
+
+                changed = true;
+
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+
 
 
 // --------------------------------------------------
@@ -692,9 +819,6 @@ const INTENTS = {
         'obrigado pela informacao',
         'obrigada pela informacao',
 
-        'obrigado pela informacao',
-        'obrigada pela informacao',
-
         'agradeco',
         'agradeco muito',
         'agradecido',
@@ -830,32 +954,36 @@ function detectIntent(message) {
         };
     }
 
+    // Texto utilizado apenas para procurar uma segunda
+    // intenção depois de uma possível saudação inicial.
+    //
+    // A variável `text` original permanece intacta.
+    const intentText = removeLeadingGreeting(text);
 
-        /**
-     * =====================================================
-     * PEDIDO DE SERVIÇO POR PADRÃO LINGUÍSTICO
-     * =====================================================
-     *
-     * Reconhece pedidos de serviço mesmo quando o nome
-     * concreto do serviço não está cadastrado aqui.
-     *
-     * Exemplos:
-     *
-     * "quero solicitar limpeza"
-     * "preciso de instalação"
-     * "gostaria de um corte de cabelo"
-     * "quero orçamento para pintura"
-     *
-     * O nome do serviço permanece dinâmico.
-     *
-     * IMPORTANTE:
-     *
-     * Não usar apenas palavras isoladas como "preciso",
-     * "quero" ou "serviço", pois isso poderia gerar
-     * falsos positivos.
-     *
-     * =====================================================
-     */
+
+    // =====================================================
+    // PEDIDO DE SERVIÇO POR PADRÃO LINGUÍSTICO
+    // =====================================================
+    //
+    // Reconhece pedidos de serviço mesmo quando o nome
+    // concreto do serviço não está cadastrado aqui.
+    //
+    // Exemplos:
+    //
+    // "quero solicitar limpeza"
+    // "preciso de instalação"
+    // "gostaria de um corte de cabelo"
+    // "quero orçamento para pintura"
+    //
+    // O nome do serviço permanece dinâmico.
+    //
+    // IMPORTANTE:
+    //
+    // Não usar apenas palavras isoladas como "preciso",
+    // "quero" ou "serviço", pois isso poderia gerar
+    // falsos positivos.
+    //
+    // =====================================================
 
     const serviceRequestPatterns = [
 
@@ -904,9 +1032,9 @@ function detectIntent(message) {
 
 
     const looksLikeServiceRequest =
-        serviceRequestPatterns.some(
-            (pattern) => pattern.test(text)
-        );
+    serviceRequestPatterns.some(
+        (pattern) => pattern.test(intentText)
+    );
 
 
     if (looksLikeServiceRequest) {
@@ -919,38 +1047,36 @@ function detectIntent(message) {
     }
 
 
-    /**
-     * =====================================================
-     * PRIORIDADE DAS INTENÇÕES
-     * =====================================================
-     *
-     * GREETING fica por último de propósito.
-     *
-     * Uma saudação acompanhada de outra intenção
-     * não deve esconder a intenção principal.
-     *
-     * Exemplos:
-     *
-     * "Olá, quero fazer um pedido"
-     * -> ORDER
-     *
-     * "Bom dia, quero ver o menu"
-     * -> MENU
-     *
-     * "Boa tarde, quanto custa?"
-     * -> PRICE
-     *
-     * "Olá, onde ficam?"
-     * -> LOCATION
-     *
-     * "Boa noite"
-     * -> GREETING
-     *
-     * "Boa noite, até amanhã"
-     * -> GOODBYE
-     *
-     * =====================================================
-     */
+    // =====================================================
+    // PRIORIDADE DAS INTENÇÕES
+    // =====================================================
+    //
+    // GREETING fica por último de propósito.
+    //
+    // Uma saudação acompanhada de outra intenção
+    // não deve esconder a intenção principal.
+    //
+    // Exemplos:
+    //
+    // "Olá, quero fazer um pedido"
+    // -> ORDER
+    //
+    // "Bom dia, quero ver o menu"
+    // -> MENU
+    //
+    // "Boa tarde, quanto custa?"
+    // -> PRICE
+    //
+    // "Olá, onde ficam?"
+    // -> LOCATION
+    //
+    // "Boa noite"
+    // -> GREETING
+    //
+    // "Boa noite, até amanhã"
+    // -> GOODBYE
+    //
+    // =====================================================
 
     const priority = [
 
@@ -980,11 +1106,9 @@ function detectIntent(message) {
     ];
 
 
-    /**
-     * =====================================================
-     * INTENÇÃO PRINCIPAL
-     * =====================================================
-     */
+    // =====================================================
+    // INTENÇÃO PRINCIPAL
+    // =====================================================
 
     for (const intent of priority) {
 
@@ -999,29 +1123,145 @@ function detectIntent(message) {
     }
 
 
-    /**
-     * =====================================================
-     * SAUDAÇÃO
-     * =====================================================
-     *
-     * Só chegamos aqui quando nenhuma outra intenção
-     * foi encontrada.
-     *
-     * Portanto:
-     *
-     * "Olá"
-     * "Oi"
-     * "Bom dia"
-     * "Boa tarde"
-     * "Boa noite"
-     *
-     * continuam sendo GREETING.
-     *
-     * Uma saudação acompanhada de outra intenção já
-     * terá sido capturada acima.
-     *
-     * =====================================================
-     */
+    // =====================================================
+    // PEDIDO / COMPRA POR PADRÃO LINGUÍSTICO
+    // =====================================================
+    //
+    // Reconhece pedidos em que o cliente indica uma compra
+    // mas o item concreto é dinâmico.
+    //
+    // Exemplos:
+    //
+    // "Bom dia, queria uma Classic Burger"
+    // "queria uma pizza"
+    // "queria um produto"
+    // "gostaria de uma camisa"
+    // "pretendo comprar um produto"
+    //
+    // O nome do produto NÃO é conhecido aqui.
+    //
+    // A resolução concreta do produto fica para as
+    // camadas superiores.
+    //
+    // Este bloco fica DEPOIS da prioridade para evitar
+    // que frases como "quero ver o menu" sejam classificadas
+    // incorretamente como ORDER.
+    //
+    // =====================================================
+
+    const orderPatterns = [
+
+        /^queria (.+)$/,
+
+        /^gostaria de (.+)$/,
+
+        /^pretendo comprar (.+)$/,
+
+        /^pretendo encomendar (.+)$/,
+
+        /^vou comprar (.+)$/,
+
+        /^vou encomendar (.+)$/,
+
+        /^vou pedir (.+)$/
+    ];
+
+
+    const looksLikeOrder =
+    orderPatterns.some(
+        (pattern) => pattern.test(intentText)
+    );
+
+
+    if (looksLikeOrder) {
+
+        return {
+            intent: 'ORDER',
+            confidence: 1,
+            text
+        };
+    }
+
+
+    // =====================================================
+    // CONSULTA DE ITEM POR PADRÃO LINGUÍSTICO
+    // =====================================================
+    //
+    // Reconhece perguntas em que o cliente pergunta se
+    // determinado item existe, é vendido ou é oferecido.
+    //
+    // Exemplos:
+    //
+    // "Olá, vocês têm batata?"
+    // "tem pizza?"
+    // "vocês vendem camisas?"
+    // "vocês oferecem este produto?"
+    //
+    // O item concreto permanece dinâmico.
+    //
+    // IMPORTANTE:
+    //
+    // normalizeText() remove acentos. Portanto, os padrões
+    // usam "voces" e não "vocês".
+    //
+    // =====================================================
+
+    const menuQueryPatterns = [
+
+        /^tem (.+)$/,
+
+        /^voces tem (.+)$/,
+
+        /^o que voces tem (.+)$/,
+
+        /^voces vendem (.+)$/,
+
+        /^vende (.+)$/,
+
+        /^vendem (.+)$/,
+
+        /^oferecem (.+)$/,
+
+        /^voces oferecem (.+)$/
+    ];
+
+
+   const looksLikeMenuQuery =
+    menuQueryPatterns.some(
+        (pattern) => pattern.test(intentText)
+    );
+
+    if (looksLikeMenuQuery) {
+
+        return {
+            intent: 'MENU',
+            confidence: 1,
+            text
+        };
+    }
+
+
+    // =====================================================
+    // SAUDAÇÃO
+    // =====================================================
+    //
+    // Só chegamos aqui quando nenhuma outra intenção
+    // foi encontrada.
+    //
+    // Portanto:
+    //
+    // "Olá"
+    // "Oi"
+    // "Bom dia"
+    // "Boa tarde"
+    // "Boa noite"
+    //
+    // continuam sendo GREETING.
+    //
+    // Uma saudação acompanhada de outra intenção já
+    // terá sido capturada acima.
+    //
+    // =====================================================
 
     if (containsAny(text, INTENTS.GREETING)) {
 
@@ -1033,20 +1273,18 @@ function detectIntent(message) {
     }
 
 
-    /**
-     * =====================================================
-     * DESCONHECIDO
-     * =====================================================
-     *
-     * Regra importante:
-     *
-     * Se não houver confiança suficiente para classificar
-     * a mensagem, não inventamos uma intenção.
-     *
-     * A camada superior pode decidir permanecer em silêncio.
-     *
-     * =====================================================
-     */
+    // =====================================================
+    // DESCONHECIDO
+    // =====================================================
+    //
+    // Regra importante:
+    //
+    // Se não houver confiança suficiente para classificar
+    // a mensagem, não inventamos uma intenção.
+    //
+    // A camada superior pode decidir permanecer em silêncio.
+    //
+    // =====================================================
 
     return {
         intent: 'UNKNOWN',

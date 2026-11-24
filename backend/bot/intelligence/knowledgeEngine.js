@@ -1,4 +1,5 @@
-﻿const {
+﻿
+const {
     detectIntent,
     normalizeText
 } = require('../../services/intentService');
@@ -50,10 +51,31 @@ const {
  *
  * Isso preserva o isolamento multi-tenant.
  *
- * NOVA CAPACIDADE:
+ * =========================================================
+ * REGRA IMPORTANTE
+ * =========================================================
  *
- * Mensagens compostas de produtos podem gerar múltiplas
- * ações de add_product.
+ * O Knowledge Engine interpreta.
+ *
+ * Ele NÃO deve inventar:
+ *
+ * - produtos
+ * - serviços
+ * - empresas
+ * - preços
+ * - quantidades não mencionadas
+ * - respostas genéricas de fallback
+ *
+ * Quando a mensagem não puder ser interpretada com
+ * confiança suficiente, o comportamento pode terminar
+ * em "unknown".
+ *
+ * A camada superior decide então se deve permanecer
+ * em silêncio.
+ *
+ * =========================================================
+ * MENSAGENS COMPOSTAS
+ * =========================================================
  *
  * Exemplo:
  *
@@ -71,6 +93,25 @@ const {
  *      type: 'add_product',
  *      candidate: 'batata',
  *      quantity: null
+ *   }
+ * ]
+ *
+ * Outro exemplo:
+ *
+ * "Quero 2 chicken e 3 batatas"
+ *
+ * =>
+ *
+ * [
+ *   {
+ *      type: 'add_product',
+ *      candidate: 'chicken',
+ *      quantity: 2
+ *   },
+ *   {
+ *      type: 'add_product',
+ *      candidate: 'batatas',
+ *      quantity: 3
  *   }
  * ]
  *
@@ -241,16 +282,149 @@ const SERVICE_SELECTION_STATES = [
 
 /**
  * =========================================================
+ * PREFIXOS CONVERSACIONAIS
+ * =========================================================
+ *
+ * Estes prefixos são importantes porque clientes escrevem
+ * naturalmente:
+ *
+ * "Bom dia, queria chicken"
+ * "Olá, queria 2 chicken"
+ * "Boa tarde, gostaria de uma pizza"
+ *
+ * O cumprimento não deve destruir a intenção seguinte.
+ * =========================================================
+ */
+
+const GREETING_PREFIXES = [
+    'ola',
+    'olá',
+    'oi',
+    'bom dia',
+    'boa tarde',
+    'boa noite',
+    'bom dia pessoal',
+    'boa tarde pessoal',
+    'boa noite pessoal',
+    'ola pessoal',
+    'oi pessoal'
+];
+
+
+/**
+ * =========================================================
  * NORMALIZAÇÃO
  * =========================================================
  */
 
 function normalizeForComparison(text) {
 
-    return normalizeText(text)
+    return normalizeText(text || '')
         .replace(/\s+/g, ' ')
         .trim();
 
+}
+
+
+/**
+ * =========================================================
+ * REMOVE CUMPRIMENTO INICIAL
+ * =========================================================
+ *
+ * Exemplos:
+ *
+ * "Bom dia, queria chicken"
+ * =>
+ * "queria chicken"
+ *
+ * "Olá, quero 2 chicken"
+ * =>
+ * "quero 2 chicken"
+ *
+ * "Boa tarde queria ver o menu"
+ * =>
+ * "queria ver o menu"
+ *
+ * O texto original continua preservado no retorno final.
+ * =========================================================
+ */
+
+function removeLeadingGreeting(text) {
+
+    let value =
+        normalizeForComparison(text);
+
+    if (!value) {
+        return '';
+    }
+
+
+    let changed = true;
+
+    while (changed) {
+
+        changed = false;
+
+        for (
+            const greeting
+            of GREETING_PREFIXES
+        ) {
+
+            const pattern =
+                new RegExp(
+                    `^${greeting.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s*[,;:!?-]\\s*|\\s+)`,
+                    'i'
+                );
+
+            if (
+                pattern.test(value)
+            ) {
+
+                value =
+                    value
+                        .replace(
+                            pattern,
+                            ''
+                        )
+                        .trim();
+
+                changed = true;
+
+                break;
+            }
+        }
+    }
+
+
+    return value;
+}
+
+
+/**
+ * =========================================================
+ * REMOVE PREFIXOS SOCIAIS
+ * =========================================================
+ *
+ * Diferente de removeLeadingGreeting(), esta função pode
+ * ser utilizada para obter uma versão interpretável da
+ * mensagem sem destruir a mensagem original.
+ * =========================================================
+ */
+
+function normalizeForIntent(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return '';
+    }
+
+    return (
+        removeLeadingGreeting(
+            normalized
+        ) || normalized
+    );
 }
 
 
@@ -317,6 +491,7 @@ function isReferenceConfirmation(text) {
 const NUMBER_WORDS = {
 
     zero: 0,
+
     um: 1,
     uma: 1,
 
@@ -324,6 +499,7 @@ const NUMBER_WORDS = {
     duas: 2,
 
     tres: 3,
+    três: 3,
 
     quatro: 4,
     cinco: 5,
@@ -417,6 +593,90 @@ function extractQuantity(text) {
 
 /**
  * =========================================================
+ * EXTRAI QUANTIDADE DO INÍCIO DE UM SEGMENTO
+ * =========================================================
+ *
+ * Ao contrário de extractQuantity(), esta função é útil
+ * para mensagens compostas.
+ *
+ * Exemplo:
+ *
+ * "2 chicken"
+ * => 2
+ *
+ * "3 batatas"
+ * => 3
+ *
+ * "chicken"
+ * => null
+ *
+ * Isso evita associar a quantidade do primeiro item a
+ * todos os itens da mensagem.
+ * =========================================================
+ */
+
+function extractLeadingQuantity(text) {
+
+    const normalized =
+        normalizeForComparison(text);
+
+    if (!normalized) {
+        return null;
+    }
+
+
+    const digitMatch =
+        normalized.match(
+            /^(\d+)\b/
+        );
+
+    if (digitMatch) {
+
+        return Number(
+            digitMatch[1]
+        );
+
+    }
+
+
+    const words =
+        Object.entries(
+            NUMBER_WORDS
+        )
+            .sort(
+                (a, b) =>
+                    b[0].length -
+                    a[0].length
+            );
+
+
+    for (
+        const [word, value]
+        of words
+    ) {
+
+        const pattern =
+            new RegExp(
+                `^${word}\\b`
+            );
+
+        if (
+            pattern.test(normalized)
+        ) {
+
+            return value;
+
+        }
+
+    }
+
+
+    return null;
+}
+
+
+/**
+ * =========================================================
  * POSIÇÃO DO PRODUTO
  * =========================================================
  */
@@ -449,13 +709,18 @@ function extractProductPosition(text) {
         setimo: 7,
         setima: 7,
 
+        sétimo: 7,
+        sétima: 7,
+
         oitavo: 8,
         oitava: 8,
 
         nono: 9,
         nona: 9,
 
+        décimo: 10,
         decimo: 10,
+        décima: 10,
         decima: 10
     };
 
@@ -483,7 +748,9 @@ function extractProductPosition(text) {
 
     if (
         /\bultimo\b/.test(normalized) ||
-        /\bultima\b/.test(normalized)
+        /\bultima\b/.test(normalized) ||
+        /\búltimo\b/.test(normalized) ||
+        /\búltima\b/.test(normalized)
     ) {
 
         return 'last';
@@ -516,7 +783,9 @@ function extractReference(text) {
      */
 
     const position =
-        extractProductPosition(normalized);
+        extractProductPosition(
+            normalized
+        );
 
     if (position !== null) {
 
@@ -568,7 +837,7 @@ function extractReference(text) {
 
 
     if (
-        /\b(ultimo|ultima)\b/
+        /\b(ultimo|ultima|último|última)\b/
             .test(normalized)
     ) {
 
@@ -596,7 +865,7 @@ function extractReference(text) {
 function isAddAction(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
 
     if (!normalized) {
@@ -608,22 +877,10 @@ function isAddAction(text) {
      * =====================================================
      * NUNCA É ADIÇÃO
      * =====================================================
-     *
-     * Frases que começam com "quero" podem representar
-     * muitas intenções diferentes:
-     *
-     * "quero ver o menu"
-     * "quero ver o carrinho"
-     * "quero fazer um pedido"
-     * "quero falar com uma pessoa"
-     *
-     * Portanto, "quero" sozinho NÃO é suficiente
-     * para caracterizar add_product.
      */
 
-
     if (
-        /\b(quero|vou querer)\s+(remover|tirar|eliminar|excluir|apagar)\b/
+        /\b(quero|queria|vou querer)\s+(remover|tirar|eliminar|excluir|apagar)\b/
             .test(normalized)
     ) {
 
@@ -632,42 +889,27 @@ function isAddAction(text) {
     }
 
 
-
     /**
- * =====================================================
- * SOLICITAÇÃO DE SERVIÇO NÃO É ADIÇÃO DE PRODUTO
- * =====================================================
- *
- * "quero pedir um serviço"
- * "quero pedir serviço"
- * "pedir um serviço"
- *
- * representam uma solicitação de serviço/orçamento,
- * não a adição de um produto ao carrinho.
- *
- * Não dependemos de nenhuma empresa específica.
- */
+     * =====================================================
+     * SOLICITAÇÃO DE SERVIÇO
+     * =====================================================
+     */
 
-if (
-    /\b(quero\s+)?pedir\s+(um|uma|o|a|os|as)?\s*servi[cç]o(s)?\b/
-        .test(normalized)
-) {
+    if (
+        /\b(quero|queria|gostaria de|vou querer)?\s*pedir\s+(um|uma|o|a|os|as)?\s*servi[cç]o(s)?\b/
+            .test(normalized)
+    ) {
 
-    return false;
+        return false;
 
-}
-
+    }
 
 
     /**
      * =====================================================
      * AÇÕES EXPLÍCITAS DE ADIÇÃO
      * =====================================================
-     *
-     * Estas palavras indicam diretamente que o cliente
-     * pretende adicionar/colocar/acrescentar algo.
      */
-
 
     const explicitAddPrefixes = [
 
@@ -689,6 +931,7 @@ if (
         'pode colocar',
 
         'quero pedir',
+        'queria pedir',
 
         'peço',
         'peco',
@@ -716,37 +959,17 @@ if (
 
     /**
      * =====================================================
-     * "QUERO" / "VOU QUERER"
+     * "QUERO" / "QUERIA" / "VOU QUERER"
      * =====================================================
-     *
-     * Só consideramos adição quando existe algo que
-     * realmente parece um item sendo pedido logo depois.
-     *
-     * Exemplos válidos:
-     *
-     * "quero 2 burgers"
-     * "quero um burger"
-     * "quero burger"
-     * "vou querer uma coca"
-     *
-     * Exemplos inválidos:
-     *
-     * "quero ver o carrinho"
-     * "quero ver o menu"
-     * "quero fazer um pedido"
-     * "quero falar com uma pessoa"
      */
 
-
     const wantMatch =
-        normalized.match(
-            /^(quero|vou querer)\s+(.+)$/i
-        );
+    normalized.match(
+        /^(quero|queria|vou querer|gostaria|desejo|pretendo)\s+(.+)$/i
+    );
 
 
-    if (
-        !wantMatch
-    ) {
+    if (!wantMatch) {
 
         return false;
 
@@ -764,15 +987,12 @@ if (
 
 
     /**
-     * Verbos/estruturas que indicam que o cliente está
-     * falando sobre uma ação, consulta ou fluxo,
-     * e não adicionando um produto.
+     * Estruturas que representam consulta ou fluxo.
      */
-
 
     const nonProductPatterns = [
 
-        /^(ver|mostrar|mostra|consultar|consultar|saber)\b/,
+        /^(ver|mostrar|mostra|consultar|saber|conhecer|olhar)\b/,
 
         /^(fazer|efetuar|realizar)\s+(um|uma)?\s*(pedido|compra)\b/,
 
@@ -780,7 +1000,11 @@ if (
 
         /^(pedir)\s+(informação|informacoes|informações|ajuda)\b/,
 
-        /^(saber|ver)\s+(o|a|os|as)?\s*(menu|carrinho|total|preço|preco|valor)\b/
+        /^(saber|ver)\s+(o|a|os|as)?\s*(menu|carrinho|total|preço|preco|valor)\b/,
+
+        /^(ver|mostrar|mostra)\s+(o|a|os|as)?\s*(serviço|servicos|serviços)\b/,
+
+        /^(fazer|efetuar|realizar)\s+(uma|um)?\s*(solicitação|solicitacao|orçamento|orcamento)\b/
 
     ];
 
@@ -797,19 +1021,6 @@ if (
     }
 
 
-    /**
-     * =====================================================
-     * CASOS NATURAIS DE "QUERO"
-     * =====================================================
-     *
-     * Se não parece uma instrução de consulta/fluxo,
-     * mantemos "quero X" como potencial adição.
-     *
-     * A resolução real do produto continua sendo feita
-     * posteriormente pelos serviços da empresa.
-     */
-
-
     return true;
 
 }
@@ -824,7 +1035,7 @@ if (
 function isRemoveAction(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     const phrases = [
 
@@ -846,6 +1057,10 @@ function isRemoveAction(text) {
         'quero remover',
         'quero tirar',
         'quero eliminar',
+
+        'queria remover',
+        'queria tirar',
+        'queria eliminar',
 
         'pode remover',
         'pode tirar',
@@ -880,7 +1095,7 @@ function isRemoveAction(text) {
 function isEditAction(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     const phrases = [
 
@@ -926,7 +1141,7 @@ function isQuantityEditAction(
 ) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (
         quantity === null
@@ -990,7 +1205,7 @@ function isQuantityEditAction(
      */
 
     if (
-        /\b(fica|passa|muda|altera|modifica)\b/.test(normalized) &&
+        /\b(fica|passa|muda|altera|modifica|deixa)\b/.test(normalized) &&
         /\b(para|em|com|a)?\s*\d+\b/.test(normalized)
     ) {
 
@@ -1010,6 +1225,7 @@ function isQuantityEditAction(
         ) &&
         (
             /\bquero\b/.test(normalized) ||
+            /\bqueria\b/.test(normalized) ||
             /\bficar com\b/.test(normalized)
         )
     ) {
@@ -1032,7 +1248,7 @@ function isQuantityEditAction(
 function isReplaceAction(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     return (
         /\b(troca|trocar|substitui|substituir)\b/
@@ -1052,7 +1268,7 @@ function isReplaceAction(text) {
 function isBackAction(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     const phrases = [
 
@@ -1098,16 +1314,49 @@ function cleanItemCandidate(text) {
     }
 
 
+    /**
+     * Primeiro removemos cumprimentos.
+     */
+
+    value =
+        removeLeadingGreeting(
+            value
+        );
+
+
+    /**
+     * Prefixos.
+     */
+
     const prefixes = [
 
         'quero',
+        'queria',
+
+        'gostaria',
+        'desejo',
+        'pretendo',
+
         'quero um',
         'quero uma',
+
+        'queria um',
+        'queria uma',
+
         'quero dois',
         'quero duas',
+
+        'queria dois',
+        'queria duas',
+
         'quero tres',
+        'queria tres',
+
         'quero quatro',
+        'queria quatro',
+
         'quero cinco',
+        'queria cinco',
 
         'vou querer',
         'vou querer um',
@@ -1123,6 +1372,8 @@ function cleanItemCandidate(text) {
         'adiciona',
         'adicionar',
 
+        'add',
+
         'acrescenta',
         'acrescentar',
 
@@ -1133,6 +1384,7 @@ function cleanItemCandidate(text) {
         'pode colocar',
 
         'quero pedir',
+        'queria pedir',
 
         'peço',
         'peco',
@@ -1184,6 +1436,8 @@ function cleanItemCandidate(text) {
         'dispoe',
 
         'quero solicitar',
+        'queria solicitar',
+
         'solicita',
         'solicitar',
 
@@ -1192,12 +1446,20 @@ function cleanItemCandidate(text) {
         'gostaria do',
         'gostaria da',
 
+        'queria de',
+        'queria do',
+        'queria da',
+
         'preciso do',
         'preciso da',
 
         'quero um servico',
         'quero uma servico',
         'quero servico',
+
+        'queria um servico',
+        'queria uma servico',
+        'queria servico',
 
         'solicito',
         'pedido de',
@@ -1272,13 +1534,13 @@ function cleanItemCandidate(text) {
 
     value =
         value.replace(
-            /^(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
+            /^(um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/,
             ''
         );
 
 
     /**
-     * Remove artigos após limpeza dos prefixos.
+     * Remove artigos.
      */
 
     value =
@@ -1287,10 +1549,6 @@ function cleanItemCandidate(text) {
             ''
         );
 
-
-    /**
-     * Remove artigos novamente.
-     */
 
     value =
         value.replace(
@@ -1329,7 +1587,7 @@ function cleanItemCandidate(text) {
 function extractItemCandidate(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return null;
@@ -1338,13 +1596,19 @@ function extractItemCandidate(text) {
 
     const actionPatterns = [
 
-        /^quero\s+/,
+        /^(quero|queria)\s+/,
         /^vou querer\s+/,
 
         /^manda\s+/,
 
+        /^gostaria\b/,
+        /^desejo\b/,
+        /^pretendo\b/,
+
         /^adiciona\s+/,
         /^adicionar\s+/,
+
+        /^add\s+/,
 
         /^acrescenta\s+/,
         /^acrescentar\s+/,
@@ -1355,7 +1619,7 @@ function extractItemCandidate(text) {
         /^pode adicionar\s+/,
         /^pode colocar\s+/,
 
-        /^quero pedir\s+/,
+        /^(quero|queria) pedir\s+/,
 
         /^peço\s+/,
         /^peco\s+/,
@@ -1404,14 +1668,18 @@ function extractItemCandidate(text) {
         /^dispoe de\s+/,
         /^dispoe\s+/,
 
-        /^quero solicitar\s+/,
+        /^(quero|queria) solicitar\s+/,
         /^solicita\s+/,
         /^solicitar\s+/,
 
         /^preciso de\s+/,
         /^gostaria de\s+/,
         /^gostaria do\s+/,
-        /^gostaria da\s+/
+        /^gostaria da\s+/,
+
+        /^queria de\s+/,
+        /^queria do\s+/,
+        /^queria da\s+/
 
     ];
 
@@ -1475,7 +1743,7 @@ function extractItemCandidate(text) {
                 ''
             )
             .replace(
-                /^quero solicitar\s+/i,
+                /^(quero|queria) solicitar\s+/i,
                 ''
             )
             .replace(
@@ -1500,6 +1768,18 @@ function extractItemCandidate(text) {
             )
             .replace(
                 /^gostaria da\s+/i,
+                ''
+            )
+            .replace(
+                /^queria de\s+/i,
+                ''
+            )
+            .replace(
+                /^queria do\s+/i,
+                ''
+            )
+            .replace(
+                /^queria da\s+/i,
                 ''
             )
             .replace(
@@ -1555,31 +1835,6 @@ function extractItemCandidate(text) {
  * =========================================================
  * CANDIDATO DIRETO
  * =========================================================
- *
- * Extrai um item quando o utilizador envia diretamente
- * o nome de um produto/serviço dentro de um estado de
- * seleção.
- *
- * IMPORTANTE:
- *
- * Não devemos transformar palavras genéricas ou comandos
- * conversacionais em candidatos.
- *
- * Exemplos que NÃO são candidatos:
- *
- * "quero ver tudo"
- * "menu"
- * "quero ver o menu"
- * "quero fazer um pedido"
- * "quero falar com uma pessoa"
- * "isso"
- * "aquilo"
- * "sim"
- * "não"
- *
- * A resolução real do produto/serviço continua dependente
- * dos dados da empresa.
- * =========================================================
  */
 
 function extractDirectItemCandidate(
@@ -1588,7 +1843,7 @@ function extractDirectItemCandidate(
 ) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return null;
@@ -1620,12 +1875,6 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * =====================================================
-     * LIMITE DE TAMANHO
-     * =====================================================
-     */
-
     if (
         normalized.length > 80
     ) {
@@ -1634,12 +1883,6 @@ function extractDirectItemCandidate(
 
     }
 
-
-    /**
-     * =====================================================
-     * RESPOSTAS CONVERSACIONAIS
-     * =====================================================
-     */
 
     if (
         isAffirmative(normalized) ||
@@ -1652,12 +1895,6 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * =====================================================
-     * APENAS NÚMERO
-     * =====================================================
-     */
-
     if (
         /^\d+$/.test(normalized)
     ) {
@@ -1666,12 +1903,6 @@ function extractDirectItemCandidate(
 
     }
 
-
-    /**
-     * =====================================================
-     * PERGUNTAS GENÉRICAS
-     * =====================================================
-     */
 
     if (
         /^(quanto|qual|onde|como|quando|tem|tens|voces|voce)\b/
@@ -1683,49 +1914,33 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * =====================================================
-     * INTENÇÕES / COMANDOS GENÉRICOS
-     * =====================================================
-     *
-     * Estes textos representam intenção conversacional,
-     * não nomes de produtos ou serviços.
-     *
-     * Isto evita falsos candidatos como:
-     *
-     * "quero ver tudo"
-     * "quero ver o menu"
-     * "quero fazer um pedido"
-     * "quero falar com uma pessoa"
-     */
-
     const genericIntentPatterns = [
 
-        /^quero ver\b/,
+        /^(quero|queria) ver\b/,
 
-        /^quero olhar\b/,
+        /^(quero|queria) olhar\b/,
 
-        /^quero conhecer\b/,
+        /^(quero|queria) conhecer\b/,
 
-        /^quero saber\b/,
+        /^(quero|queria) saber\b/,
 
-        /^quero fazer\b/,
+        /^(quero|queria) fazer\b/,
 
-        /^quero falar\b/,
+        /^(quero|queria) falar\b/,
 
-        /^quero conversar\b/,
+        /^(quero|queria) conversar\b/,
 
-        /^quero pedir\b/,
+        /^(quero|queria) pedir\b/,
 
-        /^quero solicitar\b/,
+        /^(quero|queria) solicitar\b/,
 
-        /^quero um pedido\b/,
+        /^(quero|queria) um pedido\b/,
 
-        /^quero o pedido\b/,
+        /^(quero|queria) o pedido\b/,
 
-        /^quero o menu\b/,
+        /^(quero|queria) o menu\b/,
 
-        /^quero menu\b/,
+        /^(quero|queria) menu\b/,
 
         /^ver o menu\b/,
 
@@ -1763,12 +1978,6 @@ function extractDirectItemCandidate(
 
         /^falar com\b/,
 
-        /^falar com uma pessoa\b/,
-
-        /^falar com alguem\b/,
-
-        /^falar com alguém\b/,
-
         /^atendente\b/,
 
         /^pessoa\b/,
@@ -1800,12 +2009,6 @@ function extractDirectItemCandidate(
     }
 
 
-    /**
-     * =====================================================
-     * REFERÊNCIAS VAGAS
-     * =====================================================
-     */
-
     const vagueReferencePatterns = [
 
         /^(isso|isto|aquilo|esse|essa|este|esta|aquele|aquela)$/,
@@ -1820,9 +2023,9 @@ function extractDirectItemCandidate(
 
         /^(qualquer coisa)$/,
 
-        /^(qualquer)$/,
+        /^qualquer$/,
 
-        /^(tudo|nada)$/,
+        /^(tudo|nada)$/
 
     ];
 
@@ -1841,6 +2044,7 @@ function extractDirectItemCandidate(
 
     return normalized;
 }
+
 
 /**
  * =========================================================
@@ -1893,7 +2097,7 @@ function extractServiceCandidate(
 
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return null;
@@ -1902,11 +2106,11 @@ function extractServiceCandidate(
 
     const serviceRequestPatterns = [
 
-        /^quero solicitar\s+/,
+        /^(quero|queria) solicitar\s+/,
 
-        /^quero um servico\s+/,
+        /^(quero|queria) um servico\s+/,
 
-        /^quero servico\s+/,
+        /^(quero|queria) servico\s+/,
 
         /^preciso de\s+/,
 
@@ -1955,15 +2159,15 @@ function extractServiceCandidate(
         candidate =
             candidate
                 .replace(
-                    /^quero solicitar\s+/i,
+                    /^(quero|queria) solicitar\s+/i,
                     ''
                 )
                 .replace(
-                    /^quero um servico\s+/i,
+                    /^(quero|queria) um servico\s+/i,
                     ''
                 )
                 .replace(
-                    /^quero servico\s+/i,
+                    /^(quero|queria) servico\s+/i,
                     ''
                 )
                 .replace(
@@ -2047,7 +2251,7 @@ function extractServiceCandidate(
 function extractQuantityTarget(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return null;
@@ -2075,8 +2279,8 @@ function extractQuantityTarget(text) {
 
 
     if (
-        /\b(fica|passa)\b/.test(normalized) &&
-        /\b(para|a)?\s*\d+\b/.test(normalized)
+        /\b(fica|passa|muda|altera|modifica|deixa)\b/.test(normalized) &&
+        /\b(para|em|com|a)?\s*\d+\b/.test(normalized)
     ) {
 
         return 'quantity';
@@ -2092,34 +2296,17 @@ function extractQuantityTarget(text) {
  * =========================================================
  * EXTRAI CANDIDATO DE PRODUTO PARA ALTERAÇÃO DE QUANTIDADE
  * =========================================================
- *
- * Exemplos:
- *
- * "fica só 1 chicken"
- * "fica 2 batatas"
- * "deixa 1 refrigerante"
- * "passa o chicken para 1"
- * "muda batata para 2"
- *
- * Retorna apenas o candidato linguístico.
- *
- * Não resolve produto no banco.
- * =========================================================
  */
 
 function extractQuantityProductCandidate(text) {
 
     let normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return null;
     }
 
-
-    /*
-     * Remove estruturas de alteração.
-     */
 
     normalized =
         normalized
@@ -2133,10 +2320,6 @@ function extractQuantityProductCandidate(text) {
             );
 
 
-    /*
-     * Remove expressões de quantidade.
-     */
-
     normalized =
         normalized
             .replace(
@@ -2144,18 +2327,14 @@ function extractQuantityProductCandidate(text) {
                 ''
             )
             .replace(
-                /\b\d+\b/,
+                /^\d+\s+/,
                 ''
             )
             .replace(
-                /\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez)\b/i,
+                /^(um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez)\s+/i,
                 ''
             );
 
-
-    /*
-     * Remove "só".
-     */
 
     normalized =
         normalized
@@ -2174,8 +2353,6 @@ function extractQuantityProductCandidate(text) {
 }
 
 
-
-
 /**
  * =========================================================
  * DETECTA ALVO
@@ -2192,25 +2369,11 @@ function detectTarget({
 }) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
 
     /**
-     * =========================================================
      * INTENÇÕES EXPLÍCITAS
-     * =========================================================
-     *
-     * Quando o intentService já identificou claramente a
-     * intenção, essa intenção deve ter prioridade sobre
-     * candidatos contextuais.
-     *
-     * Isto evita casos como:
-     *
-     * "quero ver tudo"
-     * → serviceCandidate falso positivo
-     * → target: service
-     *
-     * A intenção explícita deve vencer.
      */
 
     if (
@@ -2270,9 +2433,7 @@ function detectTarget({
 
 
     /**
-     * =========================================================
      * CARRINHO / TOTAL
-     * =========================================================
      */
 
     if (
@@ -2293,9 +2454,7 @@ function detectTarget({
 
 
     /**
-     * =========================================================
      * SERVIÇO
-     * =========================================================
      */
 
     if (
@@ -2303,6 +2462,8 @@ function detectTarget({
         context?.service_id ||
         context?.serviceId ||
         context?.service_name ||
+        context?.currentService ||
+        context?.lastService ||
         state === 'viewing_services' ||
         state === 'viewing_service' ||
         state === 'service_request'
@@ -2314,9 +2475,7 @@ function detectTarget({
 
 
     /**
-     * =========================================================
      * PRODUTO
-     * =========================================================
      */
 
     if (
@@ -2333,9 +2492,7 @@ function detectTarget({
 
 
     /**
-     * =========================================================
      * QUANTIDADE
-     * =========================================================
      */
 
     if (
@@ -2350,9 +2507,7 @@ function detectTarget({
 
 
     /**
-     * =========================================================
      * PEDIDO EM CONFIRMAÇÃO
-     * =========================================================
      */
 
     if (
@@ -2368,6 +2523,7 @@ function detectTarget({
 
     return null;
 }
+
 
 /**
  * =========================================================
@@ -2390,11 +2546,10 @@ function detectBehavior({
     context,
     hasCompoundCartAction,
     hasQuantityChangeAction
-
 }) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
 
     /**
@@ -2420,13 +2575,18 @@ function detectBehavior({
 
     }
 
+
+    /**
+     * ALTERAÇÃO DE QUANTIDADE
+     */
+
     if (
-    hasQuantityChangeAction
-) {
+        hasQuantityChangeAction
+    ) {
 
-    return 'change_quantity';
+        return 'change_quantity';
 
-}
+    }
 
 
     /**
@@ -2553,6 +2713,19 @@ function detectBehavior({
 
 
     /**
+     * PEDIDO DE SERVIÇO
+     */
+
+    if (
+        intent === 'SERVICE_REQUEST'
+    ) {
+
+        return 'request_service';
+
+    }
+
+
+    /**
      * SELEÇÃO DE SERVIÇO
      */
 
@@ -2566,19 +2739,6 @@ function detectBehavior({
     ) {
 
         return 'select_service';
-
-    }
-
-
-    /**
-     * PEDIDO DE SERVIÇO
-     */
-
-    if (
-        intent === 'SERVICE_REQUEST'
-    ) {
-
-        return 'request_service';
 
     }
 
@@ -2627,37 +2787,6 @@ function detectBehavior({
 
 
     /**
-     * SELECIONAR SERVIÇO
-     */
-
-    if (
-        serviceCandidate &&
-        (
-            state === 'viewing_services' ||
-            state === 'viewing_service' ||
-            state === 'service_request'
-        )
-    ) {
-
-        return 'select_service';
-
-    }
-
-
-    /**
-     * PEDIDO DE SERVIÇO
-     */
-
-    if (
-        intent === 'SERVICE_REQUEST'
-    ) {
-
-        return 'request_service';
-
-    }
-
-
-    /**
      * PREÇO
      */
 
@@ -2688,11 +2817,13 @@ function detectBehavior({
      */
 
     if (
-    intent === 'SERVICE' ||
-    intent === 'SERVICES'
-) {
-    return 'show_services';
-}
+        intent === 'SERVICE' ||
+        intent === 'SERVICES'
+    ) {
+
+        return 'show_services';
+
+    }
 
 
     /**
@@ -2735,23 +2866,17 @@ function detectBehavior({
 
 
     /**
- * =========================================================
- * ATENDIMENTO HUMANO
- * =========================================================
- *
- * HUMAN é a intenção moderna usada pelo intentService.
- * ATTENDANT é mantido por compatibilidade com classificações
- * anteriores.
- */
+     * ATENDIMENTO HUMANO
+     */
 
-if (
-    intent === 'HUMAN' ||
-    intent === 'ATTENDANT'
-) {
+    if (
+        intent === 'HUMAN' ||
+        intent === 'ATTENDANT'
+    ) {
 
-    return 'human_support';
+        return 'human_support';
 
-}
+    }
 
 
     /**
@@ -2793,6 +2918,19 @@ if (
     }
 
 
+    /**
+     * CUMPRIMENTO
+     */
+
+    if (
+        intent === 'GREETING'
+    ) {
+
+        return 'greeting';
+
+    }
+
+
     return 'unknown';
 }
 
@@ -2806,7 +2944,7 @@ if (
 function extractReplacementCandidates(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
 
     const match =
@@ -2854,38 +2992,30 @@ function extractReplacementCandidates(text) {
 
 /**
  * =========================================================
- * EXTRAI MÚLTIPLOS CANDIDATOS DE ADIÇÃO
+ * SEPARA ITENS COMPOSTOS
  * =========================================================
  *
- * Esta função é importante para mensagens como:
+ * O objetivo aqui não é resolver produtos.
  *
- * "Quero chicken e batata"
+ * O objetivo é transformar uma mensagem natural em
+ * segmentos candidatos.
  *
- * "Quero chicken, batata e refrigerante"
+ * Exemplo:
  *
- * "Manda duas pizzas e uma água"
+ * "2 chicken e 3 batatas"
  *
- * O Knowledge Engine não resolve os produtos.
+ * =>
  *
- * Apenas separa candidatos linguísticos.
+ * "2 chicken"
+ * "3 batatas"
  *
- * IMPORTANTE:
- *
- * Não fazemos simplesmente:
- *
- * text.split(' e ')
- *
- * porque nomes de produtos podem conter "e".
- *
- * A divisão é feita somente quando a primeira parte
- * demonstra claramente intenção de adicionar.
  * =========================================================
  */
 
-function extractMultipleAddCandidates(text) {
+function splitProductSegments(text) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
         return [];
@@ -2893,7 +3023,7 @@ function extractMultipleAddCandidates(text) {
 
 
     /**
-     * Primeiro tratamos vírgulas.
+     * Primeiro tentamos vírgulas.
      */
 
     const commaParts =
@@ -2906,77 +3036,95 @@ function extractMultipleAddCandidates(text) {
             .filter(Boolean);
 
 
-    /**
-     * Se houver vírgulas, cada parte pode representar
-     * um item independente.
-     *
-     * Exemplo:
-     *
-     * "quero chicken, batata, refrigerante"
-     */
-
     if (
         commaParts.length > 1
     ) {
 
-        const candidates = [];
-
-        for (
-            const part
-            of commaParts
-        ) {
-
-            const candidate =
-                cleanItemCandidate(
-                    part
-                );
-
-            if (
-                candidate
-            ) {
-
-                candidates.push({
-                    candidate,
-
-                    quantity:
-                        extractQuantity(part)
-                });
-
-            }
-
-        }
-
-
-        if (
-            candidates.length > 1
-        ) {
-
-            return candidates;
-
-        }
-
+        return commaParts;
     }
 
 
     /**
-     * Detecta uma intenção de adição no início.
-     *
-     * Exemplos:
-     *
-     * "quero chicken e batata"
-     * "manda chicken e batata"
-     * "adiciona chicken e batata"
-     * "vou querer chicken e batata"
+     * Depois +.
      */
 
+    if (
+        normalized.includes('+')
+    ) {
+
+        const plusParts =
+            normalized
+                .split(/\s*\+\s*/)
+                .map(
+                    part =>
+                        part.trim()
+                )
+                .filter(Boolean);
+
+        if (
+            plusParts.length > 1
+        ) {
+
+            return plusParts;
+        }
+    }
+
+
+    /**
+     * Finalmente "e" / "também".
+     *
+     * Esta separação é deliberadamente conservadora.
+     */
+
+    const andParts =
+        normalized
+            .split(
+                /\s+(?:e|tambem|também)\s+/i
+            )
+            .map(
+                part =>
+                    part.trim()
+            )
+            .filter(Boolean);
+
+
+    return andParts;
+}
+
+
+/**
+ * =========================================================
+ * EXTRAI MÚLTIPLOS CANDIDATOS DE ADIÇÃO
+ * =========================================================
+ */
+
+function extractMultipleAddCandidates(text) {
+
+    const normalized =
+        normalizeForIntent(text);
+
+    if (!normalized) {
+        return [];
+    }
+
+
+    /**
+     * =====================================================
+     * SEPARAÇÃO POR VÍRGULA / + / E
+     * =====================================================
+     */
+
+    let remaining =
+        normalized;
+
+
     const addPrefixMatch =
-        normalized.match(
-            /^(quero|vou querer|manda|mandar|adiciona|adicionar|acrescenta|acrescentar|coloca|colocar|pode adicionar|pode colocar|quero pedir|peço|peco|pede|pedir)\s+(.+)$/i
+        remaining.match(
+            /^(quero|queria|vou querer|manda|mandar|adiciona|adicionar|add|acrescenta|acrescentar|coloca|colocar|pode adicionar|pode colocar|quero pedir|queria pedir|peço|peco|pede|pedir)\s+(.+)$/i
         );
 
 
     let prefix = '';
-    let remaining = normalized;
 
     if (addPrefixMatch) {
 
@@ -2987,86 +3135,19 @@ function extractMultipleAddCandidates(text) {
             addPrefixMatch[2]
                 .trim();
 
-    } else {
-
-        const directParts =
-            normalized
-                .split(/\s*(?:\+|\be\b|tambem|também)\s*/i)
-                .map(
-                    part =>
-                        part.trim()
-                )
-                .filter(Boolean);
-
-        if (directParts.length < 2) {
-
-            return [];
-
-        }
-
-        const directCandidates = [];
-
-        for (
-            const part
-            of directParts
-        ) {
-
-            const candidate =
-                cleanItemCandidate(
-                    part
-                );
-
-            if (!candidate) {
-                continue;
-            }
-
-            directCandidates.push({
-
-                candidate,
-
-                quantity:
-                    extractQuantity(part)
-
-            });
-
-        }
-
-        if (
-            directCandidates.length < 2
-        ) {
-
-            return [];
-
-        }
-
-        return directCandidates;
-
     }
 
 
     /**
-     * Separação conservadora.
-     *
-     * Depois de uma intenção explícita de adicionar,
-     * " e " pode representar outro item.
-     *
-     * Não dividimos quando não existe intenção clara
-     * de adicionar.
+     * Se houver prefixo de adição, ele fica somente no
+     * primeiro segmento.
      */
 
     const parts =
-        remaining
-                .split(/\s*(?:\+|\be\b|tambem|também)\s*/i)            
-                .map(
-                part =>
-                    part.trim()
-            )
-            .filter(Boolean);
+        splitProductSegments(
+            remaining
+        );
 
-
-    /**
-     * Se não houve separação, não é mensagem composta.
-     */
 
     if (
         parts.length < 2
@@ -3086,16 +3167,25 @@ function extractMultipleAddCandidates(text) {
         index++
     ) {
 
-        let part =
+                let part =
             parts[index];
 
 
         /**
-         * A primeira parte pode ainda conter o prefixo.
+         * Quantidade deve ser retirada do segmento
+         * original, antes de adicionar o prefixo
+         * conversacional.
          */
 
+        const quantity =
+            extractLeadingQuantity(
+                part
+            );
+
+
         if (
-            index === 0
+            index === 0 &&
+            prefix
         ) {
 
             part =
@@ -3103,11 +3193,24 @@ function extractMultipleAddCandidates(text) {
 
         }
 
-
-        const candidate =
+        let candidate =
             cleanItemCandidate(
                 part
             );
+
+
+        /**
+         * Se a limpeza ainda deixou uma quantidade
+         * inicial, removemos novamente.
+         */
+
+        candidate =
+            candidate
+                .replace(
+                    /^(um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez|\d+)\s+/i,
+                    ''
+                )
+                .trim();
 
 
         if (!candidate) {
@@ -3115,12 +3218,53 @@ function extractMultipleAddCandidates(text) {
         }
 
 
+        /**
+         * Evita que intenções conversacionais sejam
+         * interpretadas como produtos.
+         */
+
+        const genericPatterns = [
+
+            /^ver\b/i,
+            /^mostrar\b/i,
+            /^mostra\b/i,
+            /^consultar\b/i,
+            /^saber\b/i,
+
+            /^fazer\s+(um|uma)?\s*(pedido|compra)\b/i,
+
+            /^falar\s+com\b/i,
+
+            /^conversar\s+com\b/i,
+
+            /^menu\b/i,
+
+            /^carrinho\b/i,
+
+            /^total\b/i,
+
+            /^servi[cç]o\b/i
+
+        ];
+
+
+        if (
+            genericPatterns.some(
+                pattern =>
+                    pattern.test(candidate)
+            )
+        ) {
+
+            continue;
+
+        }
+
+
         candidates.push({
 
             candidate,
 
-            quantity:
-                extractQuantity(part)
+            quantity
 
         });
 
@@ -3128,7 +3272,7 @@ function extractMultipleAddCandidates(text) {
 
 
     /**
-     * Só consideramos composto quando temos pelo menos
+     * Só é mensagem composta quando existem pelo menos
      * dois candidatos reais.
      */
 
@@ -3180,26 +3324,15 @@ function detectMultipleAddActions(text) {
  * =========================================================
  * DETECTA AÇÕES COMPOSTAS
  * =========================================================
- *
- * Exemplos:
- *
- * "tira a coca e coloca duas fanta"
- *
- * "remove a coca e adiciona duas fanta"
- *
- * "quero chicken e batata"
- *
- * "troca a coca por fanta"
- *
- * A resolução concreta dos produtos continua no
- * productService/botEngine.
- * =========================================================
  */
 
-function detectCompoundActions(text, intent = null) {
+function detectCompoundActions(
+    text,
+    intent = null
+) {
 
     const normalized =
-        normalizeForComparison(text);
+        normalizeForIntent(text);
 
     if (!normalized) {
 
@@ -3208,11 +3341,22 @@ function detectCompoundActions(text, intent = null) {
     }
 
 
-    if (intent === "SERVICE_REQUEST") {
+    /**
+     * Solicitação de serviço não deve ser interpretada
+     * como composição de produtos.
+     */
 
+    if (
+    intent === 'SERVICE_REQUEST'
+) {
+    const addIntentCandidate =
+        isAddAction(normalized) &&
+        !/\b(servico|serviços|serviço|corte de relva)\b/i.test(normalized);
+
+    if (!addIntentCandidate) {
         return [];
-
     }
+}
 
 
     const actions = [];
@@ -3275,47 +3419,56 @@ function detectCompoundActions(text, intent = null) {
     }
 
 
+  /**
+ * =====================================================
+ * MÚLTIPLAS ADIÇÕES
+ * =====================================================
+ *
+ * Só tentamos interpretar múltiplas adições quando
+ * a mensagem não contém uma ação explícita de remoção
+ * ou alteração/substituição.
+ *
+ * Isto evita que uma mensagem composta como:
+ *
+ * "remove chicken e adiciona batata e refrigerante"
+ *
+ * seja interpretada incorretamente apenas como
+ * múltiplas adições.
+ * =====================================================
+ */
+
+const hasRemovalIntent =
+    /\b(remove|retira|tira|elimina|nao quero|não quero)\b/.test(
+        normalized
+    );
+
+const hasEditIntent =
+    /\b(muda|troca|altera|modifica|substitui)\b/.test(
+        normalized
+    );
+
+const multipleAddActions =
+    !hasRemovalIntent && !hasEditIntent
+        ? detectMultipleAddActions(normalized)
+        : [];
+
+if (
+    multipleAddActions.length > 1
+) {
+    actions.push(
+        ...multipleAddActions
+    );
+
+    return actions;
+}
+
+
+
+
     /**
      * =====================================================
-     * MÚLTIPLAS ADIÇÕES
+     * SEPARAÇÃO DE AÇÕES
      * =====================================================
-     *
-     * IMPORTANTE:
-     *
-     * Esta verificação acontece antes do split genérico.
-     *
-     * Isso corrige:
-     *
-     * "Quero chicken e batata"
-     */
-
-    const multipleAddActions =
-        detectMultipleAddActions(
-            normalized
-        );
-
-
-    if (
-        multipleAddActions.length > 1
-    ) {
-
-        actions.push(
-            ...multipleAddActions
-        );
-
-        return actions;
-
-    }
-
-
-    /**
-     * =====================================================
-     * SEPARAÇÃO DE AÇÕES COMPOSTAS
-     * =====================================================
-     *
-     * Exemplo:
-     *
-     * "remove a coca e adiciona uma fanta"
      */
 
     const parts =
@@ -3338,7 +3491,7 @@ function detectCompoundActions(text, intent = null) {
 
     /**
      * =====================================================
-     * ANALISA CADA PARTE
+     * ANALISA CADA SEGMENTO
      * =====================================================
      */
 
@@ -3399,7 +3552,6 @@ function detectCompoundActions(text, intent = null) {
 
                         ? {
                               type: 'position',
-
                               value: position
                           }
 
@@ -3408,11 +3560,8 @@ function detectCompoundActions(text, intent = null) {
                             ? reference
 
                             : {
-                                  type:
-                                      'candidate',
-
-                                  value:
-                                      candidate
+                                  type: 'candidate',
+                                  value: candidate
                               },
 
                 candidate
@@ -3446,102 +3595,93 @@ function detectCompoundActions(text, intent = null) {
         ) {
 
             const reference =
-    extractReference(
-        segment
-    );
+                extractReference(
+                    segment
+                );
 
 
-const position =
-    extractProductPosition(
-        segment
-    );
+            const position =
+                extractProductPosition(
+                    segment
+                );
 
 
-let quantityProductCandidate = null;
+            let quantityProductCandidate =
+                extractQuantityProductCandidate(
+                    segment
+                );
 
 
-/*
- * Tenta identificar o produto mencionado
- * juntamente com a alteração de quantidade.
- */
+            if (
+                quantityProductCandidate
+            ) {
 
-quantityProductCandidate =
-    cleanItemCandidate(
-        segment
-    );
+                quantityProductCandidate =
+                    quantityProductCandidate
+                        .replace(
+                            /\b(fica|fica só|passa|deixa)\b/gi,
+                            ''
+                        )
+                        .replace(
+                            /\b(para|em|com)\b/gi,
+                            ''
+                        )
+                        .replace(
+                            /\b\d+\b/g,
+                            ''
+                        )
+                        .replace(
+                            /\b(um|uma|dois|duas|tres|três|quatro|cinco|seis|sete|oito|nove|dez)\b/gi,
+                            ''
+                        )
+                        .replace(
+                            /\bso\b/gi,
+                            ''
+                        )
+                        .replace(
+                            /\s+/g,
+                            ' '
+                        )
+                        .trim();
 
-
-/*
- * Remove a estrutura específica da alteração
- * de quantidade.
- */
-
-quantityProductCandidate =
-    quantityProductCandidate
-        .replace(
-            /\b(fica|fica só|passa|deixa)\b/gi,
-            ''
-        )
-        .replace(
-            /\b(para|em|com)\b/gi,
-            ''
-        )
-        .replace(
-            /\b\d+\b/g,
-            ''
-        )
-        .replace(
-            /\bso\b/gi,
-            ''
-        )
-        .replace(
-            /\s+/g,
-            ' '
-        )
-        .trim();
+            }
 
 
-actions.push({
+            actions.push({
 
-    type:
-        'change_quantity',
+                type:
+                    'change_quantity',
 
-    quantity,
+                quantity,
 
-    target:
-        position !== null
+                target:
+                    position !== null
 
-            ? {
-                  type:
-                      'position',
+                        ? {
+                              type: 'position',
+                              value: position
+                          }
 
-                  value:
-                      position
-              }
+                        : reference
 
-            : reference
+                            ? reference
 
-                ? reference
+                            : quantityProductCandidate
 
-                : quantityProductCandidate
+                                ? {
+                                      type: 'candidate',
+                                      value:
+                                          quantityProductCandidate
+                                  }
 
-                    ? {
-                          type:
-                              'candidate',
+                                : {
+                                      type: 'current'
+                                  }
 
-                          value:
-                              quantityProductCandidate
-                      }
-
-                    : {
-                          type:
-                              'current'
-                      }
-
-});
+            });
 
 
-continue;
+            continue;
 
         }
 
@@ -3556,7 +3696,7 @@ continue;
             isAddAction(segment)
         ) {
 
-            const candidate =
+            let candidate =
                 cleanItemCandidate(
                     segment
                 );
@@ -3572,7 +3712,7 @@ continue;
                     candidate,
 
                     quantity:
-                        extractQuantity(
+                        extractLeadingQuantity(
                             segment
                         )
 
@@ -3634,7 +3774,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * CONFIRMAÇÃO CONTEXTUAL
+     * =====================================================
      */
 
     if (
@@ -3656,7 +3798,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * NEGAÇÃO CONTEXTUAL
+     * =====================================================
      */
 
     if (
@@ -3678,7 +3822,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * REFERÊNCIA COMO CONFIRMAÇÃO
+     * =====================================================
      */
 
     if (
@@ -3700,7 +3846,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * CONFIRMAÇÃO EXPLÍCITA
+     * =====================================================
      */
 
     if (
@@ -3744,7 +3892,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * REFERÊNCIA COM CONTEXTO
+     * =====================================================
      */
 
     if (
@@ -3771,7 +3921,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * INTENÇÃO EXPLÍCITA
+     * =====================================================
      */
 
     if (
@@ -3795,7 +3947,9 @@ function resolveContextualIntent({
 
 
     /**
+     * =====================================================
      * UNKNOWN
+     * =====================================================
      */
 
     return {
@@ -3805,8 +3959,7 @@ function resolveContextualIntent({
         confidence:
             detected?.confidence ?? 0,
 
-        source:
-            'unknown'
+        source: 'unknown'
 
     };
 }
@@ -3824,30 +3977,128 @@ function analyzeMessage({
     context = {}
 }) {
 
-    const detected =
-        detectIntent(
-            message
+    const originalMessage =
+        message || '';
+
+
+    /**
+     * =====================================================
+     * DETECÇÃO INICIAL
+     * =====================================================
+     *
+     * Primeiro tentamos a mensagem inteira.
+     *
+     * Depois, quando existe cumprimento inicial, também
+     * analisamos a versão sem o cumprimento.
+     *
+     * Isto é fundamental para:
+     *
+     * "Bom dia, queria ver o menu"
+     *
+     * "Olá, quero chicken"
+     *
+     * "Boa tarde, queria falar com uma pessoa"
+     * =====================================================
+     */
+
+    const normalizedMessage =
+        normalizeForComparison(
+            originalMessage
         );
 
+
+    const intentMessage =
+        normalizeForIntent(
+            originalMessage
+        );
+
+
+    let detected =
+        detectIntent(
+            originalMessage
+        );
+
+
+    /**
+     * Se a mensagem começa por cumprimento e a primeira
+     * classificação não capturou a intenção real, tentamos
+     * novamente sem o cumprimento.
+     */
+
+    const detectedInitialIntent =
+        String(
+            detected?.intent ||
+            'UNKNOWN'
+        ).toUpperCase();
+
+
+    if (
+        intentMessage &&
+        intentMessage !== normalizedMessage &&
+        (
+            detectedInitialIntent === 'UNKNOWN' ||
+            detectedInitialIntent === 'GREETING'
+        )
+    ) {
+
+        const contextualDetected =
+            detectIntent(
+                intentMessage
+            );
+
+
+        const contextualIntent =
+            String(
+                contextualDetected?.intent ||
+                'UNKNOWN'
+            ).toUpperCase();
+
+
+        if (
+            contextualIntent !== 'UNKNOWN' &&
+            (
+                detectedInitialIntent === 'UNKNOWN' ||
+                contextualIntent !== 'GREETING'
+            )
+        ) {
+
+            detected = {
+
+                ...contextualDetected,
+
+                originalText:
+                    originalMessage,
+
+                normalizedText:
+                    contextualDetected.normalizedText ||
+                    intentMessage
+
+            };
+
+        }
+
+    }
+
+
+    /**
+     * =====================================================
+     * RESOLUÇÃO CONTEXTUAL
+     * =====================================================
+     */
 
     const resolved =
         resolveContextualIntent({
 
             detected,
 
-            message,
+            message:
+                originalMessage,
 
             state,
 
             context
 
         });
-
-
-    const normalizedMessage =
-        normalizeForComparison(
-            message
-        );
 
 
     /**
@@ -3858,49 +4109,49 @@ function analyzeMessage({
 
     const quantity =
         extractQuantity(
-            normalizedMessage
+            intentMessage
         );
 
 
     const addAction =
         isAddAction(
-            normalizedMessage
+            originalMessage
         );
 
 
     const removeAction =
         isRemoveAction(
-            normalizedMessage
+            originalMessage
         );
 
 
     const editAction =
         isEditAction(
-            normalizedMessage
+            originalMessage
         );
 
 
     const backAction =
         isBackAction(
-            normalizedMessage
+            originalMessage
         );
 
 
     const replaceAction =
         isReplaceAction(
-            normalizedMessage
+            originalMessage
         );
 
 
     const productPosition =
         extractProductPosition(
-            normalizedMessage
+            intentMessage
         );
 
 
     const reference =
         extractReference(
-            normalizedMessage
+            intentMessage
         );
 
 
@@ -3912,38 +4163,68 @@ function analyzeMessage({
 
     const compoundActions =
         detectCompoundActions(
-            normalizedMessage,
+            originalMessage,
             resolved.intent
         );
 
 
-    const hasCompoundCartAction =
-    compoundActions.length > 1;
+    /**
+     * =====================================================
+     * DETECTA SE EXISTE AÇÃO DE CARRINHO COMPOSTA
+     * =====================================================
+     *
+     * Não basta existirem duas ações quaisquer.
+     *
+     * Por exemplo:
+     *
+     * "quero saber o preço e o horário"
+     *
+     * não é uma ação composta de carrinho.
+     *
+     * Consideramos apenas ações que realmente alteram ou
+     * manipulam o carrinho:
+     *
+     * add_product
+     * remove_product
+     * change_quantity
+     * replace_product
+     * =====================================================
+     */
 
-const hasQuantityChangeAction =
-    compoundActions.some(
-        action =>
-            action.type === 'change_quantity'
-    );
+    const cartMutationTypes = [
+
+        'add_product',
+        'remove_product',
+        'change_quantity',
+        'replace_product'
+
+    ];
+
+
+    const cartActions =
+        compoundActions.filter(
+            action =>
+                cartMutationTypes.includes(
+                    action.type
+                )
+        );
+
+
+    const hasCompoundCartAction =
+        cartActions.length > 1;
+
+
+    const hasQuantityChangeAction =
+        compoundActions.some(
+            action =>
+                action.type === 'change_quantity'
+        );
+
 
     /**
      * =====================================================
      * CANDIDATOS DE PRODUTOS
      * =====================================================
-     *
-     * Exemplo:
-     *
-     * "Quero chicken e batata"
-     *
-     * productCandidates:
-     *
-     * [
-     *   "chicken",
-     *   "batata"
-     * ]
-     *
-     * O candidato singular continua disponível para
-     * compatibilidade com o fluxo existente.
      */
 
     const addProductActions =
@@ -3966,66 +4247,72 @@ const hasQuantityChangeAction =
 
 
     /**
- * =====================================================
- * CANDIDATOS DE PRODUTO / SERVIÇO
- * =====================================================
- *
- * Intenções explícitas de navegação/conversa não devem
- * gerar candidatos genéricos.
- *
- * Exemplos:
- *
- * "quero ver o menu"
- * "quero ver os serviços"
- * "quero falar com uma pessoa"
- * "quero fazer um pedido"
- *
- * Nestes casos a intenção já está identificada.
- */
+     * =====================================================
+     * INTENÇÕES QUE NÃO DEVEM GERAR PRODUTO
+     * =====================================================
+     */
 
-const explicitNonItemIntent =
-    [
-        'GREETING',
-        'MENU',
-        'SERVICE',
-        'SERVICES',
-        'SERVICE_REQUEST',
-        'HUMAN',
-        'ATTENDANT',
-        'LOCATION',
-        'HOURS',
-        'HELP',
-        'THANKS',
-        'GOODBYE'
-    ].includes(
-        resolved.intent
-    );
-
-
-const productCandidate =
-    explicitNonItemIntent
-
-        ? null
-
-        : (
-            hasMultipleProductCandidates
-
-                ? null
-
-                : extractProductCandidate(
-                      normalizedMessage,
-                      state
-                  )
+    const explicitNonItemIntent =
+        [
+            'GREETING',
+            'MENU',
+            'SERVICE',
+            'SERVICES',
+            'SERVICE_REQUEST',
+            'HUMAN',
+            'ATTENDANT',
+            'LOCATION',
+            'HOURS',
+            'HELP',
+            'THANKS',
+            'GOODBYE'
+        ].includes(
+            resolved.intent
         );
 
 
-const serviceCandidate =
-    explicitNonItemIntent || productCandidate
-        ? null
-        : extractServiceCandidate(
-              normalizedMessage,
-              state
-          );
+    /**
+     * =====================================================
+     * CANDIDATO SINGULAR
+     * =====================================================
+     *
+     * Mantido para compatibilidade com o fluxo existente.
+     */
+
+    const productCandidate =
+        explicitNonItemIntent
+
+            ? null
+
+            : (
+                hasMultipleProductCandidates
+
+                    ? null
+
+                    : extractProductCandidate(
+                          originalMessage,
+                          state
+                      )
+            );
+
+
+    /**
+     * =====================================================
+     * CANDIDATO DE SERVIÇO
+     * =====================================================
+     */
+
+    const serviceCandidate =
+        explicitNonItemIntent ||
+        productCandidate ||
+        hasMultipleProductCandidates
+
+            ? null
+
+            : extractServiceCandidate(
+                  originalMessage,
+                  state
+              );
 
 
     /**
@@ -4036,30 +4323,8 @@ const serviceCandidate =
 
     const replacementCandidates =
         extractReplacementCandidates(
-            normalizedMessage
+            originalMessage
         );
-
-
-    /**
-     * =====================================================
-     * DEBUG
-     * =====================================================
-     */
-
-    console.log(
-        '🔎 COMPOUND DEBUG:',
-        JSON.stringify(
-            compoundActions,
-            null,
-            2
-        )
-    );
-
-
-    console.log(
-        '🔎 hasCompoundCartAction:',
-        hasCompoundCartAction
-    );
 
 
     /**
@@ -4072,7 +4337,7 @@ const serviceCandidate =
         detectBehavior({
 
             text:
-                normalizedMessage,
+                originalMessage,
 
             state,
 
@@ -4101,7 +4366,6 @@ const serviceCandidate =
 
             hasQuantityChangeAction
 
-
         });
 
 
@@ -4115,7 +4379,7 @@ const serviceCandidate =
         detectTarget({
 
             text:
-                normalizedMessage,
+                originalMessage,
 
             state,
 
@@ -4167,12 +4431,15 @@ const serviceCandidate =
 
     return {
 
-        message,
+        message:
+            originalMessage,
 
         normalizedText:
             detected.normalizedText ||
             detected.text ||
-            normalizeText(message),
+            normalizeText(
+                originalMessage
+            ),
 
 
         /**
@@ -4197,6 +4464,14 @@ const serviceCandidate =
 
         detectedIntent:
             detected.intent,
+
+
+        /**
+         * Texto utilizado para interpretar a intenção.
+         */
+
+        intentText:
+            intentMessage,
 
 
         /**
@@ -4280,55 +4555,82 @@ const serviceCandidate =
 
 
             /**
-             * Compatibilidade com o fluxo existente.
-             *
-             * Se houver vários produtos, fica null.
+             * Compatibilidade.
              */
 
             productCandidate,
 
 
             /**
-             * NOVO:
-             *
-             * Lista de candidatos de produtos.
+             * Lista completa.
              */
 
             productCandidates,
 
 
             /**
-             * NOVO:
-             *
-             * Indica se existem múltiplos produtos.
+             * Indica múltiplos produtos.
              */
 
             hasMultipleProductCandidates,
 
 
+            /**
+             * Candidato de serviço.
+             */
+
             serviceCandidate,
 
+
+            /**
+             * Posição.
+             */
 
             productPosition,
 
 
+            /**
+             * Referência contextual.
+             */
+
             reference,
 
+
+            /**
+             * Produto antigo em substituição.
+             */
 
             targetProductCandidate:
                 replacementCandidates
                     .targetProductCandidate,
 
 
+            /**
+             * Novo produto em substituição.
+             */
+
             replacementCandidate:
                 replacementCandidates
                     .replacementCandidate,
 
 
+            /**
+             * Alvo de alteração de quantidade.
+             */
+
             quantityTarget:
                 extractQuantityTarget(
-                    normalizedMessage
-                )
+                    originalMessage
+                ),
+
+
+            /**
+             * Informação adicional útil para o bot.
+             */
+
+            hasCompoundCartAction,
+
+            hasQuantityChangeAction
 
         }
 
@@ -4391,8 +4693,13 @@ module.exports = {
     extractReplacementCandidates,
 
     extractQuantityProductCandidate,
-    
-    cleanItemCandidate
 
+    cleanItemCandidate,
+
+    removeLeadingGreeting,
+
+    normalizeForIntent,
+
+    extractLeadingQuantity
 
 };
